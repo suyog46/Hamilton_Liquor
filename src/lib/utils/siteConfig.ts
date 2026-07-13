@@ -1,0 +1,32 @@
+export const siteConfig = {
+  name: "Hamilton Liquor Store",
+  shortName: "Hamilton Liquor",
+  tagline: "Baltimore's neighborhood spot for wine, spirits & beer",
+  address: {
+    line1: "5418 Harford Rd",
+    line2: "Baltimore, MD 21214",
+    full: "5418 Harford Rd, Baltimore, MD 21214",
+  },
+  phone: "(443) 438-5483",
+  phoneHref: "tel:+14434385483",
+  email: "info@hamiltonliquorstore.com",
+  hours: [
+    { day: "Monday", time: "9 AM – 10 PM" },
+    { day: "Tuesday", time: "9 AM – 10 PM" },
+    { day: "Wednesday", time: "9 AM – 10 PM" },
+    { day: "Thursday", time: "9 AM – 10 PM" },
+    { day: "Friday", time: "9 AM – 11 PM" },
+    { day: "Saturday", time: "9 AM – 11 PM" },
+    { day: "Sunday", time: "Closed" },
+  ],
+  holidayNote: "Holiday hours may differ from regular store hours.",
+  googleRating: 4.0,
+  googleReviewCount: 77,
+  mapsEmbedUrl: "https://www.google.com/maps?q=5418+Harford+Rd,+Baltimore,+MD+21214&output=embed",
+  mapsDirectionsUrl: "https://www.google.com/maps/dir/?api=1&destination=5418+Harford+Rd,+Baltimore,+MD+21214",
+  googleReviewUrl: "https://www.google.com/maps/search/?api=1&query=Hamilton+Liquor+Store+5418+Harford+Rd+Baltimore+MD",
+  social: {
+    facebook: "#",
+    instagram: "#",
+  },
+};
