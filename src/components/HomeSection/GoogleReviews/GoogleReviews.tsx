@@ -1,5 +1,6 @@
 import { Icon } from "@iconify/react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import GlowBackground from "@/components/Common/GlowBackground/GlowBackground";
 import { siteConfig } from "@/lib/utils";
 
 interface Review {
@@ -36,8 +37,9 @@ const reviews: Review[] = [
 
 const GoogleReviews = () => {
   return (
-    <section className="bg-gray-50 py-16">
-      <div className="max-w-[1280px] mx-auto px-6">
+    <section className="relative bg-gray-50 py-16 overflow-hidden">
+      <GlowBackground />
+      <div className="relative max-w-[1280px] mx-auto px-6">
         <div className="flex flex-col items-center text-center gap-3 mb-10">
           <span className="text-xs font-semibold uppercase tracking-widest text-primary-normal">Customer Love</span>
           <h2 className="font-title text-2xl sm:text-3xl font-bold text-black">What Customers Say</h2>

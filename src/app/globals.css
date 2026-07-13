@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "aos/dist/aos.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -63,6 +64,7 @@
 
   /* Secondary */
   --color-secondary: #f97316;
+  --color-secondary-normal: #5C1B2E;
 
   /* Semantic Colors */
   --color-success: #22c55e;
@@ -82,7 +84,7 @@
 
   /* Fonts */
   /* --font-display: "Poppins", sans-serif; */
-  --font-body: "Inter", sans-serif;
+  --font-body: var(--font-inter), sans-serif;
     --font-title: var(--font-cinzel);
 
   /* Spacing */
@@ -170,6 +172,23 @@
     @apply bg-background text-foreground;
   }
   html {
-    @apply font-mono;
+    @apply font-body;
   }
+}
+
+@keyframes glow-flow {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translate(4%, -5%) scale(1.15);
+    opacity: 0.9;
+  }
+}
+
+.glow-blob {
+  animation: glow-flow 10s ease-in-out infinite;
+  will-change: transform, opacity;
 }

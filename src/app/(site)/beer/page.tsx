@@ -1,15 +1,7 @@
-import ProductGridTemplate from "@/components/Shop/ProductGridTemplate/ProductGridTemplate";
-import { getProductsByCategory } from "@/lib/utils/products";
+import { redirect } from "next/navigation";
 
 const BeerPage = () => {
-  return (
-    <ProductGridTemplate
-      eyebrow="Category"
-      title="Beer"
-      subtitle="Craft lagers, IPAs, and pilsners from local and international breweries."
-      products={getProductsByCategory("Beer")}
-    />
-  );
+  redirect("/shop?category=Beer");
 };
 
 export default BeerPage;

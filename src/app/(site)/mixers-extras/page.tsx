@@ -1,16 +1,7 @@
-import ProductGridTemplate from "@/components/Shop/ProductGridTemplate/ProductGridTemplate";
-import { mixerAsProducts } from "@/lib/utils/products";
+import { redirect } from "next/navigation";
 
 const MixersExtrasPage = () => {
-  return (
-    <ProductGridTemplate
-      eyebrow="Category"
-      title="Mixers & Extras"
-      subtitle="Tonics, garnishes, bitters, and bar tools to round out your order."
-      products={mixerAsProducts}
-      searchPlaceholder="Search mixers & extras…"
-    />
-  );
+  redirect("/shop?category=Mixer");
 };
 
 export default MixersExtrasPage;

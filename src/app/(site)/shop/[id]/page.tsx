@@ -10,7 +10,6 @@ import {
   allProducts,
   getProductById,
   getTopCategory,
-  topCategorySlugs,
   type Product,
 } from "@/lib/utils/products";
 
@@ -83,7 +82,7 @@ const ProductDetailPage = async ({ params }: ProductPageProps) => {
             Home
           </Link>
           <Icon icon="material-symbols:chevron-right" className="w-3.5 h-3.5 text-gray-300" />
-          <Link href={`/${topCategorySlugs[topCategory]}`} className="hover:text-primary-normal transition-colors">
+          <Link href={`/shop?category=${topCategory}`} className="hover:text-primary-normal transition-colors">
             {topCategory}
           </Link>
           <Icon icon="material-symbols:chevron-right" className="w-3.5 h-3.5 text-gray-300" />
@@ -198,7 +197,7 @@ const ProductDetailPage = async ({ params }: ProductPageProps) => {
         <section className="bg-gray-50 py-14">
           <div className="max-w-[1280px] mx-auto px-6">
             <h2 className="font-title text-xl sm:text-2xl font-bold text-black mb-6">Related Products</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
               {relatedProducts.map((related) => (
                 <ProductCard key={related.id} product={related} />
               ))}
@@ -212,7 +211,7 @@ const ProductDetailPage = async ({ params }: ProductPageProps) => {
         <section className="bg-white py-14">
           <div className="max-w-[1280px] mx-auto px-6">
             <h2 className="font-title text-xl sm:text-2xl font-bold text-black mb-6">You Might Also Like</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
               {similarProducts.map((similar) => (
                 <ProductCard key={similar.id} product={similar} />
               ))}

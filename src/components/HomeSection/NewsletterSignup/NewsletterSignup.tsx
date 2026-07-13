@@ -1,11 +1,12 @@
 import { Icon } from "@iconify/react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import GlowBackground from "@/components/Common/GlowBackground/GlowBackground";
 
 const NewsletterSignup = () => {
   return (
     <section className="relative bg-black py-16 overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_rgba(227,185,125,0.15)_0%,_rgba(0,0,0,0)_60%)]" />
+      <GlowBackground />
       <div className="relative max-w-[720px] mx-auto px-6 flex flex-col items-center text-center gap-4">
         <div className="flex items-center justify-center w-14 h-14 rounded-full bg-primary-normal/10 border border-primary-normal/40">
           <Icon icon="solar:letter-outline" className="w-6 h-6 text-primary-normal" />

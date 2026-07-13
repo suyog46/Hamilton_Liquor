@@ -1,10 +1,6 @@
 export const navbarLinks = [
   { name: "Home", href: "/" },
   { name: "Shop All", href: "/shop" },
-  { name: "Wine", href: "/wine" },
-  { name: "Spirits", href: "/spirits" },
-  { name: "Beer", href: "/beer" },
-  { name: "Mixers & Extras", href: "/mixers-extras" },
   { name: "Specials", href: "/specials" },
   { name: "About", href: "/about" },
   { name: "Contact", href: "/contact" },
@@ -12,10 +8,10 @@ export const navbarLinks = [
 
 export const footerShopLinks = [
   { name: "Shop All", href: "/shop" },
-  { name: "Wine", href: "/wine" },
-  { name: "Spirits", href: "/spirits" },
-  { name: "Beer", href: "/beer" },
-  { name: "Mixers & Extras", href: "/mixers-extras" },
+  { name: "Wine", href: "/shop?category=Wine" },
+  { name: "Spirits", href: "/shop?category=Spirits" },
+  { name: "Beer", href: "/shop?category=Beer" },
+  { name: "Mixers & Extras", href: "/shop?category=Mixer" },
   { name: "Specials", href: "/specials" },
 ];
 

@@ -1,9 +1,11 @@
 import { Icon } from "@iconify/react";
+import GlowBackground from "@/components/Common/GlowBackground/GlowBackground";
 
 const PickupDeliveryInfo = () => {
   return (
-    <section className="bg-gray-50 py-16">
-      <div className="max-w-[1280px] mx-auto px-6">
+    <section className="relative bg-gray-50 py-16 overflow-hidden">
+      <GlowBackground />
+      <div className="relative max-w-[1280px] mx-auto px-6">
         <div className="flex flex-col items-center text-center gap-2 mb-10">
           <span className="text-xs font-semibold uppercase tracking-widest text-primary-normal">How It Works</span>
           <h2 className="font-title text-2xl sm:text-3xl font-bold text-black">Pickup &amp; Delivery</h2>

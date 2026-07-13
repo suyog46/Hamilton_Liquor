@@ -1,6 +1,12 @@
+"use client";
+
 import Image from "next/image";
+import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
+import { useAgeVerification } from "@/lib/context/AgeVerification";
 
 const Hero = () => {
+  const { verified } = useAgeVerification();
+
   return (
     <section className="relative w-full min-h-[600px] md:h-screen overflow-hidden bg-black lg:flex lg:flex-row">
       {/* Bottle image — full-bleed background on mobile, right-hand column on md+ */}
@@ -26,7 +32,19 @@ const Hero = () => {
             Hamilton Liquor Store
           </span>
           <h1 className="font-title text-4xl md:text-7xl xl:text-8xl font-bold text-white leading-tight w-full max-w-none md:whitespace-nowrap z-20">
-            Crafted for the <br className="hidden md:block" />Connoisseur
+            {verified ? (
+              <>
+                <TextGenerateEffect words="Crafted for the" className="inline" duration={0.5} />
+                <br className="hidden md:block" />
+                <TextGenerateEffect words="Connoisseur" className="inline" duration={0.8} />
+              </>
+            ) : (
+              <>
+                <span>Crafted for the</span>
+                <br className="hidden md:block" />
+                <span>Connoisseur</span>
+              </>
+            )}
           </h1>
           <p className="text-base md:text-lg text-white/70 w-full max-w-md">
             Discover a curated collection of premium spirits, distilled with

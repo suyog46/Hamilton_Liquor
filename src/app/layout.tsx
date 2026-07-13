@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist,  Cinzel, JetBrains_Mono } from "next/font/google";
+import { Geist, Cinzel, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,6 +22,11 @@ const cinzel = Cinzel({
   variable: "--font-cinzel",
 });
 
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
+
 
 export const metadata: Metadata = {
   title: "Hamilton Liquor Store | Baltimore, MD",
@@ -37,7 +42,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn(cinzel.variable, "font-mono", jetbrainsMono.variable)}
+      className={cn(cinzel.variable, inter.variable, jetbrainsMono.variable, "font-body")}
     >
 
       <body>

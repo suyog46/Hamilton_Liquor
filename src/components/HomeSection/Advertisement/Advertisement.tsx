@@ -1,9 +1,10 @@
 import { Icon } from "@iconify/react";
+import GlowBackground from "@/components/Common/GlowBackground/GlowBackground";
 
 const Advertisement = () => {
   return (
     <section className="relative bg-black py-20 overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(255,182,166,0.15)_0%,_rgba(0,0,0,0)_60%)]" />
+      <GlowBackground />
 
       <div className="relative max-w-[1280px] mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-8">
         <div className="flex flex-col gap-4 text-center md:text-left">

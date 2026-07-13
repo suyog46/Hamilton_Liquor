@@ -1,13 +1,20 @@
 import ProductGridTemplate from "@/components/Shop/ProductGridTemplate/ProductGridTemplate";
-import { products } from "@/lib/utils/products";
+import { allProducts } from "@/lib/utils/products";
 
-const ShopAllPage = () => {
+interface ShopAllPageProps {
+  searchParams: Promise<{ category?: string }>;
+}
+
+const ShopAllPage = async ({ searchParams }: ShopAllPageProps) => {
+  const { category } = await searchParams;
+
   return (
     <ProductGridTemplate
       eyebrow="Full Collection"
       title="Shop All"
       subtitle="Browse our entire range of wine, spirits, beer, and mixers — all in one place."
-      products={products}
+      products={allProducts}
+      initialCategory={category}
     />
   );
 };
