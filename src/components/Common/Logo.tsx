@@ -1,6 +1,6 @@
-import { setAgencyMode } from "@/src/redux/features/toggleSlice";
+// import { setAgencyMode } from "@/src/redux/features/toggleSlice";
 import Link from "next/link";
-import { useDispatch } from "react-redux";
+// import { useDispatch } from "react-redux";
 
 interface LogoProps {
   showSearchBar: boolean;
@@ -8,13 +8,13 @@ interface LogoProps {
 }
 
 const Logo = ({ showSearchBar, color ="white" }: LogoProps) => {
-  const dispatch = useDispatch();
+//   const dispatch = useDispatch();
 
   return (
     <div className="relative w-24 sm:w-32 flex items-center justify-start flex-shrink-0 overflow-hidden">
       <Link
         href="/"
-        onClick={() => dispatch(setAgencyMode(false))}
+        // onClick={() => dispatch(setAgencyMode(false))}
         className="flex items-center justify-start w-fit"
         aria-label="Travories — Home"
       >
