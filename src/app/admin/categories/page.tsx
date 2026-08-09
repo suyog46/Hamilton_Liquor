@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import MediaUpload, { type MediaValue } from "@/components/Admin/MediaUpload/MediaUpload";
+import { ConfirmDialog } from "@/components/Admin/ConfirmDialog/ConfirmDialog";
 import {
   useCreateCategoryMutation,
   useDeleteCategoryMutation,
@@ -49,6 +50,7 @@ const AdminCategoriesPage = () => {
   const [media, setMedia] = useState<MediaValue | null>(null);
   const [mediaError, setMediaError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [categoryPendingDelete, setCategoryPendingDelete] = useState<Category | null>(null);
 
   const categories = data?.data.items ?? [];
   const isSaving = isCreating || isUpdating;
@@ -116,13 +118,15 @@ const AdminCategoriesPage = () => {
     }
   };
 
-  const handleDelete = async (category: Category) => {
-    if (!window.confirm(`Delete "${category.name}"? This cannot be undone.`)) return;
+  const handleDelete = async () => {
+    if (!categoryPendingDelete) return;
+    const category = categoryPendingDelete;
 
     setDeletingId(category.id);
     try {
       await deleteCategory(category.id).unwrap();
       toast.success("Category deleted.");
+      setCategoryPendingDelete(null);
     } catch (err) {
       toast.error(getErrorMessage(err, "Failed to delete category."));
     } finally {
@@ -191,38 +195,34 @@ const AdminCategoriesPage = () => {
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="font-medium">{category.name}</p>
-                      <Badge variant={category.is_active ? "secondary" : "outline"}>
+                      <Badge variant={category.is_active ? "success" : "outline"}>
                         {category.is_active ? "Active" : "Inactive"}
                       </Badge>
                     </div>
                     <p className="text-[11px] text-muted-foreground">/{category.slug}</p>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button
+                  <div className="flex items-center gap-3">
+                    <button
                       type="button"
-                      variant="ghost"
-                      size="icon-sm"
                       aria-label="Edit category"
-                      className="hover:bg-brand-hover hover:text-primary-normal"
                       onClick={() => openEditDialog(category)}
+                      className="cursor-pointer text-muted-foreground transition-colors hover:text-primary-normal"
                     >
                       <Icon icon="solar:pen-linear" className="h-4 w-4" />
-                    </Button>
-                    <Button
+                    </button>
+                    <button
                       type="button"
-                      variant="ghost"
-                      size="icon-sm"
                       aria-label="Delete category"
-                      className="hover:bg-destructive/10"
                       disabled={isDeleting && deletingId === category.id}
-                      onClick={() => handleDelete(category)}
+                      onClick={() => setCategoryPendingDelete(category)}
+                      className="cursor-pointer text-muted-foreground transition-colors hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isDeleting && deletingId === category.id ? (
                         <Icon icon="svg-spinners:180-ring" className="h-4 w-4 text-destructive" />
                       ) : (
-                        <Icon icon="solar:trash-bin-minimalistic-linear" className="h-4 w-4 text-destructive" />
+                        <Icon icon="solar:trash-bin-minimalistic-linear" className="h-4 w-4" />
                       )}
-                    </Button>
+                    </button>
                   </div>
                 </div>
               </CardContent>
@@ -268,7 +268,7 @@ const AdminCategoriesPage = () => {
             <DialogFooter className="mt-4">
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={() => setDialogOpen(false)}
                 disabled={isSaving}
               >
@@ -286,6 +286,15 @@ const AdminCategoriesPage = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!categoryPendingDelete}
+        onOpenChange={(open) => !open && setCategoryPendingDelete(null)}
+        title={`Delete "${categoryPendingDelete?.name}"?`}
+        description="This cannot be undone."
+        isLoading={isDeleting}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 };

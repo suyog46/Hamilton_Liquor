@@ -69,8 +69,8 @@
   --color-primary-active: #C28E47; /* Deep gold for click/active state */
 
 
-  /* Secondary */
-  --color-secondary: #f97316;
+  /* Secondary (brand accent — distinct from the shadcn --secondary token,
+     which is mapped from :root below and drives Button/Badge variant="secondary") */
   --color-secondary-normal: #5C1B2E;
 
   /* Hover accent — used for interactive rows/cards (e.g. admin lists) */

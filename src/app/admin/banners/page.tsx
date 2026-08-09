@@ -52,7 +52,7 @@ const AdminBannersPage = () => {
             <div className="relative h-32 w-full bg-muted">
               <Image src={banner.image} alt={banner.headline} fill sizes="360px" className="object-cover" />
               <Badge
-                variant={banner.active ? "secondary" : "outline"}
+                variant={banner.active ? "success" : "outline"}
                 className="absolute top-2 right-2"
               >
                 {banner.active ? "Active" : "Inactive"}
@@ -62,14 +62,18 @@ const AdminBannersPage = () => {
               <p className="text-[11px] text-muted-foreground">{banner.label}</p>
               <p className="font-medium">{banner.headline}</p>
               <p className="text-[11px] text-muted-foreground">{banner.placement}</p>
-              <div className="flex items-center gap-1 mt-2">
-                <Button type="button" variant="outline" size="sm" className="flex-1 gap-1.5">
+              <div className="flex items-center gap-2 mt-2">
+                <Button type="button" variant="secondary" size="sm" className="flex-1 gap-1.5">
                   <Icon icon="solar:pen-linear" className="h-3.5 w-3.5" />
                   Edit
                 </Button>
-                <Button type="button" variant="ghost" size="icon-sm" aria-label="Delete banner">
-                  <Icon icon="solar:trash-bin-minimalistic-linear" className="h-4 w-4 text-destructive" />
-                </Button>
+                <button
+                  type="button"
+                  aria-label="Delete banner"
+                  className="cursor-pointer text-muted-foreground transition-colors hover:text-destructive"
+                >
+                  <Icon icon="solar:trash-bin-minimalistic-linear" className="h-4 w-4" />
+                </button>
               </div>
             </CardContent>
           </Card>

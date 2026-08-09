@@ -1,26 +1,26 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import type { PublicProductListItem } from "@/redux/features/product/productApiSlice";
 import { useLazyGetPublicProductDetailQuery } from "@/redux/features/product/productApiSlice";
 import { formatPrice, formatVolume, getDisplayVariant } from "@/lib/utils/productDisplay";
 import { useAddToCartMutation } from "@/redux/features/cart/cartApiSlice";
+import { useGetMeQuery } from "@/redux/features/user/userApiSlice";
 import { useCartStore } from "@/lib/stores/cartStore";
 import { getCartItemCount } from "@/lib/utils/cartDisplay";
-import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { useState } from "react";
 
 const ProductCard = ({ product }: { product: PublicProductListItem }) => {
-  const router = useRouter();
-  const pathname = usePathname();
   const [isLiked, setIsLiked] = useState(false);
   const [fetchDetail, { isFetching: isResolvingVariant }] = useLazyGetPublicProductDetailQuery();
   const [addToCart, { isLoading: isAdding }] = useAddToCartMutation();
   const setCartCount = useCartStore((s) => s.setCount);
+  const addGuestItem = useCartStore((s) => s.addGuestItem);
+  const { data: meData } = useGetMeQuery();
+  const isLoggedIn = !!meData?.data;
 
   const inStock = product.is_in_stock;
   const showFromPrice = product.available_variant_volumes.length > 1;
@@ -41,16 +41,23 @@ const ProductCard = ({ product }: { product: PublicProductListItem }) => {
         toast.error("This product is currently unavailable.");
         return;
       }
+
+      // Guests build their cart locally — the real cart API requires auth
+      // on every endpoint, so there's nothing to call until they sign in.
+      if (!isLoggedIn) {
+        addGuestItem(
+          { ...variant, product: { id: detail.data.id, name: detail.data.name, slug: detail.data.slug } },
+          1
+        );
+        toast.success("Added to cart.");
+        return;
+      }
+
       const res = await addToCart({ product_variant_id: variant.id, quantity: 1 }).unwrap();
       setCartCount(getCartItemCount(res.data));
       toast.success("Added to cart.");
-    } catch (err) {
-      if (isFetchBaseQueryError(err) && err.status === 401) {
-        toast.error("You are not logged in. Log in first.");
-        router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
-      } else {
-        toast.error("Failed to add to cart. Please try again.");
-      }
+    } catch {
+      toast.error("Failed to add to cart. Please try again.");
     }
   };
 

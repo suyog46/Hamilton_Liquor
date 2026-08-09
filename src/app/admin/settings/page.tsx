@@ -80,7 +80,7 @@ const AdminSettingsPage = () => {
             </div>
             <Badge variant="secondary">Owner</Badge>
           </div>
-          <Button type="button" variant="outline" className="w-fit gap-1.5">
+          <Button type="button" variant="secondary" className="w-fit gap-1.5">
             <Icon icon="solar:user-plus-linear" className="h-4 w-4" />
             Invite Staff Member
           </Button>

@@ -13,49 +13,74 @@ import {
   useGetCartQuery,
   useUpdateCartItemMutation,
   useRemoveCartItemMutation,
+  type CartProductVariant,
 } from "@/redux/features/cart/cartApiSlice";
-import { useCartStore } from "@/lib/stores/cartStore";
-import { getCartItemCount, getCartSubtotal } from "@/lib/utils/cartDisplay";
+import { useGetMeQuery } from "@/redux/features/user/userApiSlice";
+import { useCartStore, useCartHydrated } from "@/lib/stores/cartStore";
+import { getCartItemCount } from "@/lib/utils/cartDisplay";
 import { formatAbv, formatPrice, formatVolume } from "@/lib/utils/productDisplay";
-import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
 
 const DELIVERY_FEE = 4.99;
 const FREE_DELIVERY_THRESHOLD = 200;
 const DELIVERY_MINIMUM = 30;
 
+interface DisplayLine {
+  id: string;
+  quantity: number;
+  product_variant: CartProductVariant;
+}
+
 const CartPage = () => {
   const router = useRouter();
-  const { data, isLoading, isFetching, error } = useGetCartQuery();
+  const { data: meData } = useGetMeQuery();
+  const isLoggedIn = !!meData?.data;
+
+  const { data, isLoading, isFetching } = useGetCartQuery(undefined, { skip: !isLoggedIn });
   const [updateCartItem] = useUpdateCartItemMutation();
   const [removeCartItem] = useRemoveCartItemMutation();
   const setCartCount = useCartStore((s) => s.setCount);
+  const guestItems = useCartStore((s) => s.guestItems);
+  const updateGuestItem = useCartStore((s) => s.updateGuestItem);
+  const removeGuestItem = useCartStore((s) => s.removeGuestItem);
+  const hasHydrated = useCartHydrated();
   const [fulfillment, setFulfillment] = useState<"pickup" | "delivery">("pickup");
 
   const cart = data?.data;
-  const unauthorized = isFetchBaseQueryError(error) && error.status === 401;
 
   useEffect(() => {
-    if (cart) setCartCount(getCartItemCount(cart));
-  }, [cart, setCartCount]);
+    if (isLoggedIn && cart) setCartCount(getCartItemCount(cart));
+  }, [isLoggedIn, cart, setCartCount]);
 
-  const updateQty = async (itemId: string, quantity: number) => {
+  const items: DisplayLine[] = isLoggedIn
+    ? cart?.items ?? []
+    : guestItems.map((item) => ({ id: item.variant.id, quantity: item.quantity, product_variant: item.variant }));
+
+  const updateQty = async (line: DisplayLine, quantity: number) => {
+    if (!isLoggedIn) {
+      updateGuestItem(line.id, quantity);
+      return;
+    }
     try {
-      await updateCartItem({ item_id: itemId, quantity: Math.max(1, quantity) }).unwrap();
+      await updateCartItem({ item_id: line.id, quantity: Math.max(1, quantity) }).unwrap();
     } catch {
       toast.error("Failed to update quantity.");
     }
   };
 
-  const removeLine = async (itemId: string) => {
+  const removeLine = async (line: DisplayLine) => {
+    if (!isLoggedIn) {
+      removeGuestItem(line.id);
+      return;
+    }
     try {
-      await removeCartItem(itemId).unwrap();
+      await removeCartItem(line.id).unwrap();
     } catch {
       toast.error("Failed to remove item.");
     }
   };
 
   const handleCheckout = () => {
-    if (unauthorized || !cart) {
+    if (!isLoggedIn) {
       toast.error("You are not logged in. Log in first.");
       router.push("/login?redirect=/cart");
       return;
@@ -63,8 +88,8 @@ const CartPage = () => {
     toast.info("Checkout isn't available yet — check back soon.");
   };
 
-  const items = cart?.items ?? [];
-  const subtotal = cart ? getCartSubtotal(cart) : 0;
+  const showSkeleton = isLoggedIn ? isLoading : !hasHydrated;
+  const subtotal = items.reduce((sum, line) => sum + Number(line.product_variant.price) * line.quantity, 0);
   const deliveryFee =
     fulfillment === "delivery" && subtotal > 0 ? (subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE) : 0;
   const total = subtotal + deliveryFee;
@@ -75,7 +100,7 @@ const CartPage = () => {
 
       <section className="bg-white py-10 sm:py-14">
         <div className="max-w-[1280px] mx-auto px-6">
-          {isLoading ? (
+          {showSkeleton ? (
             <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-8 items-start">
               <div className="flex flex-col gap-4">
                 {Array.from({ length: 3 }).map((_, i) => (
@@ -99,11 +124,11 @@ const CartPage = () => {
             <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-8 items-start">
               {/* Cart lines */}
               <div className="flex flex-col gap-4">
-                {items.map((item) => {
-                  const { product_variant: variant } = item;
+                {items.map((line) => {
+                  const variant = line.product_variant;
                   return (
                     <div
-                      key={item.id}
+                      key={line.id}
                       className="flex gap-4 p-4 rounded-2xl border border-gray-100 shadow-sm"
                     >
                       <div className="relative w-20 h-24 sm:w-24 sm:h-28 shrink-0 rounded-xl overflow-hidden bg-gray-50">
@@ -136,7 +161,7 @@ const CartPage = () => {
                           </div>
                           <button
                             aria-label="Remove item"
-                            onClick={() => removeLine(item.id)}
+                            onClick={() => removeLine(line)}
                             className="text-gray-300 hover:text-red-500 transition-colors shrink-0"
                           >
                             <Icon icon="solar:trash-bin-minimalistic-linear" className="w-5 h-5" />
@@ -147,23 +172,23 @@ const CartPage = () => {
                           <div className="flex items-center gap-3 rounded-lg border border-gray-200 px-2 py-1">
                             <button
                               aria-label="Decrease quantity"
-                              onClick={() => updateQty(item.id, item.quantity - 1)}
+                              onClick={() => updateQty(line, line.quantity - 1)}
                               className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-black"
                             >
                               <Icon icon="solar:minus-circle-linear" className="w-4 h-4" />
                             </button>
-                            <span className="text-sm font-semibold w-4 text-center">{item.quantity}</span>
+                            <span className="text-sm font-semibold w-4 text-center">{line.quantity}</span>
                             <button
                               aria-label="Increase quantity"
-                              onClick={() => updateQty(item.id, item.quantity + 1)}
-                              disabled={item.quantity >= variant.quantity}
+                              onClick={() => updateQty(line, line.quantity + 1)}
+                              disabled={line.quantity >= variant.quantity}
                               className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-black disabled:opacity-30"
                             >
                               <Icon icon="solar:add-circle-linear" className="w-4 h-4" />
                             </button>
                           </div>
                           <span className="text-sm sm:text-base font-bold text-black">
-                            {formatPrice(Number(variant.price) * item.quantity)}
+                            {formatPrice(Number(variant.price) * line.quantity)}
                           </span>
                         </div>
                       </div>
@@ -249,7 +274,7 @@ const CartPage = () => {
                 <Button
                   type="button"
                   onClick={handleCheckout}
-                  disabled={isFetching}
+                  disabled={isLoggedIn && isFetching}
                   className="h-12 rounded-lg bg-primary-normal text-black text-sm font-semibold hover:opacity-90 w-full"
                 >
                   Proceed to Checkout

@@ -19,8 +19,8 @@ const coupons = [
   { code: "SUMMER22", type: "Fixed", value: "$10 off $50+", usage: "200 / 200", status: "Expired", expires: "Jun 30, 2026" },
 ];
 
-const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-  Active: "secondary",
+const statusVariant: Record<string, "success" | "outline" | "destructive"> = {
+  Active: "success",
   Scheduled: "outline",
   Expired: "destructive",
 };
@@ -64,13 +64,21 @@ const AdminCouponsPage = () => {
                 </TableCell>
                 <TableCell className="text-muted-foreground">{coupon.expires}</TableCell>
                 <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    <Button type="button" variant="ghost" size="icon-sm" aria-label="Edit coupon">
+                  <div className="flex items-center justify-end gap-3">
+                    <button
+                      type="button"
+                      aria-label="Edit coupon"
+                      className="cursor-pointer text-muted-foreground transition-colors hover:text-primary-normal"
+                    >
                       <Icon icon="solar:pen-linear" className="h-4 w-4" />
-                    </Button>
-                    <Button type="button" variant="ghost" size="icon-sm" aria-label="Delete coupon">
-                      <Icon icon="solar:trash-bin-minimalistic-linear" className="h-4 w-4 text-destructive" />
-                    </Button>
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Delete coupon"
+                      className="cursor-pointer text-muted-foreground transition-colors hover:text-destructive"
+                    >
+                      <Icon icon="solar:trash-bin-minimalistic-linear" className="h-4 w-4" />
+                    </button>
                   </div>
                 </TableCell>
               </TableRow>

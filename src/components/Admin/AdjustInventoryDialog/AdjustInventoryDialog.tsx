@@ -132,7 +132,7 @@ export function AdjustInventoryDialog({
           aria-label="Adjust stock"
           onClick={() => setOpen(true)}
           className={cn(
-            "text-muted-foreground transition-colors hover:text-primary-normal",
+            "cursor-pointer text-muted-foreground transition-colors hover:text-primary-normal",
             className
           )}
         >
@@ -141,7 +141,7 @@ export function AdjustInventoryDialog({
       ) : (
         <Button
           type="button"
-          variant="outline"
+          variant="secondary"
           size="sm"
           className={cn("gap-1.5 rounded-md", className)}
           onClick={() => setOpen(true)}
@@ -163,7 +163,7 @@ export function AdjustInventoryDialog({
               <Field orientation="horizontal">
                 <Button
                   type="button"
-                  variant={direction === "increase" ? "default" : "outline"}
+                  variant={direction === "increase" ? "default" : "secondary"}
                   className={cn(
                     "flex-1 gap-1.5 rounded-md",
                     direction === "increase" && "bg-primary-normal text-black hover:bg-primary-hover"
@@ -175,7 +175,7 @@ export function AdjustInventoryDialog({
                 </Button>
                 <Button
                   type="button"
-                  variant={direction === "decrease" ? "default" : "outline"}
+                  variant={direction === "decrease" ? "default" : "secondary"}
                   className={cn(
                     "flex-1 gap-1.5 rounded-md",
                     direction === "decrease" && "bg-destructive text-white hover:bg-destructive/90"
@@ -238,7 +238,7 @@ export function AdjustInventoryDialog({
             <DialogFooter className="mt-4">
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={() => handleOpenChange(false)}
                 disabled={isLoading}
               >

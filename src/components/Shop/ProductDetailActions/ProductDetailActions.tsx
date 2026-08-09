@@ -2,23 +2,29 @@
 
 import { Icon } from "@iconify/react";
 import { useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { ProductVariant } from "@/redux/features/product/productApiSlice";
 import { isVariantInStock } from "@/lib/utils/productDisplay";
 import { useAddToCartMutation } from "@/redux/features/cart/cartApiSlice";
+import { useGetMeQuery } from "@/redux/features/user/userApiSlice";
 import { useCartStore } from "@/lib/stores/cartStore";
 import { getCartItemCount } from "@/lib/utils/cartDisplay";
-import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
 
-const ProductDetailActions = ({ variant }: { variant: ProductVariant | null }) => {
-  const router = useRouter();
-  const pathname = usePathname();
+interface ProductRef {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+const ProductDetailActions = ({ variant, product }: { variant: ProductVariant | null; product: ProductRef }) => {
   const [qty, setQty] = useState(1);
   const [inCart, setInCart] = useState(false);
   const [addToCart, { isLoading: isAdding }] = useAddToCartMutation();
   const setCartCount = useCartStore((s) => s.setCount);
+  const addGuestItem = useCartStore((s) => s.addGuestItem);
+  const { data: meData } = useGetMeQuery();
+  const isLoggedIn = !!meData?.data;
 
   const inStock = isVariantInStock(variant);
   const maxQty = variant ? Math.min(24, variant.quantity) : 1;
@@ -26,18 +32,22 @@ const ProductDetailActions = ({ variant }: { variant: ProductVariant | null }) =
   const handleAddToCart = async () => {
     if (!variant || !inStock) return;
 
+    // Guests build their cart locally — the real cart API requires auth on
+    // every endpoint, so there's nothing to call until they sign in.
+    if (!isLoggedIn) {
+      addGuestItem({ ...variant, product }, qty);
+      setInCart(true);
+      toast.success(`Added ${qty} to cart.`);
+      return;
+    }
+
     try {
       const res = await addToCart({ product_variant_id: variant.id, quantity: qty }).unwrap();
       setCartCount(getCartItemCount(res.data));
       setInCart(true);
       toast.success(`Added ${qty} to cart.`);
-    } catch (err) {
-      if (isFetchBaseQueryError(err) && err.status === 401) {
-        toast.error("You are not logged in. Log in first.");
-        router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
-      } else {
-        toast.error("Failed to add to cart. Please try again.");
-      }
+    } catch {
+      toast.error("Failed to add to cart. Please try again.");
     }
   };
 

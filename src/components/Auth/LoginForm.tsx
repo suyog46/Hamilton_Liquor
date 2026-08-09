@@ -54,7 +54,13 @@ const LoginForm = () => {
       } else {
         // No explicit destination — send admins to the dashboard and
         // everyone else to the storefront.
-        const me = await fetchMe().unwrap().catch(() => null);
+        const me = await fetchMe()
+          .unwrap()
+          .catch((fetchMeError) => {
+            console.error("[login] could not fetch /auth/me to determine role:", fetchMeError);
+            return null;
+          });
+        if (!me) toast.warning("Signed in, but couldn't confirm your role — sending you to the storefront.");
         router.push(me?.data.role === "ADMIN" ? "/admin" : "/");
       }
     } catch (err) {

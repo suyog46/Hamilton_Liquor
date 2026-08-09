@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import MediaUpload, { type MediaValue } from "@/components/Admin/MediaUpload/MediaUpload";
 import { AdjustInventoryDialog } from "@/components/Admin/AdjustInventoryDialog/AdjustInventoryDialog";
+import { ConfirmDialog } from "@/components/Admin/ConfirmDialog/ConfirmDialog";
 import { useGetCategoriesQuery } from "@/redux/features/category/categoryApiSlice";
 import { useGetBrandsQuery } from "@/redux/features/brand/brandApiSlice";
 import { useGetCountriesQuery } from "@/redux/features/country/countryApiSlice";
@@ -126,6 +127,8 @@ const ProductDetailPage = () => {
   const [variantForm, setVariantForm] = useState<VariantFormState>(emptyVariantForm());
   const [variantErrors, setVariantErrors] = useState<Record<string, string>>({});
   const [deletingVariantId, setDeletingVariantId] = useState<string | null>(null);
+  const [deleteProductConfirmOpen, setDeleteProductConfirmOpen] = useState(false);
+  const [variantPendingDelete, setVariantPendingDelete] = useState<ProductVariant | null>(null);
 
   const openCreateVariantDialog = () => {
     setEditingVariant(null);
@@ -176,7 +179,6 @@ const ProductDetailPage = () => {
 
   const handleDeleteProduct = async () => {
     if (!product) return;
-    if (!window.confirm(`Delete "${product.name}"? This cannot be undone.`)) return;
 
     try {
       await deleteProduct(productId).unwrap();
@@ -237,13 +239,15 @@ const ProductDetailPage = () => {
     }
   };
 
-  const handleDeleteVariant = async (variant: ProductVariant) => {
-    if (!window.confirm("Delete this variant? This cannot be undone.")) return;
+  const handleDeleteVariant = async () => {
+    if (!variantPendingDelete) return;
+    const variant = variantPendingDelete;
 
     setDeletingVariantId(variant.id);
     try {
       await deleteVariant({ variant_id: variant.id, product_id: productId }).unwrap();
       toast.success("Variant deleted.");
+      setVariantPendingDelete(null);
     } catch (err) {
       toast.error(getErrorMessage(err, "Failed to delete variant."));
     } finally {
@@ -269,7 +273,7 @@ const ProductDetailPage = () => {
         <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
           <Icon icon="solar:danger-circle-linear" className="h-6 w-6 text-destructive" />
           <p className="text-xs text-muted-foreground">Failed to load this product.</p>
-          <Button variant="outline" size="sm" render={<Link href="/admin/products" />}>
+          <Button variant="secondary" size="sm" render={<Link href="/admin/products" />}>
             Back to Products
           </Button>
         </CardContent>
@@ -284,7 +288,7 @@ const ProductDetailPage = () => {
         description={`/${product.slug}`}
         action={
           <div className="flex items-center gap-2">
-            <Button variant="outline" render={<Link href="/admin/products" />}>
+            <Button variant="secondary" render={<Link href="/admin/products" />}>
               Back
             </Button>
             <Button
@@ -292,7 +296,7 @@ const ProductDetailPage = () => {
               variant="destructive"
               className="gap-1.5"
               disabled={isDeletingProduct}
-              onClick={handleDeleteProduct}
+              onClick={() => setDeleteProductConfirmOpen(true)}
             >
               {isDeletingProduct ? (
                 <Icon icon="svg-spinners:180-ring" className="h-4 w-4" />
@@ -428,7 +432,7 @@ const ProductDetailPage = () => {
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle>Variants</CardTitle>
-          <Button type="button" variant="outline" size="sm" className="gap-1.5 bg-primary-normal hover:bg-primary-hover transition-all duration-150" onClick={openCreateVariantDialog}>
+          <Button type="button" variant="secondary" size="sm" className="gap-1.5 bg-primary-normal hover:bg-primary-hover transition-all duration-150" onClick={openCreateVariantDialog}>
             <Icon icon="solar:add-circle-linear" className="h-4 w-4" />
             Add Variant
           </Button>
@@ -452,7 +456,7 @@ const ProductDetailPage = () => {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <p className="font-medium">{variant.volume_ml} mL</p>
-                        <Badge variant={variant.is_active ? "secondary" : "outline"}>
+                        <Badge variant={variant.is_active ? "success" : "outline"}>
                           {variant.is_active ? "Active" : "Inactive"}
                         </Badge>
                       </div>
@@ -461,30 +465,28 @@ const ProductDetailPage = () => {
                         {variant.quantity}
                       </p>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Button
+                    <div className="flex items-center gap-3">
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="icon-sm"
                         aria-label="Edit variant"
                         onClick={() => openEditVariantDialog(variant)}
+                        className="cursor-pointer text-muted-foreground transition-colors hover:text-primary-normal"
                       >
                         <Icon icon="solar:pen-linear" className="h-4 w-4" />
-                      </Button>
-                      <Button
+                      </button>
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="icon-sm"
                         aria-label="Delete variant"
                         disabled={isDeletingVariant && deletingVariantId === variant.id}
-                        onClick={() => handleDeleteVariant(variant)}
+                        onClick={() => setVariantPendingDelete(variant)}
+                        className="cursor-pointer text-muted-foreground transition-colors hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {isDeletingVariant && deletingVariantId === variant.id ? (
                           <Icon icon="svg-spinners:180-ring" className="h-4 w-4 text-destructive" />
                         ) : (
-                          <Icon icon="solar:trash-bin-minimalistic-linear" className="h-4 w-4 text-destructive" />
+                          <Icon icon="solar:trash-bin-minimalistic-linear" className="h-4 w-4" />
                         )}
-                      </Button>
+                      </button>
                     </div>
                   </div>
 
@@ -499,7 +501,7 @@ const ProductDetailPage = () => {
                     />
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
                       className="h-7 gap-1.5 rounded-md px-2 text-[11px]"
                       render={
@@ -613,7 +615,7 @@ const ProductDetailPage = () => {
             <DialogFooter className="mt-4">
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={() => setVariantDialogOpen(false)}
                 disabled={isSavingVariant}
               >
@@ -631,6 +633,24 @@ const ProductDetailPage = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={deleteProductConfirmOpen}
+        onOpenChange={setDeleteProductConfirmOpen}
+        title={`Delete "${product.name}"?`}
+        description="This cannot be undone."
+        isLoading={isDeletingProduct}
+        onConfirm={handleDeleteProduct}
+      />
+
+      <ConfirmDialog
+        open={!!variantPendingDelete}
+        onOpenChange={(open) => !open && setVariantPendingDelete(null)}
+        title="Delete this variant?"
+        description="This cannot be undone."
+        isLoading={isDeletingVariant}
+        onConfirm={handleDeleteVariant}
+      />
     </div>
   );
 };

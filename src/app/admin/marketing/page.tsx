@@ -29,7 +29,7 @@ const AdminMarketingPage = () => {
         title="SMS & Email Signups"
         description="Manage your marketing list and send out specials or announcements."
         action={
-          <Button type="button" variant="outline" className="gap-1.5">
+          <Button type="button" variant="secondary" className="gap-1.5">
             <Icon icon="solar:export-linear" className="h-4 w-4" />
             Export List
           </Button>

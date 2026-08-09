@@ -7,12 +7,12 @@ import { toast } from "sonner";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { Badge } from "@/components/ui/badge";
+import { ConfirmDialog } from "@/components/Admin/ConfirmDialog/ConfirmDialog";
 import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
 import {
   useDeleteProductMutation,
   type Product,
 } from "@/redux/features/product/productApiSlice";
-import { cn } from "@/lib/utils/cn";
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (isFetchBaseQueryError(error)) {
@@ -35,46 +35,44 @@ const totalStock = (product: Product) =>
 
 function ActionsCell({ product }: { product: Product }) {
   const [deleteProduct, { isLoading }] = useDeleteProductMutation();
-  const [confirming, setConfirming] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const handleDelete = async () => {
-    if (!window.confirm(`Delete "${product.name}"? This cannot be undone.`)) return;
-
-    setConfirming(true);
     try {
       await deleteProduct(product.id).unwrap();
       toast.success("Product deleted.");
+      setConfirmOpen(false);
     } catch (err) {
       toast.error(getErrorMessage(err, "Failed to delete product."));
-    } finally {
-      setConfirming(false);
     }
   };
-
-  const isDeleting = isLoading && confirming;
 
   return (
     <div className="flex items-center justify-end gap-3">
       <Link
         href={`/admin/products/${product.id}`}
         aria-label="Edit product"
-        className="text-muted-foreground transition-colors hover:text-primary-normal"
+        className="cursor-pointer text-muted-foreground transition-colors hover:text-primary-normal"
       >
         <Icon icon="solar:pen-linear" className="h-4 w-4" />
       </Link>
       <button
         type="button"
         aria-label="Delete product"
-        disabled={isDeleting}
-        onClick={handleDelete}
-        className="text-muted-foreground transition-colors hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50"
+        onClick={() => setConfirmOpen(true)}
+        className="cursor-pointer text-muted-foreground transition-colors hover:text-destructive"
       >
-        {isDeleting ? (
-          <Icon icon="svg-spinners:180-ring" className="h-4 w-4 text-destructive" />
-        ) : (
-          <Icon icon="solar:trash-bin-minimalistic-linear" className="h-4 w-4" />
-        )}
+        <Icon icon="solar:trash-bin-minimalistic-linear" className="h-4 w-4" />
       </button>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={`Delete "${product.name}"?`}
+        description="This cannot be undone."
+        isLoading={isLoading}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
@@ -122,7 +120,7 @@ export const productColumns: ColumnDef<Product>[] = [
     id: "status",
     header: "Status",
     cell: ({ row }) => (
-      <Badge className={cn(row.original.is_active ? "bg-green-700 text-white" : "outline")}>
+      <Badge variant={row.original.is_active ? "success" : "outline"}>
         {row.original.is_active ? "Active" : "Inactive"}
       </Badge>
     ),

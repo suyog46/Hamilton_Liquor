@@ -61,7 +61,7 @@ const VariantHistoryPage = () => {
         <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
           <Icon icon="solar:danger-circle-linear" className="h-6 w-6 text-destructive" />
           <p className="text-xs text-muted-foreground">Failed to load this variant.</p>
-          <Button variant="outline" size="sm" render={<Link href={`/admin/products/${productId}`} />}>
+          <Button variant="secondary" size="sm" render={<Link href={`/admin/products/${productId}`} />}>
             Back to Product
           </Button>
         </CardContent>
@@ -76,7 +76,7 @@ const VariantHistoryPage = () => {
         description={`Current quantity: ${variant.quantity}`}
         action={
           <div className="flex items-center gap-2">
-            <Button variant="outline" render={<Link href={`/admin/products/${productId}`} />}>
+            <Button variant="secondary" render={<Link href={`/admin/products/${productId}`} />}>
               Back to Product
             </Button>
             <AdjustInventoryDialog

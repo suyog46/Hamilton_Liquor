@@ -4,13 +4,13 @@ import { cn, navbarLinks, siteConfig } from "@/lib/utils";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useGetCartQuery } from "@/redux/features/cart/cartApiSlice";
+import { useAddToCartMutation, useGetCartQuery } from "@/redux/features/cart/cartApiSlice";
 import { useGetMeQuery } from "@/redux/features/user/userApiSlice";
 import { useLogoutMutation } from "@/redux/features/auth/authApiSlice";
 import { useCartStore } from "@/lib/stores/cartStore";
-import { getCartItemCount } from "@/lib/utils/cartDisplay";
+import { getCartItemCount, getGuestCartItemCount } from "@/lib/utils/cartDisplay";
 import { useAppDispatch } from "@/redux/hooks";
 import { apiSlice } from "@/redux/apiSlice";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -40,26 +40,55 @@ const NavbarClient = () => {
 
   const isSolid = isScrolled || isOpen;
 
-  // Guests get a 401 here, which just leaves the badge at 0 — the shared
-  // apiSlice base query already tries a token refresh before giving up.
-  const { data: cartData } = useGetCartQuery();
-  const cartCount = useCartStore((s) => s.count);
-  const setCartCount = useCartStore((s) => s.setCount);
-
-  useEffect(() => {
-    if (cartData) setCartCount(getCartItemCount(cartData.data));
-  }, [cartData, setCartCount]);
-
-  const cartBadge = cartCount > 0 && (
-    <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4.5 h-4.5 px-1 rounded-full bg-primary-normal text-black text-[10px] font-bold">
-      {cartCount > 99 ? "99+" : cartCount}
-    </span>
-  );
-
   const { data: meData, isLoading: isLoadingMe } = useGetMeQuery();
   const user = meData?.data;
+  const isLoggedIn = !!user;
   const firstName = user?.name.trim().split(/\s+/)[0] ?? "";
   const initial = firstName ? firstName[0].toUpperCase() : "?";
+
+  // Guests never call the cart API — it requires auth on every endpoint —
+  // their cart lives in the zustand store instead (see guestItems below).
+  const { data: cartData } = useGetCartQuery(undefined, { skip: !isLoggedIn });
+  const cartCount = useCartStore((s) => s.count);
+  const setCartCount = useCartStore((s) => s.setCount);
+  const guestItems = useCartStore((s) => s.guestItems);
+  const clearGuestItems = useCartStore((s) => s.clearGuestItems);
+  const [addToCart] = useAddToCartMutation();
+
+  useEffect(() => {
+    if (isLoggedIn && cartData) setCartCount(getCartItemCount(cartData.data));
+  }, [isLoggedIn, cartData, setCartCount]);
+
+  // Once a guest with a local cart signs in, push those lines into their
+  // real account cart so nothing they added before login gets lost.
+  const isMerging = useRef(false);
+  useEffect(() => {
+    if (!isLoggedIn || guestItems.length === 0 || isMerging.current) return;
+    isMerging.current = true;
+
+    (async () => {
+      try {
+        let last;
+        for (const item of guestItems) {
+          last = await addToCart({ product_variant_id: item.variant.id, quantity: item.quantity }).unwrap();
+        }
+        if (last) setCartCount(getCartItemCount(last.data));
+        clearGuestItems();
+        toast.success("Restored your saved cart.");
+      } catch {
+        toast.error("Couldn't restore some items to your cart.");
+      } finally {
+        isMerging.current = false;
+      }
+    })();
+  }, [isLoggedIn, guestItems, addToCart, clearGuestItems, setCartCount]);
+
+  const displayCartCount = isLoggedIn ? cartCount : getGuestCartItemCount(guestItems);
+  const cartBadge = displayCartCount > 0 && (
+    <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4.5 h-4.5 px-1 rounded-full bg-primary-normal text-black text-[10px] font-bold">
+      {displayCartCount > 99 ? "99+" : displayCartCount}
+    </span>
+  );
 
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
 

@@ -33,7 +33,7 @@ const AdminReportsPage = () => {
         title="Reports"
         description="Basic sales performance for the last 30 days."
         action={
-          <Button type="button" variant="outline" className="gap-1.5">
+          <Button type="button" variant="secondary" className="gap-1.5">
             <Icon icon="solar:export-linear" className="h-4 w-4" />
             Export Report
           </Button>

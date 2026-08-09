@@ -34,7 +34,7 @@ function VariantsCell({ product }: { product: Product }) {
           <Link
             href={`/admin/products/${product.id}/variants/${variant.id}/history`}
             aria-label="See variant history"
-            className="text-muted-foreground transition-colors hover:text-primary-normal"
+            className="cursor-pointer text-muted-foreground transition-colors hover:text-primary-normal"
           >
             <Icon icon="solar:clock-circle-linear" className="h-4 w-4" />
           </Link>

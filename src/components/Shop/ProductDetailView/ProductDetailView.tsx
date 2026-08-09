@@ -153,7 +153,11 @@ const ProductDetailView = ({ product, categoryHref }: ProductDetailViewProps) =>
               <p className="text-sm text-gray-600 leading-relaxed">{product.description}</p>
             )}
 
-            <ProductDetailActions key={selectedVariant?.id} variant={selectedVariant} />
+            <ProductDetailActions
+              key={selectedVariant?.id}
+              variant={selectedVariant}
+              product={{ id: product.id, name: product.name, slug: product.slug }}
+            />
 
             <div className="flex flex-col gap-2.5 mt-2 p-4 rounded-xl bg-gray-50 border border-gray-100">
               <div className="flex items-start gap-2.5 text-sm text-gray-700">

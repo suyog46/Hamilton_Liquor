@@ -78,7 +78,7 @@ const AdminOrdersPage = () => {
         title="Orders"
         description="Accept, prepare, and fulfill pickup and delivery orders."
         action={
-          <Button type="button" variant="outline" className="gap-1.5">
+          <Button type="button" variant="secondary" className="gap-1.5">
             <Icon icon="solar:export-linear" className="h-4 w-4" />
             Export Orders
           </Button>
@@ -130,9 +130,8 @@ const AdminOrdersPage = () => {
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger
-                      render={
-                        <Button type="button" variant="ghost" size="icon-sm" aria-label="Order actions" />
-                      }
+                      aria-label="Order actions"
+                      className="cursor-pointer text-muted-foreground transition-colors hover:text-primary-normal"
                     >
                       <Icon icon="solar:menu-dots-bold" className="h-4 w-4" />
                     </DropdownMenuTrigger>

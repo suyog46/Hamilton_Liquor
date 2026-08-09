@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import MediaUpload, { type MediaValue } from "@/components/Admin/MediaUpload/MediaUpload";
+import { ConfirmDialog } from "@/components/Admin/ConfirmDialog/ConfirmDialog";
 import {
   useCreateBrandMutation,
   useDeleteBrandMutation,
@@ -50,6 +51,7 @@ const AdminBrandsPage = () => {
   const [nameError, setNameError] = useState<string | null>(null);
   const [media, setMedia] = useState<MediaValue | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [brandPendingDelete, setBrandPendingDelete] = useState<Brand | null>(null);
 
   const brands = data?.data.items ?? [];
   const isSaving = isCreating || isUpdating;
@@ -112,13 +114,15 @@ const AdminBrandsPage = () => {
     }
   };
 
-  const handleDelete = async (brand: Brand) => {
-    if (!window.confirm(`Delete "${brand.name}"? This cannot be undone.`)) return;
+  const handleDelete = async () => {
+    if (!brandPendingDelete) return;
+    const brand = brandPendingDelete;
 
     setDeletingId(brand.id);
     try {
       await deleteBrand(brand.id).unwrap();
       toast.success("Brand deleted.");
+      setBrandPendingDelete(null);
     } catch (err) {
       toast.error(getErrorMessage(err, "Failed to delete brand."));
     } finally {
@@ -187,38 +191,34 @@ const AdminBrandsPage = () => {
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="font-medium">{brand.name}</p>
-                      <Badge variant={brand.is_active ? "secondary" : "outline"}>
+                      <Badge variant={brand.is_active ? "success" : "outline"}>
                         {brand.is_active ? "Active" : "Inactive"}
                       </Badge>
                     </div>
                     <p className="text-[11px] text-muted-foreground">/{brand.slug}</p>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button
+                  <div className="flex items-center gap-3">
+                    <button
                       type="button"
-                      variant="ghost"
-                      size="icon-sm"
                       aria-label="Edit brand"
-                      className="hover:bg-brand-hover hover:text-primary-normal"
                       onClick={() => openEditDialog(brand)}
+                      className="cursor-pointer text-muted-foreground transition-colors hover:text-primary-normal"
                     >
                       <Icon icon="solar:pen-linear" className="h-4 w-4" />
-                    </Button>
-                    <Button
+                    </button>
+                    <button
                       type="button"
-                      variant="ghost"
-                      size="icon-sm"
                       aria-label="Delete brand"
-                      className="hover:bg-destructive/10"
                       disabled={isDeleting && deletingId === brand.id}
-                      onClick={() => handleDelete(brand)}
+                      onClick={() => setBrandPendingDelete(brand)}
+                      className="cursor-pointer text-muted-foreground transition-colors hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isDeleting && deletingId === brand.id ? (
                         <Icon icon="svg-spinners:180-ring" className="h-4 w-4 text-destructive" />
                       ) : (
-                        <Icon icon="solar:trash-bin-minimalistic-linear" className="h-4 w-4 text-destructive" />
+                        <Icon icon="solar:trash-bin-minimalistic-linear" className="h-4 w-4" />
                       )}
-                    </Button>
+                    </button>
                   </div>
                 </div>
                 {brand.description && (
@@ -281,7 +281,7 @@ const AdminBrandsPage = () => {
             <DialogFooter className="mt-4">
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={() => setDialogOpen(false)}
                 disabled={isSaving}
               >
@@ -299,6 +299,15 @@ const AdminBrandsPage = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!brandPendingDelete}
+        onOpenChange={(open) => !open && setBrandPendingDelete(null)}
+        title={`Delete "${brandPendingDelete?.name}"?`}
+        description="This cannot be undone."
+        isLoading={isDeleting}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 };

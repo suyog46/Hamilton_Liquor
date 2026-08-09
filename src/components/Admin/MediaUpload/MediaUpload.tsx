@@ -74,7 +74,7 @@ const MediaUpload = ({ value, onChange, disabled, className }: MediaUploadProps)
         <p className="text-[11px] text-muted-foreground">PNG or JPG, shown as the product image.</p>
         <Button
           type="button"
-          variant="outline"
+          variant="secondary"
           size="sm"
           className="gap-1.5 rounded-md"
           onClick={openPicker}

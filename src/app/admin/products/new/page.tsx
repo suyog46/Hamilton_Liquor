@@ -150,7 +150,7 @@ const NewProductPage = () => {
         description="Create a new product along with its initial variants."
         action={
           <div className="flex items-center gap-2">
-            <Button type="button"  className="rounded-lg" render={<Link href="/admin/products" />}>
+            <Button type="button" variant="ghost" className="rounded-lg" render={<Link href="/admin/products" />}>
               Cancel
             </Button>
             <Button
@@ -265,7 +265,7 @@ const NewProductPage = () => {
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle>Variants</CardTitle>
-          <Button type="button" variant="outline" size="sm" className="gap-1.5 rounded-lg" onClick={addVariant}>
+          <Button type="button" variant="secondary" size="sm" className="gap-1.5 rounded-lg" onClick={addVariant}>
             <Icon icon="solar:add-circle-linear" className="h-4 w-4" />
             Add Variant
           </Button>
@@ -276,15 +276,14 @@ const NewProductPage = () => {
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-xs font-medium">Variant {i + 1}</p>
                 {variants.length > 1 && (
-                  <Button
+                  <button
                     type="button"
-                    variant="ghost"
-                    size="icon-sm"
                     aria-label="Remove variant"
                     onClick={() => removeVariant(variant.localId)}
+                    className="cursor-pointer text-muted-foreground transition-colors hover:text-destructive"
                   >
-                    <Icon icon="solar:trash-bin-minimalistic-linear" className="h-4 w-4 text-destructive" />
-                  </Button>
+                    <Icon icon="solar:trash-bin-minimalistic-linear" className="h-4 w-4" />
+                  </button>
                 )}
               </div>
 

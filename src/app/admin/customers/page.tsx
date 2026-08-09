@@ -2,7 +2,6 @@ import { Icon } from "@iconify/react";
 import AdminPageHeader from "@/components/Admin/AdminPageHeader/AdminPageHeader";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -70,14 +69,18 @@ const AdminCustomersPage = () => {
                 <TableCell>{customer.orders}</TableCell>
                 <TableCell>${customer.spent.toFixed(2)}</TableCell>
                 <TableCell>
-                  <Badge variant={customer.signedUp ? "secondary" : "outline"}>
+                  <Badge variant={customer.signedUp ? "success" : "outline"}>
                     {customer.signedUp ? "Subscribed" : "Not Subscribed"}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button type="button" variant="ghost" size="icon-sm" aria-label="View customer">
+                  <button
+                    type="button"
+                    aria-label="View customer"
+                    className="cursor-pointer text-muted-foreground transition-colors hover:text-primary-normal"
+                  >
                     <Icon icon="solar:eye-linear" className="h-4 w-4" />
-                  </Button>
+                  </button>
                 </TableCell>
               </TableRow>
             ))}
