@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,17 +13,25 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useLoginMutation } from "@/redux/features/auth/authApiSlice";
+import { useLazyGetMeQuery } from "@/redux/features/user/userApiSlice";
+import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
+
+const isSafeRedirect = (path: string | null): path is string =>
+  !!path && path.startsWith("/") && !path.startsWith("//");
 
 const LoginForm = () => {
-
-
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const explicitRedirect = isSafeRedirect(searchParams.get("redirect")) ? searchParams.get("redirect") : null;
+  const redirectTo = explicitRedirect ?? "/admin";
+  const [login, { isLoading: isSubmitting }] = useLoginMutation();
+  const [fetchMe] = useLazyGetMeQuery();
   const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const formData = new FormData(e.currentTarget);
@@ -35,10 +44,46 @@ const LoginForm = () => {
     }
 
     setError(null);
-    setIsSubmitting(true);
-    setTimeout(() => setIsSubmitting(false), 1200);
 
-    router.push("/dashboard");
+    try {
+      await login({ email, password }).unwrap();
+      toast.success("Signed in successfully.");
+
+      if (explicitRedirect) {
+        router.push(explicitRedirect);
+      } else {
+        // No explicit destination — send admins to the dashboard and
+        // everyone else to the storefront.
+        const me = await fetchMe().unwrap().catch(() => null);
+        router.push(me?.data.role === "ADMIN" ? "/admin" : "/");
+      }
+    } catch (err) {
+      let message = "Something went wrong. Please try again.";
+
+      if (isFetchBaseQueryError(err)) {
+        if (typeof err.status === "number") {
+          message =
+            (err.data as { message?: string } | undefined)?.message ??
+            "Invalid email or password.";
+
+          // The backend doesn't give us a distinct error code for this, so
+          // we fall back to sniffing the message it sends for "unverified".
+          if (/verify/i.test(message)) {
+            toast.error(message);
+            router.push(`/verify-email?email=${encodeURIComponent(email)}&redirect=${encodeURIComponent(redirectTo)}`);
+            return;
+          }
+        } else {
+          // FETCH_ERROR / TIMEOUT_ERROR / PARSING_ERROR / CUSTOM_ERROR: the
+          // request never got a real response from the server (e.g. CORS
+          // block, network drop) — don't imply the credentials were wrong.
+          message = "Network error. Please check your connection and try again.";
+        }
+      }
+
+      setError(message);
+      toast.error(message);
+    }
   };
 
   return (
@@ -109,7 +154,7 @@ const LoginForm = () => {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="h-11 w-full bg-primary-normal text-sm font-semibold text-black hover:bg-primary-normal/90"
+          className="h-11 w-full bg-primary-normal text-sm font-semibold text-black hover:bg-primary-hover"
         >
           {isSubmitting ? (
             <>

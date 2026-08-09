@@ -3,6 +3,8 @@ import { Geist, Cinzel, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/sonner";
+import StoreProvider from "@/redux/StoreProvider";
 
 const jetbrainsMono = JetBrains_Mono({subsets:['latin'],variable:'--font-mono'});
 
@@ -46,7 +48,10 @@ export default function RootLayout({
     >
 
       <body>
-        <TooltipProvider>{children}</TooltipProvider>
+        <StoreProvider>
+          <TooltipProvider>{children}</TooltipProvider>
+          <Toaster />
+        </StoreProvider>
       </body>
     </html>
   );

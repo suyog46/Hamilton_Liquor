@@ -1,13 +1,13 @@
 import ProductCard from "@/components/Common/ProductCard/ProductCard";
 import GlowBackground from "@/components/Common/GlowBackground/GlowBackground";
-import type { Product } from "@/lib/utils/products";
+import type { PublicProductListItem } from "@/redux/features/product/productApiSlice";
 import { Badge } from "@/components/ui/badge";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
 
 interface ProductShelfProps {
   eyebrow: string;
   title: string;
-  products: Product[];
+  products: PublicProductListItem[];
   viewAllHref: string;
   badgeLabel?: string;
   tone?: "light" | "dark";

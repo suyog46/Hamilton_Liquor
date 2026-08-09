@@ -1,23 +1,58 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { Product } from "@/lib/utils/products";
+import { useRouter, usePathname } from "next/navigation";
+import { toast } from "sonner";
+import type { PublicProductListItem } from "@/redux/features/product/productApiSlice";
+import { useLazyGetPublicProductDetailQuery } from "@/redux/features/product/productApiSlice";
+import { formatPrice, formatVolume, getDisplayVariant } from "@/lib/utils/productDisplay";
+import { useAddToCartMutation } from "@/redux/features/cart/cartApiSlice";
+import { useCartStore } from "@/lib/stores/cartStore";
+import { getCartItemCount } from "@/lib/utils/cartDisplay";
+import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
 import { Icon } from "@iconify/react";
-import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
-const badgeLabels: Record<string, string> = {
-  "on-sale": "On Sale",
-  "best-seller": "Best Seller",
-  "staff-pick": "Staff Pick",
-  "new-arrival": "New",
-};
-
-const ProductCard = ({ product }: { product: Product }) => {
+const ProductCard = ({ product }: { product: PublicProductListItem }) => {
+  const router = useRouter();
+  const pathname = usePathname();
   const [isLiked, setIsLiked] = useState(false);
-  const [inCart, setInCart] = useState(false);
-  const primaryTag = product.tags?.[0];
+  const [fetchDetail, { isFetching: isResolvingVariant }] = useLazyGetPublicProductDetailQuery();
+  const [addToCart, { isLoading: isAdding }] = useAddToCartMutation();
+  const setCartCount = useCartStore((s) => s.setCount);
+
+  const inStock = product.is_in_stock;
+  const showFromPrice = product.available_variant_volumes.length > 1;
+  const volumesLabel = product.available_variant_volumes.map(formatVolume).join(", ");
+  const isBusy = isResolvingVariant || isAdding;
+
+  // The list endpoint only gives us volumes, not variant ids — resolve the
+  // product's default (cheapest in-stock) variant on demand, then add it.
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!inStock || isBusy) return;
+
+    try {
+      const detail = await fetchDetail(product.slug).unwrap();
+      const variant = getDisplayVariant(detail.data);
+      if (!variant) {
+        toast.error("This product is currently unavailable.");
+        return;
+      }
+      const res = await addToCart({ product_variant_id: variant.id, quantity: 1 }).unwrap();
+      setCartCount(getCartItemCount(res.data));
+      toast.success("Added to cart.");
+    } catch (err) {
+      if (isFetchBaseQueryError(err) && err.status === 401) {
+        toast.error("You are not logged in. Log in first.");
+        router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+      } else {
+        toast.error("Failed to add to cart. Please try again.");
+      }
+    }
+  };
 
   return (
     <div className="group relative flex flex-col bg-white rounded-3xl overflow-hidden transition-all duration-300 hover:-translate-y-1 shadow-[0_1px_3px_rgba(0,0,0,0.06)]   ">
@@ -33,30 +68,30 @@ const ProductCard = ({ product }: { product: Product }) => {
         />
       </button>
 
-      <Link href={`/shop/${product.id}`} className="contents">
+      <Link href={`/shop/${product.slug}`} className="contents">
         {/* Product image */}
         <div className="relative h-72 sm:h-80 bg-gray-50 overflow-hidden">
-          <Image
-            src={product.image}
-            alt={product.name}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className={cn(
-              "object-cover group-hover:scale-[1.04] transition-transform duration-500 ease-out",
-              !product.inStock && "opacity-50 grayscale"
-            )}
-          />
+          {product.thumbnail?.url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={product.thumbnail.url}
+              alt={product.name}
+              className={cn(
+                "absolute inset-0 h-full w-full object-cover group-hover:scale-[1.04] transition-transform duration-500 ease-out",
+                !inStock && "opacity-50 grayscale"
+              )}
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-gray-300">
+              <Icon icon="solar:bottle-linear" className="w-12 h-12" />
+            </div>
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-transparent" />
 
           <span className="absolute top-4 left-4 text-[11px] font-semibold uppercase tracking-wide text-primary-normal bg-black/80 backdrop-blur-sm px-2.5 py-1 rounded-full">
-            {product.category}
+            {product.category.name}
           </span>
-          {primaryTag && (
-            <span className="absolute bottom-4 left-4 text-[11px] font-semibold uppercase tracking-wide text-black bg-primary-normal px-2.5 py-1 rounded-full">
-              {badgeLabels[primaryTag]}
-            </span>
-          )}
-          {!product.inStock && (
+          {!inStock && (
             <span className="absolute inset-x-0 bottom-0 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-white bg-black/80">
               Out of Stock
             </span>
@@ -65,45 +100,39 @@ const ProductCard = ({ product }: { product: Product }) => {
 
         {/* Info */}
         <div className="px-5 pt-5 flex flex-col gap-1.5">
-          <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wide truncate">{product.brand}</span>
+          <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wide truncate">
+            {product.brand.name}
+          </span>
           <h3 className="font-title text-lg font-semibold text-black leading-snug truncate">{product.name}</h3>
 
-          <div className="flex items-center gap-3 text-xs text-gray-500">
-            <span>{product.volume}</span>
-            <span className="w-1 h-1 rounded-full bg-gray-300" />
-            <span>{product.abv} ABV</span>
-            <span className="w-1 h-1 rounded-full bg-gray-300" />
-            <span className="flex items-center gap-1 text-gray-700">
-              <Icon icon="solar:star-bold" className="w-3.5 h-3.5 text-yellow-500" />
-              {product.rating}
-            </span>
-          </div>
+          {volumesLabel && (
+            <div className="flex items-center gap-3 text-xs text-gray-500">
+              <span>{volumesLabel}</span>
+            </div>
+          )}
         </div>
       </Link>
 
       <div className="px-5 pb-5 mt-3">
         <div className="h-px bg-gray-100 mb-4" />
         <div className="flex items-center justify-between">
-          <div className="flex items-baseline gap-2">
-            <span className="text-xl font-bold text-black">${product.price}</span>
-            {product.originalPrice && (
-              <span className="text-sm text-gray-400 line-through">${product.originalPrice}</span>
-            )}
+          <div className="flex items-baseline gap-1.5">
+            {showFromPrice && <span className="text-xs text-gray-400">From</span>}
+            <span className="text-xl font-bold text-black">{formatPrice(product.starting_price)}</span>
           </div>
           <button
-            aria-label={!product.inStock ? "Sold out" : inCart ? "Added to cart" : "Add to cart"}
-            onClick={() => product.inStock && setInCart((prev) => !prev)}
-            disabled={!product.inStock}
+            type="button"
+            aria-label={!inStock ? "Sold out" : "Add to cart"}
+            onClick={handleAddToCart}
+            disabled={!inStock || isBusy}
             className={cn(
-              "flex items-center justify-center w-11 h-11 rounded-full transition-colors shadow-sm",
-              !product.inStock
+              "relative z-10 flex items-center justify-center w-11 h-11 rounded-full shadow-sm transition-colors",
+              !inStock || isBusy
                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : inCart
-                ? "bg-black text-white"
                 : "bg-primary-normal text-black hover:opacity-90"
             )}
           >
-            <Icon icon={inCart ? "solar:check-circle-bold" : "solar:cart-plus-outline"} className="w-5 h-5" />
+            <Icon icon={isBusy ? "svg-spinners:180-ring" : "solar:cart-plus-outline"} className="w-5 h-5" />
           </button>
         </div>
       </div>

@@ -1,5 +1,4 @@
 import ProductGridTemplate from "@/components/Shop/ProductGridTemplate/ProductGridTemplate";
-import { getProductsByTag } from "@/lib/utils/products";
 
 const NewArrivalsPage = () => {
   return (
@@ -7,7 +6,8 @@ const NewArrivalsPage = () => {
       eyebrow="Just Landed"
       title="New Arrivals"
       subtitle="The latest bottles to hit our shelves, fresh from our favorite producers."
-      products={getProductsByTag("new-arrival")}
+      defaultSortBy="created_at"
+      defaultSortOrder="desc"
     />
   );
 };

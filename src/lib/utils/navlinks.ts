@@ -1,18 +1,18 @@
 export const navbarLinks = [
   { name: "Home", href: "/" },
   { name: "Shop All", href: "/shop" },
-  { name: "Specials", href: "/specials" },
   { name: "About", href: "/about" },
   { name: "Contact", href: "/contact" },
 ];
 
+// These route through /wine, /spirits, /beer, /mixers-extras, which redirect to
+// /shop?category=<slug> — the slug must match a category created in the admin panel.
 export const footerShopLinks = [
   { name: "Shop All", href: "/shop" },
-  { name: "Wine", href: "/shop?category=Wine" },
-  { name: "Spirits", href: "/shop?category=Spirits" },
-  { name: "Beer", href: "/shop?category=Beer" },
-  { name: "Mixers & Extras", href: "/shop?category=Mixer" },
-  { name: "Specials", href: "/specials" },
+  { name: "Wine", href: "/wine" },
+  { name: "Spirits", href: "/spirits" },
+  { name: "Beer", href: "/beer" },
+  { name: "Mixers & Extras", href: "/mixers-extras" },
 ];
 
 export const footerCompanyLinks = [

@@ -62,9 +62,21 @@
   --color-primary-800: #1e40af;
   --color-primary-900: #1e3a8a;
 
+  /* Primary button hover — a darkened shade of primary-normal itself
+     (not an opacity fade) so filled buttons read as a clean, deliberate
+     dark-down on hover instead of a washed-out blend with the page bg. */
+ --color-primary-hover: #D4A362;  /* Slightly darker, richer gold for hover */
+  --color-primary-active: #C28E47; /* Deep gold for click/active state */
+
+
   /* Secondary */
   --color-secondary: #f97316;
   --color-secondary-normal: #5C1B2E;
+
+  /* Hover accent — used for interactive rows/cards (e.g. admin lists) */
+  --color-brand-hover: color-mix(in oklch, var(--color-primary-normal) 10%, var(--color-background));
+  --color-brand-hover-border: color-mix(in oklch, var(--color-primary-normal) 55%, transparent);
+
 
   /* Semantic Colors */
   --color-success: #22c55e;

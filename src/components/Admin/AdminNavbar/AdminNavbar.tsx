@@ -1,6 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
+import { toast } from "sonner";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
@@ -14,8 +16,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useLogoutMutation } from "@/redux/features/auth/authApiSlice";
 
 const AdminNavbar = () => {
+  const router = useRouter();
+  const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
+
+  const handleLogout = async () => {
+    try {
+      await logout().unwrap();
+    } catch {
+      toast.error("Something went wrong signing out.");
+    } finally {
+      router.push("/login");
+    }
+  };
+
   return (
     <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-background px-4">
       <SidebarTrigger />
@@ -72,7 +88,11 @@ const AdminNavbar = () => {
               Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive">
+            <DropdownMenuItem
+              variant="destructive"
+              disabled={isLoggingOut}
+              onClick={handleLogout}
+            >
               <Icon icon="solar:logout-2-linear" />
               Log out
             </DropdownMenuItem>

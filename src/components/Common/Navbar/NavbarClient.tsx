@@ -3,9 +3,29 @@
 import { cn, navbarLinks, siteConfig } from "@/lib/utils";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { useGetCartQuery } from "@/redux/features/cart/cartApiSlice";
+import { useGetMeQuery } from "@/redux/features/user/userApiSlice";
+import { useLogoutMutation } from "@/redux/features/auth/authApiSlice";
+import { useCartStore } from "@/lib/stores/cartStore";
+import { getCartItemCount } from "@/lib/utils/cartDisplay";
+import { useAppDispatch } from "@/redux/hooks";
+import { apiSlice } from "@/redux/apiSlice";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const NavbarClient = () => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const dispatch = useAppDispatch();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -19,6 +39,68 @@ const NavbarClient = () => {
   }, []);
 
   const isSolid = isScrolled || isOpen;
+
+  // Guests get a 401 here, which just leaves the badge at 0 — the shared
+  // apiSlice base query already tries a token refresh before giving up.
+  const { data: cartData } = useGetCartQuery();
+  const cartCount = useCartStore((s) => s.count);
+  const setCartCount = useCartStore((s) => s.setCount);
+
+  useEffect(() => {
+    if (cartData) setCartCount(getCartItemCount(cartData.data));
+  }, [cartData, setCartCount]);
+
+  const cartBadge = cartCount > 0 && (
+    <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4.5 h-4.5 px-1 rounded-full bg-primary-normal text-black text-[10px] font-bold">
+      {cartCount > 99 ? "99+" : cartCount}
+    </span>
+  );
+
+  const { data: meData, isLoading: isLoadingMe } = useGetMeQuery();
+  const user = meData?.data;
+  const firstName = user?.name.trim().split(/\s+/)[0] ?? "";
+  const initial = firstName ? firstName[0].toUpperCase() : "?";
+
+  const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
+
+  const handleLogout = async () => {
+    try {
+      await logout().unwrap();
+    } catch {
+      toast.error("Something went wrong signing out.");
+    } finally {
+      dispatch(apiSlice.util.resetApiState());
+      setCartCount(0);
+      setIsOpen(false);
+      router.push("/");
+    }
+  };
+
+  const accountControl = isLoadingMe ? (
+    <Skeleton className="w-6 h-6 rounded-full" />
+  ) : user ? (
+    <DropdownMenu>
+      <DropdownMenuTrigger className="inline-flex items-center justify-center outline-none" aria-label="Account menu">
+        <Avatar size="sm">
+          <AvatarFallback className="bg-primary-normal text-black font-semibold">{initial}</AvatarFallback>
+        </Avatar>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem variant="destructive" disabled={isLoggingOut} onClick={handleLogout}>
+          <Icon icon="solar:logout-2-linear" className="w-4 h-4" />
+          {isLoggingOut ? "Logging out..." : "Log out"}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ) : (
+    <Link
+      href={`/login?redirect=${encodeURIComponent(pathname)}`}
+      aria-label="Log in"
+      className="inline-flex items-center justify-center text-primary-normal hover:opacity-80 transition-opacity"
+    >
+      <Icon icon="solar:user-circle-linear" className="w-6 h-6" />
+    </Link>
+  );
 
   return (
     <header
@@ -61,7 +143,9 @@ const NavbarClient = () => {
             className="relative inline-flex items-center justify-center text-primary-normal hover:opacity-80 transition-opacity"
           >
             <Icon icon="solar:cart-large-minimalistic-linear" className="w-6 h-6" />
+            {cartBadge}
           </Link>
+          {accountControl}
         </div>
 
         {/* Mobile actions */}
@@ -69,10 +153,13 @@ const NavbarClient = () => {
           <Link
             href="/cart"
             aria-label="View cart"
-            className="inline-flex items-center justify-center p-2 text-primary-normal"
+            className="relative inline-flex items-center justify-center p-2 text-primary-normal"
           >
             <Icon icon="solar:cart-large-minimalistic-linear" className="w-6 h-6" />
+            {cartBadge}
           </Link>
+
+          <div className="p-2">{accountControl}</div>
 
           {/* Mobile menu button */}
           <button

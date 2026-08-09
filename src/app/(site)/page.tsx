@@ -7,13 +7,28 @@ import PickupDeliveryInfo from "@/components/HomeSection/PickupDeliveryInfo/Pick
 import NewsletterSignup from "@/components/HomeSection/NewsletterSignup/NewsletterSignup";
 import GoogleMapSection from "@/components/HomeSection/GoogleMapSection/GoogleMapSection";
 import GoogleReviews from "@/components/HomeSection/GoogleReviews/GoogleReviews";
-import { getProductsByTag } from "@/lib/utils/products";
+import { core } from "@/lib/api/core";
+import type {
+  PublicProductListItem,
+  PublicProductListResponse,
+} from "@/redux/features/product/productApiSlice";
 
-const Home = () => {
-  const bestSellers = getProductsByTag("best-seller").slice(0, 4);
-  const staffPicks = getProductsByTag("staff-pick").slice(0, 4);
-  const newArrivals = getProductsByTag("new-arrival").slice(0, 4);
-  const onSale = getProductsByTag("on-sale").slice(0, 4);
+// The catalog has no "best seller" / "staff pick" concept yet — each shelf below
+// pulls a genuinely different slice of the live catalog so the homepage isn't
+// showing the same four products three times over.
+const getProducts = async (query: string): Promise<PublicProductListItem[]> => {
+  const res = await core(`products?${query}`);
+  if (!res.ok) return [];
+  const json: PublicProductListResponse = await res.json();
+  return json.data.items;
+};
+
+const Home = async () => {
+  const [newArrivals, bestSellers, staffPicks] = await Promise.all([
+    getProducts("limit=4&sort_by=created_at&sort_order=desc"),
+    getProducts("limit=4&sort_by=created_at&sort_order=asc"),
+    getProducts("limit=4&sort_by=updated_at&sort_order=desc"),
+  ]);
 
   return (
     <>
@@ -41,13 +56,6 @@ const Home = () => {
         viewAllHref="/new-arrivals"
       />
       <FeaturedProducts />
-      <ProductShelf
-        eyebrow="Limited Time"
-        title="On Sale Now"
-        products={onSale}
-        viewAllHref="/specials"
-        badgeLabel="Save up to 20%"
-      />
       <PickupDeliveryInfo />
       <NewsletterSignup />
       <GoogleMapSection />

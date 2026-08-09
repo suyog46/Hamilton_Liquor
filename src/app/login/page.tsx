@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { Icon } from "@iconify/react";
 import LoginForm from "@/components/Auth/LoginForm";
 
@@ -8,7 +9,17 @@ export const metadata: Metadata = {
   description: "Sign in to your Liquor account to manage orders, track deliveries, and shop faster.",
 };
 
-const LoginPage = () => {
+const isSafeRedirect = (path: string | undefined): path is string =>
+  !!path && path.startsWith("/") && !path.startsWith("//");
+
+interface LoginPageProps {
+  searchParams: Promise<{ redirect?: string }>;
+}
+
+const LoginPage = async ({ searchParams }: LoginPageProps) => {
+  const { redirect } = await searchParams;
+  const registerHref = isSafeRedirect(redirect) ? `/register?redirect=${encodeURIComponent(redirect)}` : "/register";
+
   return (
     <main className="relative flex min-h-svh w-full items-center justify-center overflow-hidden bg-black px-6 py-16">
       {/* Ambient glow */}
@@ -30,12 +41,14 @@ const LoginPage = () => {
             </p>
           </div>
 
-          <LoginForm />
+          <Suspense fallback={null}>
+            <LoginForm />
+          </Suspense>
         </div>
 
         <p className="mt-6 text-center text-xs text-white/50">
           Don&apos;t have an account?{" "}
-          <Link href="/register" className="text-primary-normal hover:underline underline-offset-4">
+          <Link href={registerHref} className="text-primary-normal hover:underline underline-offset-4">
             Create one
           </Link>
         </p>
@@ -47,7 +60,7 @@ const LoginPage = () => {
           <Icon icon="solar:arrow-left-linear" className="h-3.5 w-3.5" />
           Back to store
         </Link>
-      </div>
+      </div>  
     </main>
   );
 };

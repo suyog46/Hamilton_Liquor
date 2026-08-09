@@ -6,91 +6,96 @@ import ProductCard from "@/components/Common/ProductCard/ProductCard";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { getTopCategory, type Product, type TopCategory } from "@/lib/utils/products";
-import { useMemo, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useGetPublicCategoriesQuery } from "@/redux/features/category/categoryApiSlice";
+import { useGetPublicProductsQuery } from "@/redux/features/product/productApiSlice";
+import { useEffect, useMemo, useState } from "react";
 
 interface ProductGridTemplateProps {
   eyebrow: string;
   title: string;
   subtitle: string;
-  products: Product[];
   searchPlaceholder?: string;
   initialCategory?: string;
+  defaultSortBy?: "created_at" | "name";
+  defaultSortOrder?: "asc" | "desc";
 }
 
-type SortOption = "Popularity" | "Price: Low to High" | "Price: High to Low" | "Top Rated";
+const PAGE_SIZE = 12;
+
+type SortValue = "newest" | "name_asc" | "name_desc";
 type PriceBucket = "all" | "under30" | "30to60" | "over60";
 
-const sortOptions: SortOption[] = ["Popularity", "Price: Low to High", "Price: High to Low", "Top Rated"];
-
-const priceBuckets: { value: PriceBucket; label: string }[] = [
-  { value: "all", label: "Any Price" },
-  { value: "under30", label: "Under $30" },
-  { value: "30to60", label: "$30 – $60" },
-  { value: "over60", label: "$60+" },
+const sortOptions: { value: SortValue; label: string; sort_by: "created_at" | "name"; sort_order: "asc" | "desc" }[] = [
+  { value: "newest", label: "Newest", sort_by: "created_at", sort_order: "desc" },
+  { value: "name_asc", label: "Name: A–Z", sort_by: "name", sort_order: "asc" },
+  { value: "name_desc", label: "Name: Z–A", sort_by: "name", sort_order: "desc" },
 ];
 
-const categoryOrder: TopCategory[] = ["Wine", "Spirits", "Beer", "Mixer"];
-const categoryLabels: Record<TopCategory, string> = {
-  Wine: "Wine",
-  Spirits: "Spirits",
-  Beer: "Beer",
-  Mixer: "Mixers & Extras",
-};
+const priceBuckets: { value: PriceBucket; label: string; min?: number; max?: number }[] = [
+  { value: "all", label: "Any Price" },
+  { value: "under30", label: "Under $30", max: 30 },
+  { value: "30to60", label: "$30 – $60", min: 30, max: 60 },
+  { value: "over60", label: "$60+", min: 60 },
+];
 
-const isValidCategory = (value: string | undefined): value is TopCategory =>
-  !!value && categoryOrder.includes(value as TopCategory);
-
-const matchesPriceBucket = (price: number, bucket: PriceBucket) => {
-  if (bucket === "under30") return price < 30;
-  if (bucket === "30to60") return price >= 30 && price <= 60;
-  if (bucket === "over60") return price > 60;
-  return true;
+const resolveDefaultSort = (sortBy?: "created_at" | "name", sortOrder?: "asc" | "desc"): SortValue => {
+  const match = sortOptions.find((opt) => opt.sort_by === sortBy && opt.sort_order === (sortOrder ?? "desc"));
+  return match?.value ?? "newest";
 };
 
 const ProductGridTemplate = ({
   eyebrow,
   title,
   subtitle,
-  products,
   searchPlaceholder = "Search products…",
   initialCategory,
+  defaultSortBy,
+  defaultSortOrder,
 }: ProductGridTemplateProps) => {
-  const availableCategories = useMemo(
-    () => categoryOrder.filter((category) => products.some((product) => getTopCategory(product) === category)),
-    [products]
-  );
+  const { data: categoryData } = useGetPublicCategoriesQuery({ limit: 50 });
+  const categories = (categoryData?.data.items ?? []).filter((category) => category.is_active);
 
-  const [activeCategory, setActiveCategory] = useState<"All" | TopCategory>(
-    isValidCategory(initialCategory) ? initialCategory : "All"
-  );
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortOption, setSortOption] = useState<SortOption>("Popularity");
+  const [activeCategory, setActiveCategory] = useState(initialCategory ?? "all");
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [sortOption, setSortOption] = useState<SortValue>(resolveDefaultSort(defaultSortBy, defaultSortOrder));
   const [priceBucket, setPriceBucket] = useState<PriceBucket>("all");
   const [inStockOnly, setInStockOnly] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [page, setPage] = useState(1);
 
-  const filteredProducts = useMemo(() => {
-    const query = searchTerm.trim().toLowerCase();
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedSearch(searchInput.trim()), 400);
+    return () => clearTimeout(timeout);
+  }, [searchInput]);
 
-    const filtered = products.filter((product) => {
-      if (activeCategory !== "All" && getTopCategory(product) !== activeCategory) return false;
-      if (inStockOnly && !product.inStock) return false;
-      if (!matchesPriceBucket(product.price, priceBucket)) return false;
-      if (query) {
-        const haystack = `${product.name} ${product.brand} ${product.category}`.toLowerCase();
-        if (!haystack.includes(query)) return false;
-      }
-      return true;
-    });
+  useEffect(() => {
+    setPage(1);
+  }, [activeCategory, debouncedSearch, sortOption, priceBucket, inStockOnly]);
 
-    const sorted = [...filtered];
-    if (sortOption === "Price: Low to High") sorted.sort((a, b) => a.price - b.price);
-    else if (sortOption === "Price: High to Low") sorted.sort((a, b) => b.price - a.price);
-    else if (sortOption === "Top Rated") sorted.sort((a, b) => b.rating - a.rating);
+  const sort = sortOptions.find((opt) => opt.value === sortOption) ?? sortOptions[0];
+  const bucket = priceBuckets.find((b) => b.value === priceBucket);
 
-    return sorted;
-  }, [products, activeCategory, searchTerm, sortOption, priceBucket, inStockOnly]);
+  const queryParams = useMemo(
+    () => ({
+      page,
+      limit: PAGE_SIZE,
+      search: debouncedSearch || undefined,
+      sort_by: sort.sort_by,
+      sort_order: sort.sort_order,
+      category: activeCategory !== "all" ? activeCategory : undefined,
+      min_price: bucket?.min,
+      max_price: bucket?.max,
+      in_stock: inStockOnly || undefined,
+    }),
+    [page, debouncedSearch, sort, activeCategory, bucket, inStockOnly]
+  );
+
+  const { data, isLoading, isFetching } = useGetPublicProductsQuery(queryParams);
+  const products = data?.data.items ?? [];
+  const pagination = data?.data.pagination;
+  const showSkeleton = isLoading || (isFetching && products.length === 0);
 
   const activeFilterCount = (priceBucket !== "all" ? 1 : 0) + (inStockOnly ? 1 : 0);
 
@@ -109,8 +114,8 @@ const ProductGridTemplate = ({
             <Input
               type="text"
               placeholder={searchPlaceholder}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="h-12 w-full rounded-xl pl-11 pr-4 text-sm border-gray-200 bg-gray-50"
             />
           </div>
@@ -118,18 +123,29 @@ const ProductGridTemplate = ({
           {/* Filter + sort row */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
             <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-              {(["All", ...availableCategories] as const).map((chip) => (
+              <button
+                type="button"
+                className={`shrink-0 px-4 py-2 rounded-full text-xs font-medium border cursor-pointer transition-colors ${
+                  activeCategory === "all"
+                    ? "bg-black text-primary-normal border-black"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                }`}
+                onClick={() => setActiveCategory("all")}
+              >
+                All
+              </button>
+              {categories.map((category) => (
                 <button
-                  key={chip}
+                  key={category.id}
                   type="button"
                   className={`shrink-0 px-4 py-2 rounded-full text-xs font-medium border cursor-pointer transition-colors ${
-                    chip === activeCategory
+                    category.slug === activeCategory
                       ? "bg-black text-primary-normal border-black"
                       : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
                   }`}
-                  onClick={() => setActiveCategory(chip)}
+                  onClick={() => setActiveCategory(category.slug)}
                 >
-                  {chip === "All" ? "All" : categoryLabels[chip]}
+                  {category.name}
                 </button>
               ))}
             </div>
@@ -157,12 +173,12 @@ const ProductGridTemplate = ({
                 <span className="text-gray-400 whitespace-nowrap hidden md:inline">Sort by</span>
                 <select
                   value={sortOption}
-                  onChange={(e) => setSortOption(e.target.value as SortOption)}
+                  onChange={(e) => setSortOption(e.target.value as SortValue)}
                   className="bg-transparent outline-none cursor-pointer"
                 >
                   {sortOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
+                    <option key={option.value} value={option.value}>
+                      {option.label}
                     </option>
                   ))}
                 </select>
@@ -176,18 +192,18 @@ const ProductGridTemplate = ({
               <div className="flex flex-col gap-2">
                 <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Price</span>
                 <div className="flex flex-wrap gap-2">
-                  {priceBuckets.map((bucket) => (
+                  {priceBuckets.map((b) => (
                     <button
-                      key={bucket.value}
+                      key={b.value}
                       type="button"
-                      onClick={() => setPriceBucket(bucket.value)}
+                      onClick={() => setPriceBucket(b.value)}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium border cursor-pointer transition-colors ${
-                        priceBucket === bucket.value
+                        priceBucket === b.value
                           ? "bg-primary-normal text-black border-primary-normal"
                           : "bg-white text-gray-600 border-gray-200"
                       }`}
                     >
-                      {bucket.label}
+                      {b.label}
                     </button>
                   ))}
                 </div>
@@ -196,7 +212,7 @@ const ProductGridTemplate = ({
               <div className="flex flex-col gap-2">
                 <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Availability</span>
                 <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                  <Checkbox checked={inStockOnly} onCheckedChange={setInStockOnly} />
+                  <Checkbox checked={inStockOnly} onCheckedChange={(checked) => setInStockOnly(!!checked)} />
                   In stock only
                 </label>
               </div>
@@ -217,17 +233,51 @@ const ProductGridTemplate = ({
           )}
 
           <div className="flex items-center justify-between mb-6">
-            <p className="text-sm text-gray-500">{filteredProducts.length} products</p>
+            <p className="text-sm text-gray-500">{pagination?.total_items ?? 0} products</p>
             <Badge className="hidden sm:inline-flex bg-gray-100 text-gray-600">21+ Age Verified</Badge>
           </div>
 
           {/* Product grid */}
-          {filteredProducts.length > 0 ? (
+          {showSkeleton ? (
             <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-              {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+              {Array.from({ length: PAGE_SIZE }).map((_, i) => (
+                <Skeleton key={i} className="h-96 w-full rounded-3xl" />
               ))}
             </div>
+          ) : products.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                {products.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+
+              {pagination && pagination.total_pages > 1 && (
+                <div className="flex items-center justify-center gap-4 mt-10">
+                  <button
+                    type="button"
+                    disabled={!pagination.has_previous}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <Icon icon="solar:alt-arrow-left-linear" className="w-3.5 h-3.5" />
+                    Prev
+                  </button>
+                  <span className="text-xs text-gray-500">
+                    Page {pagination.page} of {pagination.total_pages}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={!pagination.has_next}
+                    onClick={() => setPage((p) => p + 1)}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Next
+                    <Icon icon="solar:alt-arrow-right-linear" className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
               <Icon icon="solar:box-minimalistic-linear" className="w-10 h-10 text-gray-300" />

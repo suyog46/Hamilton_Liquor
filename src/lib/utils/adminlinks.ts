@@ -12,10 +12,13 @@ export const adminNavOverview: AdminNavItem[] = [
 export const adminNavCatalog: AdminNavItem[] = [
   { name: "Products", href: "/admin/products", icon: "solar:box-linear" },
   { name: "Categories", href: "/admin/categories", icon: "solar:folder-linear" },
+  { name: "Brands", href: "/admin/brands", icon: "solar:folder-linear" },
+
 ];
 
 export const adminNavSales: AdminNavItem[] = [
   { name: "Orders", href: "/admin/orders", icon: "solar:bag-check-linear" },
+  { name: "Inventory", href: "/admin/inventory", icon: "solar:box-minimalistic-linear" },
   { name: "Customers", href: "/admin/customers", icon: "solar:users-group-rounded-linear" },
   { name: "Coupons", href: "/admin/coupons", icon: "solar:tag-price-linear" },
 ];
@@ -34,3 +37,6 @@ export const adminNavSecondary: AdminNavItem[] = [
   { name: "Settings", href: "/admin/settings", icon: "solar:settings-linear" },
   { name: "Help & Support", href: "/admin/support", icon: "solar:question-circle-linear" },
 ];
+
+
+

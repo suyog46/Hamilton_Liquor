@@ -23,7 +23,7 @@ const Advertisement = () => {
             <Icon icon="mdi:sale-outline" className="w-10 h-10 text-primary-normal" />
           </div>
           <a
-            href="/specials"
+            href="/shop"
             className="px-8 py-3 text-sm font-semibold rounded-lg bg-primary-normal text-black hover:opacity-90 transition"
           >
             Shop the Offer

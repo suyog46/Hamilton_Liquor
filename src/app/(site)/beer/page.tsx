@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 const BeerPage = () => {
-  redirect("/shop?category=Beer");
+  redirect("/shop?category=beer");
 };
 
 export default BeerPage;
