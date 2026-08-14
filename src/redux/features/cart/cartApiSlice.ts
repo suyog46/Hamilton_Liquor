@@ -68,7 +68,9 @@ export const cartApiSlice = apiSlice.injectEndpoints({
         method: "PATCH",
         body: { quantity },
       }),
-      invalidatesTags: ["Cart"],
+      // Callers reconcile getCart from the returned CartResponse. Avoid an
+      // automatic refetch here because it can overwrite a newer debounced
+      // optimistic quantity with an older server response.
     }),
 
     removeCartItem: builder.mutation<CartResponse, string>({

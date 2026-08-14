@@ -6,13 +6,11 @@ import { toast } from "sonner";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -49,49 +47,54 @@ const AdminNavbar = () => {
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">
-        <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">
+        <span
+          aria-label="Notifications (coming soon)"
+          aria-disabled="true"
+          title="Notifications coming soon"
+          className="relative flex size-9 cursor-not-allowed items-center justify-center text-muted-foreground opacity-40"
+        >
           <Icon icon="solar:bell-linear" className="h-5 w-5" />
           <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-primary-normal" />
-        </Button>
+        </span>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="View storefront"
-          render={<a href="/" target="_blank" rel="noopener noreferrer" />}
+        <span
+          aria-label="Storefront shortcut (coming soon)"
+          aria-disabled="true"
+          title="Storefront shortcut coming soon"
+          className="flex size-9 cursor-not-allowed items-center justify-center text-muted-foreground opacity-40"
         >
           <Icon icon="solar:shop-linear" className="h-5 w-5" />
-        </Button>
+        </span>
 
         <Separator orientation="vertical" className="mx-1 h-5" />
 
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-2 rounded-none px-1.5 py-1 outline-none hover:bg-muted data-popup-open:bg-muted">
+          <DropdownMenuTrigger className="group flex items-center gap-2 px-1.5 py-1 text-muted-foreground outline-none">
             <Avatar size="sm">
               <AvatarFallback>A</AvatarFallback>
             </Avatar>
             <div className="hidden text-left leading-tight sm:grid">
-              <span className="text-xs font-medium">Store Admin</span>
-              <span className="text-[11px] text-muted-foreground">admin@hamiltonliquorstore.com</span>
+              <span className="text-xs font-medium transition-colors group-hover:text-foreground">Store Admin</span>
+              <span className="text-[11px] transition-colors group-hover:text-foreground/80">
+                admin@hamiltonliquorstore.com
+              </span>
             </div>
-            <Icon icon="solar:alt-arrow-down-linear" className="hidden h-3.5 w-3.5 text-muted-foreground sm:block" />
+            <Icon
+              icon="solar:alt-arrow-down-linear"
+              className="hidden h-3.5 w-3.5 transition-colors group-hover:text-foreground sm:block"
+            />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Icon icon="solar:user-linear" />
-              Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Icon icon="solar:settings-linear" />
-              Settings
+          <DropdownMenuContent align="end" className="w-52 rounded-lg p-1.5">
+            <DropdownMenuItem className="rounded-md" onClick={() => router.push("/")}>
+              <Icon icon="solar:shop-linear" />
+              Switch to user side
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"
               disabled={isLoggingOut}
               onClick={handleLogout}
+              className="rounded-md"
             >
               <Icon icon="solar:logout-2-linear" />
               Log out

@@ -16,6 +16,18 @@ const mutex = new Mutex();
 const baseQuery = fetchBaseQuery({
   baseUrl: "/api/proxy/",
   credentials: "include",
+  paramsSerializer: (params) => {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === "") return;
+      if (Array.isArray(value)) {
+        value.forEach((entry) => searchParams.append(key, String(entry)));
+      } else {
+        searchParams.set(key, String(value));
+      }
+    });
+    return searchParams.toString();
+  },
 });
 
 const baseQueryWithReauth: BaseQueryFn<

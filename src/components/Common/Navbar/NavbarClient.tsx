@@ -9,10 +9,11 @@ import { toast } from "sonner";
 import { useAddToCartMutation, useGetCartQuery } from "@/redux/features/cart/cartApiSlice";
 import { useGetMeQuery } from "@/redux/features/user/userApiSlice";
 import { useLogoutMutation } from "@/redux/features/auth/authApiSlice";
-import { useCartStore } from "@/lib/stores/cartStore";
+import { useCartStore, type CartStore } from "@/lib/stores/cartStore";
 import { getCartItemCount, getGuestCartItemCount } from "@/lib/utils/cartDisplay";
 import { useAppDispatch } from "@/redux/hooks";
 import { apiSlice } from "@/redux/apiSlice";
+import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -45,14 +46,15 @@ const NavbarClient = () => {
   const isLoggedIn = !!user;
   const firstName = user?.name.trim().split(/\s+/)[0] ?? "";
   const initial = firstName ? firstName[0].toUpperCase() : "?";
+  const openCartSheet = useCartStore((state: CartStore) => state.openCartSheet);
 
   // Guests never call the cart API — it requires auth on every endpoint —
   // their cart lives in the zustand store instead (see guestItems below).
   const { data: cartData } = useGetCartQuery(undefined, { skip: !isLoggedIn });
-  const cartCount = useCartStore((s) => s.count);
-  const setCartCount = useCartStore((s) => s.setCount);
-  const guestItems = useCartStore((s) => s.guestItems);
-  const clearGuestItems = useCartStore((s) => s.clearGuestItems);
+  const cartCount = useCartStore((state: CartStore) => state.count);
+  const setCartCount = useCartStore((state: CartStore) => state.setCount);
+  const guestItems = useCartStore((state: CartStore) => state.guestItems);
+  const clearGuestItems = useCartStore((state: CartStore) => state.clearGuestItems);
   const [addToCart] = useAddToCartMutation();
 
   useEffect(() => {
@@ -75,8 +77,21 @@ const NavbarClient = () => {
         if (last) setCartCount(getCartItemCount(last.data));
         clearGuestItems();
         toast.success("Restored your saved cart.");
-      } catch {
-        toast.error("Couldn't restore some items to your cart.");
+      } catch (error) {
+        const errorData = isFetchBaseQueryError(error)
+          ? error.data as {
+              message?: string;
+              detail?: string | { msg?: string }[];
+              error?: { message?: string };
+            } | string | undefined
+          : undefined;
+        const message = typeof errorData === "string"
+          ? errorData
+          : errorData?.message
+            ?? (typeof errorData?.detail === "string" ? errorData.detail : errorData?.detail?.[0]?.msg)
+            ?? errorData?.error?.message;
+
+        toast.error(message || "Couldn't restore some items to your cart.");
       } finally {
         isMerging.current = false;
       }
@@ -114,8 +129,25 @@ const NavbarClient = () => {
           <AvatarFallback className="bg-primary-normal text-black font-semibold">{initial}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuItem variant="destructive" disabled={isLoggingOut} onClick={handleLogout}>
+      <DropdownMenuContent align="end" className="w-52 rounded-lg p-1.5">
+        <DropdownMenuItem disabled className="rounded-md">
+          <Icon icon="solar:user-linear" className="w-4 h-4" />
+          My Profile
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled className="rounded-md">
+          <Icon icon="solar:bag-4-linear" className="w-4 h-4" />
+          My Orders
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled className="rounded-md">
+          <Icon icon="solar:heart-linear" className="w-4 h-4" />
+          Saved Items
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          variant="destructive"
+          disabled={isLoggingOut}
+          onClick={handleLogout}
+          className="rounded-md"
+        >
           <Icon icon="solar:logout-2-linear" className="w-4 h-4" />
           {isLoggingOut ? "Logging out..." : "Log out"}
         </DropdownMenuItem>
@@ -123,7 +155,7 @@ const NavbarClient = () => {
     </DropdownMenu>
   ) : (
     <Link
-      href={`/login?redirect=${encodeURIComponent(pathname)}`}
+      href={`/login`}
       aria-label="Log in"
       className="inline-flex items-center justify-center text-primary-normal hover:opacity-80 transition-opacity"
     >
@@ -179,14 +211,14 @@ const NavbarClient = () => {
 
         {/* Mobile actions */}
         <div className="flex items-center gap-1 lg:hidden">
-          <Link
-            href="/cart"
+          <button
+            onClick={openCartSheet}
             aria-label="View cart"
             className="relative inline-flex items-center justify-center p-2 text-primary-normal"
           >
             <Icon icon="solar:cart-large-minimalistic-linear" className="w-6 h-6" />
             {cartBadge}
-          </Link>
+          </button>
 
           <div className="p-2">{accountControl}</div>
 

@@ -8,6 +8,13 @@ import { cn } from "@/lib/utils";
 import ProductDetailActions from "@/components/Shop/ProductDetailActions/ProductDetailActions";
 import type { Product } from "@/redux/features/product/productApiSlice";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   formatAbv,
   formatPrice,
   formatVolume,
@@ -93,30 +100,34 @@ const ProductDetailView = ({ product, categoryHref }: ProductDetailViewProps) =>
 
             {product.variants.length > 1 && (
               <div className="flex flex-col gap-2">
-                <span className="text-[11px] uppercase tracking-wide text-gray-400">Size</span>
-                <div className="flex flex-wrap gap-2">
-                  {product.variants.map((variant) => {
-                    const isSelected = variant.id === selectedVariantId;
-                    const variantInStock = isVariantInStock(variant);
-                    return (
-                      <button
+                <span className="text-[11px] uppercase tracking-wide text-gray-400">
+                  Size
+                </span>
+                <Select
+                  value={selectedVariantId}
+                  onValueChange={(value) => value && setSelectedVariantId(value)}
+                >
+                  <SelectTrigger className="h-11 w-full rounded-lg border-gray-200 px-3 text-sm font-medium sm:w-64">
+                    <SelectValue placeholder="Choose a size">
+                      {selectedVariant
+                        ? `${formatVolume(selectedVariant.volume_ml)} — ${formatPrice(selectedVariant.price)}`
+                        : "Choose a size"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="rounded-lg">
+                    {product.variants.map((variant) => (
+                      <SelectItem
                         key={variant.id}
-                        type="button"
-                        disabled={!variantInStock}
-                        onClick={() => setSelectedVariantId(variant.id)}
-                        className={cn(
-                          "px-4 py-2 rounded-lg text-xs font-semibold border transition-colors",
-                          isSelected
-                            ? "bg-black text-primary-normal border-black"
-                            : "bg-white text-gray-700 border-gray-200 hover:border-gray-300",
-                          !variantInStock && "opacity-40 cursor-not-allowed line-through"
-                        )}
+                        value={variant.id}
+                        disabled={!isVariantInStock(variant)}
+                        className="rounded-md"
                       >
-                        {formatVolume(variant.volume_ml)}
-                      </button>
-                    );
-                  })}
-                </div>
+                        {formatVolume(variant.volume_ml)} — {formatPrice(variant.price)}
+                        {!isVariantInStock(variant) ? " (Out of stock)" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
 

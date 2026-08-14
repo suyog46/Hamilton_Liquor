@@ -28,6 +28,14 @@ import {
 const isLinkActive = (pathname: string, href: string) =>
   href === "/admin" ? pathname === href : pathname.startsWith(href);
 
+const enabledAdminLinks = new Set([
+  "/admin",
+  "/admin/products",
+  "/admin/categories",
+  "/admin/brands",
+  "/admin/inventory",
+]);
+
 const navGroups: { label: string; items: AdminNavItem[] }[] = [
   { label: "Overview", items: adminNavOverview },
   { label: "Catalog", items: adminNavCatalog },
@@ -67,18 +75,24 @@ const AdminSidebar = () => {
             <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.map((item) => (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      isActive={isLinkActive(pathname, item.href)}
-                      tooltip={item.name}
-                      render={<Link href={item.href} />}
-                    >
-                      <Icon icon={item.icon} className="size-4" />
-                      <span>{item.name}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {group.items.map((item) => {
+                  const enabled = enabledAdminLinks.has(item.href);
+                  return (
+                    <SidebarMenuItem key={item.href}>
+                      <SidebarMenuButton
+                        isActive={enabled && isLinkActive(pathname, item.href)}
+                        tooltip={enabled ? item.name : `${item.name} (Coming soon)`}
+                        render={enabled ? <Link href={item.href} /> : undefined}
+                        disabled={!enabled}
+                        aria-disabled={!enabled}
+                        className={!enabled ? "cursor-not-allowed opacity-40" : undefined}
+                      >
+                        <Icon icon={item.icon} className="size-4" />
+                        <span>{item.name}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -90,9 +104,10 @@ const AdminSidebar = () => {
           {adminNavSecondary.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
-                isActive={isLinkActive(pathname, item.href)}
-                tooltip={item.name}
-                render={<Link href={item.href} />}
+                tooltip={`${item.name} (Coming soon)`}
+                disabled
+                aria-disabled
+                className="cursor-not-allowed opacity-40"
               >
                 <Icon icon={item.icon} className="size-4" />
                 <span>{item.name}</span>

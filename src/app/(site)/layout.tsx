@@ -7,6 +7,7 @@ import TopBar from "@/components/Common/TopBar/TopBar";
 import { AGE_GATE_COOKIE_NAME } from "@/lib/utils";
 import { AgeVerificationProvider } from "@/lib/context/AgeVerification";
 import React from "react";
+import CartSheet from "@/components/Common/CartSheet/CartSheet";
 
 const SiteLayout = async ({ children }: { children: React.ReactNode }) => {
   const cookieStore = await cookies();
@@ -18,6 +19,7 @@ const SiteLayout = async ({ children }: { children: React.ReactNode }) => {
       <AgeGate initiallyVerified={isAgeVerified} />
       <TopBar />
       <Navbar />
+      <CartSheet />
       <main>{children}</main>
       <Footer />
     </AgeVerificationProvider>

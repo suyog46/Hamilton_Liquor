@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  cartApiSlice,
   useGetCartQuery,
   useUpdateCartItemMutation,
   useRemoveCartItemMutation,
@@ -19,6 +20,8 @@ import { useGetMeQuery } from "@/redux/features/user/userApiSlice";
 import { useCartStore, useCartHydrated } from "@/lib/stores/cartStore";
 import { getCartItemCount } from "@/lib/utils/cartDisplay";
 import { formatAbv, formatPrice, formatVolume } from "@/lib/utils/productDisplay";
+import { useAppDispatch } from "@/redux/hooks";
+import { apiSlice } from "@/redux/apiSlice";
 
 const DELIVERY_FEE = 4.99;
 const FREE_DELIVERY_THRESHOLD = 200;
@@ -32,11 +35,12 @@ interface DisplayLine {
 
 const CartPage = () => {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const { data: meData } = useGetMeQuery();
   const isLoggedIn = !!meData?.data;
 
   const { data, isLoading, isFetching } = useGetCartQuery(undefined, { skip: !isLoggedIn });
-  const [updateCartItem] = useUpdateCartItemMutation();
+  const [updateCartItem, { isLoading: isUpdatingCart }] = useUpdateCartItemMutation();
   const [removeCartItem] = useRemoveCartItemMutation();
   const setCartCount = useCartStore((s) => s.setCount);
   const guestItems = useCartStore((s) => s.guestItems);
@@ -56,13 +60,35 @@ const CartPage = () => {
     : guestItems.map((item) => ({ id: item.variant.id, quantity: item.quantity, product_variant: item.variant }));
 
   const updateQty = async (line: DisplayLine, quantity: number) => {
+    const nextQuantity = Math.max(1, Math.min(quantity, line.product_variant.quantity));
+    if (nextQuantity === line.quantity) return;
+
     if (!isLoggedIn) {
-      updateGuestItem(line.id, quantity);
+      updateGuestItem(line.id, nextQuantity);
       return;
     }
+
+    const previousCount = useCartStore.getState().count;
+    const delta = nextQuantity - line.quantity;
+    const optimisticPatch = dispatch(
+      cartApiSlice.util.updateQueryData("getCart", undefined, (draft) => {
+        const item = draft.data.items.find((cartItem) => cartItem.id === line.id);
+        if (item) item.quantity = nextQuantity;
+      })
+    );
+    setCartCount(previousCount + delta);
+
     try {
-      await updateCartItem({ item_id: line.id, quantity: Math.max(1, quantity) }).unwrap();
+      const response = await updateCartItem({ item_id: line.id, quantity: nextQuantity }).unwrap();
+      setCartCount(getCartItemCount(response.data));
+      dispatch(cartApiSlice.util.upsertQueryData("getCart", undefined, response));
+      dispatch(apiSlice.util.invalidateTags([
+        { type: "Product", id: line.product_variant.product.id },
+        { type: "Product", id: "PUBLIC_LIST" },
+      ]));
     } catch {
+      optimisticPatch.undo();
+      setCartCount(previousCount);
       toast.error("Failed to update quantity.");
     }
   };
@@ -156,7 +182,8 @@ const CartPage = () => {
                               {variant.product.name}
                             </Link>
                             <p className="text-xs text-gray-500 mt-0.5">
-                              {formatVolume(variant.volume_ml)} &middot; {formatAbv(variant.alcohol_percentage)}
+                              {formatVolume(variant.volume_ml)}
+                              {variant.alcohol_percentage && <> &middot; {formatAbv(variant.alcohol_percentage)}</>}
                             </p>
                           </div>
                           <button
@@ -173,7 +200,8 @@ const CartPage = () => {
                             <button
                               aria-label="Decrease quantity"
                               onClick={() => updateQty(line, line.quantity - 1)}
-                              className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-black"
+                              disabled={line.quantity <= 1 || (isLoggedIn && isUpdatingCart)}
+                              className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-black disabled:opacity-30"
                             >
                               <Icon icon="solar:minus-circle-linear" className="w-4 h-4" />
                             </button>
@@ -181,7 +209,7 @@ const CartPage = () => {
                             <button
                               aria-label="Increase quantity"
                               onClick={() => updateQty(line, line.quantity + 1)}
-                              disabled={line.quantity >= variant.quantity}
+                              disabled={line.quantity >= variant.quantity || (isLoggedIn && isUpdatingCart)}
                               className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-black disabled:opacity-30"
                             >
                               <Icon icon="solar:add-circle-linear" className="w-4 h-4" />

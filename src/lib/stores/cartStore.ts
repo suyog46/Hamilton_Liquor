@@ -8,7 +8,24 @@ export interface GuestCartItem {
   quantity: number;
 }
 
-interface CartStore {
+export interface CartSheetLine {
+  id: string;
+  quantity: number;
+  variant: CartProductVariant;
+}
+
+export interface CartQuantityApiUpdate {
+  itemId: string;
+  productId: string;
+  quantity: number;
+}
+
+export interface CartStore {
+  isCartSheetOpen: boolean;
+  openCartSheet: () => void;
+  closeCartSheet: () => void;
+  setCartSheetOpen: (open: boolean) => void;
+
   // Badge count for the real (logged-in) backend cart.
   count: number;
   setCount: (count: number) => void;
@@ -25,6 +42,11 @@ interface CartStore {
 export const useCartStore = create<CartStore>()(
   persist(
     (set) => ({
+      isCartSheetOpen: false,
+      openCartSheet: () => set({ isCartSheetOpen: true }),
+      closeCartSheet: () => set({ isCartSheetOpen: false }),
+      setCartSheetOpen: (open) => set({ isCartSheetOpen: open }),
+
       count: 0,
       setCount: (count) => set({ count }),
 

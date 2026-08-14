@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
     const response = NextResponse.json({ message: "Session expired." }, { status: 401 });
     response.cookies.delete("access_token");
     response.cookies.delete("refresh_token");
+    response.cookies.delete("user_role");
     return response;
   }
 
@@ -48,6 +49,7 @@ export async function POST(req: NextRequest) {
     const response = NextResponse.json({ message: "Session expired." }, { status: 401 });
     response.cookies.delete("access_token");
     response.cookies.delete("refresh_token");
+    response.cookies.delete("user_role");
     return response;
   }
 

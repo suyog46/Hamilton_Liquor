@@ -59,7 +59,7 @@ const AdminDashboardPage = () => {
           <Link
             key={link.href}
             href={link.href}
-            className="flex flex-col items-center gap-2 p-4 ring-1 ring-foreground/10 bg-card text-xs font-medium hover:bg-muted transition-colors"
+            className="flex flex-col items-center gap-2 p-4 ring-1 ring-foreground/10 bg-card text-xs font-medium hover:bg-gray-100 transition-colors"
           >
             <Icon icon={link.icon} className="h-5 w-5 text-primary-normal" />
             {link.name}

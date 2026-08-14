@@ -65,7 +65,6 @@ export function ProductsTable({ search }: ProductsTableProps) {
     sort_order: sortOrder,
   });
 
-  console.log("data in products table", data);
   const products = data?.data.items ?? [];
   const pagination = data?.data.pagination;
 

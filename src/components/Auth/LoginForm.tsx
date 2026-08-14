@@ -60,6 +60,7 @@ const LoginForm = () => {
             console.error("[login] could not fetch /auth/me to determine role:", fetchMeError);
             return null;
           });
+          console.log("[login] fetched /auth/me:", me);
         if (!me) toast.warning("Signed in, but couldn't confirm your role — sending you to the storefront.");
         router.push(me?.data.role === "ADMIN" ? "/admin" : "/");
       }

@@ -7,7 +7,6 @@ import { extractAuthTokensFromHeaders } from "@/lib/api/authCookies";
 const ACCESS_TOKEN_MAX_AGE = 60 * 15; // 15 minutes
 
 export async function proxy(request: NextRequest) {
-  console.log("enter here ")
   const { pathname } = request.nextUrl;
 
   if (!pathname.startsWith("/admin")) {
@@ -15,17 +14,18 @@ export async function proxy(request: NextRequest) {
   }
 
   const accessToken = request.cookies.get("access_token")?.value;
-
-  console.log("[middleware] accessToken:", accessToken);
   const refreshToken = request.cookies.get("refresh_token")?.value;
+  const userRole = request.cookies.get("user_role")?.value?.toUpperCase();
 
-  if (accessToken) {
-    return NextResponse.next();
-  }
-
-  if (!refreshToken) {
+  if (!accessToken && !refreshToken) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
+
+  if (userRole !== "ADMIN") {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  if (accessToken) return NextResponse.next();
 
   // Access token missing/expired but we have a refresh token — rotate it.
   try {
@@ -84,6 +84,7 @@ export async function proxy(request: NextRequest) {
     const response = NextResponse.redirect(new URL("/login", request.url));
     response.cookies.delete("access_token");
     response.cookies.delete("refresh_token");
+    response.cookies.delete("user_role");
     return response;
   }
 }

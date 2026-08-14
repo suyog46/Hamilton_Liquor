@@ -3,60 +3,111 @@
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { PublicProductListItem } from "@/redux/features/product/productApiSlice";
-import { useLazyGetPublicProductDetailQuery } from "@/redux/features/product/productApiSlice";
-import { formatPrice, formatVolume, getDisplayVariant } from "@/lib/utils/productDisplay";
-import { useAddToCartMutation } from "@/redux/features/cart/cartApiSlice";
+import { formatPrice, formatVolume } from "@/lib/utils/productDisplay";
+import {
+  cartApiSlice,
+  useAddToCartMutation,
+  useGetCartQuery,
+  type CartProductVariant,
+} from "@/redux/features/cart/cartApiSlice";
 import { useGetMeQuery } from "@/redux/features/user/userApiSlice";
-import { useCartStore } from "@/lib/stores/cartStore";
+import { useCartStore, type CartStore } from "@/lib/stores/cartStore";
 import { getCartItemCount } from "@/lib/utils/cartDisplay";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+// import { useState } from "react";
+import { useAppDispatch } from "@/redux/hooks";
+import { apiSlice } from "@/redux/apiSlice";
 
 const ProductCard = ({ product }: { product: PublicProductListItem }) => {
-  const [isLiked, setIsLiked] = useState(false);
-  const [fetchDetail, { isFetching: isResolvingVariant }] = useLazyGetPublicProductDetailQuery();
+  // const [isLiked, setIsLiked] = useState(false);
+  const router = useRouter();
+  const dispatch = useAppDispatch();
   const [addToCart, { isLoading: isAdding }] = useAddToCartMutation();
-  const setCartCount = useCartStore((s) => s.setCount);
-  const addGuestItem = useCartStore((s) => s.addGuestItem);
+  const setCartCount = useCartStore((state: CartStore) => state.setCount);
+  const cartCount = useCartStore((state: CartStore) => state.count);
+  const addGuestItem = useCartStore((state: CartStore) => state.addGuestItem);
+  const guestItems = useCartStore((state: CartStore) => state.guestItems);
+  const openCartSheet = useCartStore((state: CartStore) => state.openCartSheet);
   const { data: meData } = useGetMeQuery();
   const isLoggedIn = !!meData?.data;
+  const { data: cartData } = useGetCartQuery(undefined, { skip: !isLoggedIn });
 
   const inStock = product.is_in_stock;
-  const showFromPrice = product.available_variant_volumes.length > 1;
-  const volumesLabel = product.available_variant_volumes.map(formatVolume).join(", ");
-  const isBusy = isResolvingVariant || isAdding;
+  const showFromPrice = product.variants.length > 1;
+  const volumesLabel = product.variants.map((variant) => formatVolume(variant.volume_ml)).join(", ");
+  const isBusy = isAdding;
+  const singleVariant = product.variants.length === 1 ? product.variants[0] : null;
+  const quantityInCart = singleVariant
+    ? isLoggedIn
+      ? cartData?.data.items.find((item) => item.product_variant.id === singleVariant.id)?.quantity ?? 0
+      : guestItems.find((item:any) => item.variant.id === singleVariant.id)?.quantity ?? 0
+    : 0;
+  const isAtCartLimit = !!singleVariant && quantityInCart >= singleVariant.quantity;
 
-  // The list endpoint only gives us volumes, not variant ids — resolve the
-  // product's default (cheapest in-stock) variant on demand, then add it.
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!inStock || isBusy) return;
+    if (!inStock || isBusy || isAtCartLimit) return;
+
+
+    if (product.variants.length > 1) {
+      router.push(`/shop/${product.slug}`);
+      return;
+    }
+
+    const variant = product.variants[0];
+    if (!variant || variant.quantity <= 0) return;
+
+    const cartVariant: CartProductVariant = {
+      id: variant.id,
+      product: { id: product.id, name: product.name, slug: product.slug },
+      volume_ml: variant.volume_ml,
+      price: product.starting_price,
+      alcohol_percentage: "",
+      quantity: variant.quantity,
+      is_active: true,
+      media: product.thumbnail ?? { id: `product:${product.id}`, url: "" },
+    };
+
+    if (!isLoggedIn) {
+      addGuestItem(cartVariant, 1);
+      toast.success("Added to cart.");
+      openCartSheet();
+      return;
+    }
+
+    const previousCount = cartCount;
+    const now = new Date().toISOString();
+    const optimisticPatch = dispatch(
+      cartApiSlice.util.updateQueryData("getCart", undefined, (draft) => {
+        const existing = draft.data.items.find((item) => item.product_variant.id === variant.id);
+        if (existing) {
+          existing.quantity += 1;
+        } else {
+          draft.data.items.push({
+            id: `optimistic:${variant.id}`,
+            quantity: 1,
+            product_variant: cartVariant,
+            created_at: now,
+            updated_at: now,
+          });
+        }
+      })
+    );
+    setCartCount(previousCount + 1);
+    openCartSheet();
 
     try {
-      const detail = await fetchDetail(product.slug).unwrap();
-      const variant = getDisplayVariant(detail.data);
-      if (!variant) {
-        toast.error("This product is currently unavailable.");
-        return;
-      }
-
-      // Guests build their cart locally — the real cart API requires auth
-      // on every endpoint, so there's nothing to call until they sign in.
-      if (!isLoggedIn) {
-        addGuestItem(
-          { ...variant, product: { id: detail.data.id, name: detail.data.name, slug: detail.data.slug } },
-          1
-        );
-        toast.success("Added to cart.");
-        return;
-      }
-
       const res = await addToCart({ product_variant_id: variant.id, quantity: 1 }).unwrap();
       setCartCount(getCartItemCount(res.data));
+      dispatch(cartApiSlice.util.upsertQueryData("getCart", undefined, res));
+      dispatch(apiSlice.util.invalidateTags([{ type: "Product", id: product.id }, { type: "Product", id: "PUBLIC_LIST" }]));
       toast.success("Added to cart.");
     } catch {
+      optimisticPatch.undo();
+      setCartCount(previousCount);
       toast.error("Failed to add to cart. Please try again.");
     }
   };
@@ -64,7 +115,7 @@ const ProductCard = ({ product }: { product: PublicProductListItem }) => {
   return (
     <div className="group relative flex flex-col bg-white rounded-3xl overflow-hidden transition-all duration-300 hover:-translate-y-1 shadow-[0_1px_3px_rgba(0,0,0,0.06)]   ">
       {/* Like button */}
-      <button
+      {/* <button
         aria-label="Add to wishlist"
         onClick={() => setIsLiked((prev) => !prev)}
         className="absolute top-4 right-4 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-white/95 backdrop-blur-sm shadow-sm hover:scale-105 transition-transform"
@@ -73,7 +124,7 @@ const ProductCard = ({ product }: { product: PublicProductListItem }) => {
           icon={isLiked ? "solar:heart-bold" : "solar:heart-outline"}
           className={cn("w-5 h-5", isLiked ? "text-red-500" : "text-gray-500")}
         />
-      </button>
+      </button> */}
 
       <Link href={`/shop/${product.slug}`} className="contents">
         {/* Product image */}
@@ -129,17 +180,28 @@ const ProductCard = ({ product }: { product: PublicProductListItem }) => {
           </div>
           <button
             type="button"
-            aria-label={!inStock ? "Sold out" : "Add to cart"}
+            aria-label={
+              !inStock
+                ? "Sold out"
+                : isAtCartLimit
+                  ? "All available stock is already in your cart"
+                  : product.variants.length > 1
+                    ? "Choose options"
+                    : "Add to cart"
+            }
             onClick={handleAddToCart}
-            disabled={!inStock || isBusy}
+            disabled={!inStock || isBusy || isAtCartLimit}
             className={cn(
               "relative z-10 flex items-center justify-center w-11 h-11 rounded-full shadow-sm transition-colors",
-              !inStock || isBusy
+              !inStock || isBusy || isAtCartLimit
                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                 : "bg-primary-normal text-black hover:opacity-90"
             )}
           >
-            <Icon icon={isBusy ? "svg-spinners:180-ring" : "solar:cart-plus-outline"} className="w-5 h-5" />
+            <Icon
+              icon={isBusy ? "svg-spinners:180-ring" : isAtCartLimit ? "solar:check-circle-bold" : "solar:cart-plus-outline"}
+              className="w-5 h-5"
+            />
           </button>
         </div>
       </div>

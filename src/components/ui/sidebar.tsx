@@ -259,19 +259,24 @@ function SidebarTrigger({
   const { toggleSidebar } = useSidebar()
 
   return (
+
     <Button
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
       variant="ghost"
-      size="icon-sm"
-      className={cn(className)}
+      size="icon"
+      className={cn(
+        // Reset button padding and sizing, remove hover background/text shifts
+        "h-auto w-auto p-0 bg-transparent hover:bg-transparent focus-visible:ring-0 text-foreground hover:text-foreground",
+        className
+      )}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
       }}
       {...props}
     >
-      <SidebarIcon />
+      <SidebarIcon className="size-5" />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )

@@ -5,8 +5,9 @@ import type { Product, ProductVariant } from "@/redux/features/product/productAp
 export const getDisplayVariant = (product: Product): ProductVariant | null => {
   if (product.variants.length === 0) return null;
 
+  const inStock = product.variants.filter((variant) => variant.is_active && variant.quantity > 0);
   const active = product.variants.filter((variant) => variant.is_active);
-  const pool = active.length > 0 ? active : product.variants;
+  const pool = inStock.length > 0 ? inStock : active.length > 0 ? active : product.variants;
 
   return pool.reduce((cheapest, variant) =>
     Number(variant.price) < Number(cheapest.price) ? variant : cheapest

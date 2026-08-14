@@ -57,13 +57,19 @@ export interface PublicProductListItem {
   country: (CountryRef & { slug: string }) | null;
   thumbnail: MediaRef | null;
   starting_price: string;
-  available_variant_volumes: number[];
+  variants: PublicProductListVariant[];
   is_in_stock: boolean;
+}
+
+export interface PublicProductListVariant {
+  id: string;
+  volume_ml: number;
+  quantity: number;
 }
 
 export type PublicProductListResponse = ApiListResponse<PublicProductListItem>;
 
-export type GetProductsParams = BaseGetListParams<"name" | "created_at" | "updated_at">;
+export type GetProductsParams = BaseGetListParams<"name" | "price" | "created_at" | "updated_at">;
 
 // Public storefront listing supports the same base params plus catalog filters.
 export interface PublicGetProductsParams extends GetProductsParams {
@@ -72,7 +78,7 @@ export interface PublicGetProductsParams extends GetProductsParams {
   country?: string;
   min_price?: number;
   max_price?: number;
-  volume_ml?: number;
+  volume_ml?: number[];
   in_stock?: boolean;
 }
 
