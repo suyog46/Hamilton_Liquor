@@ -8,6 +8,7 @@ import { AGE_GATE_COOKIE_NAME } from "@/lib/utils";
 import { AgeVerificationProvider } from "@/lib/context/AgeVerification";
 import React from "react";
 import CartSheet from "@/components/Common/CartSheet/CartSheet";
+import MaintenanceNotice from "@/components/Common/MaintenanceNotice/MaintenanceNotice";
 
 const SiteLayout = async ({ children }: { children: React.ReactNode }) => {
   const cookieStore = await cookies();
@@ -17,6 +18,7 @@ const SiteLayout = async ({ children }: { children: React.ReactNode }) => {
     <AgeVerificationProvider initiallyVerified={isAgeVerified}>
       <AosProvider />
       <AgeGate initiallyVerified={isAgeVerified} />
+      <MaintenanceNotice />
       <TopBar />
       <Navbar />
       <CartSheet />
