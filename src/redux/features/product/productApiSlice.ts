@@ -82,31 +82,22 @@ export interface PublicGetProductsParams extends GetProductsParams {
   in_stock?: boolean;
 }
 
-export interface CreateProductVariantInput {
-  volume_ml: number;
-  price: number;
-  alcohol_percentage: number;
-  quantity: number;
-  media_id: string;
-}
-
 export interface CreateProductRequest {
   name: string;
-  description?: string;
+  description: string;
   category_id: string;
   brand_id: string;
-  country_id?: string;
-  variants: CreateProductVariantInput[];
+  country_id: string;
 }
 
 export interface UpdateProductRequest {
   product_id: string;
-  name?: string;
-  description?: string;
-  category_id?: string;
-  brand_id?: string;
-  country_id?: string | null;
-  is_active?: boolean;
+  name: string;
+  description: string;
+  category_id: string;
+  brand_id: string;
+  country_id: string;
+  is_active: boolean;
 }
 
 export const productApiSlice = apiSlice.injectEndpoints({

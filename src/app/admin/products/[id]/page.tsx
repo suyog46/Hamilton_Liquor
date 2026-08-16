@@ -48,8 +48,6 @@ import {
 } from "@/redux/features/product/productVariantApiSlice";
 import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
 
-const NONE_VALUE = "__none";
-
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (isFetchBaseQueryError(error)) {
     const data = error.data as { message?: string } | undefined;
@@ -99,16 +97,13 @@ const ProductDetailPage = () => {
 
   const categoryItems = categories.map((c) => ({ value: c.id, label: c.name }));
   const brandItems = brands.map((b) => ({ value: b.id, label: b.name }));
-  const countryItems = [
-    { value: NONE_VALUE, label: "None" },
-    ...countries.map((c) => ({ value: c.id, label: c.name })),
-  ];
+  const countryItems = countries.map((c) => ({ value: c.id, label: c.name }));
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
   const [brandId, setBrandId] = useState<string | undefined>(undefined);
-  const [countryId, setCountryId] = useState<string>(NONE_VALUE);
+  const [countryId, setCountryId] = useState<string | undefined>();
   const [isActive, setIsActive] = useState(true);
   const [productErrors, setProductErrors] = useState<Record<string, string>>({});
 
@@ -118,7 +113,7 @@ const ProductDetailPage = () => {
     setDescription(product.description ?? "");
     setCategoryId(product.category.id);
     setBrandId(product.brand.id);
-    setCountryId(product.country?.id ?? NONE_VALUE);
+    setCountryId(product.country?.id);
     setIsActive(product.is_active);
   }, [product]);
 
@@ -158,6 +153,7 @@ const ProductDetailPage = () => {
     if (!name.trim()) nextErrors.name = "Product name is required.";
     if (!categoryId) nextErrors.category = "Category is required.";
     if (!brandId) nextErrors.brand = "Brand is required.";
+    if (!countryId) nextErrors.country = "Country is required.";
     setProductErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
@@ -166,9 +162,9 @@ const ProductDetailPage = () => {
         product_id: productId,
         name: name.trim(),
         description: description.trim(),
-        category_id: categoryId,
-        brand_id: brandId,
-        country_id: countryId === NONE_VALUE ? null : countryId,
+        category_id: categoryId!,
+        brand_id: brandId!,
+        country_id: countryId!,
         is_active: isActive,
       }).unwrap();
       toast.success("Product updated successfully.");
@@ -227,7 +223,7 @@ const ProductDetailPage = () => {
           price,
           alcohol_percentage: alcohol,
           quantity,
-          media_id: variantForm.media!.id,
+          media: [{ media_id: variantForm.media!.id, display_order: 1 }],
         }).unwrap();
         toast.success("Variant created successfully.");
       }
@@ -381,18 +377,17 @@ const ProductDetailPage = () => {
                   {productErrors.brand && <FieldError>{productErrors.brand}</FieldError>}
                 </Field>
 
-                <Field>
+                <Field data-invalid={!!productErrors.country}>
                   <FieldLabel>Country</FieldLabel>
                   <Select
                     items={countryItems}
                     value={countryId}
-                    onValueChange={(value) => setCountryId(value ?? NONE_VALUE)}
+                    onValueChange={(value) => setCountryId(value ?? undefined)}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select country" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={NONE_VALUE}>None</SelectItem>
                       {countries.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.name}
@@ -400,6 +395,7 @@ const ProductDetailPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  {productErrors.country && <FieldError>{productErrors.country}</FieldError>}
                 </Field>
               </div>
 

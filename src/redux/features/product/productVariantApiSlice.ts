@@ -23,7 +23,10 @@ export interface CreateProductVariantRequest {
   price: number;
   alcohol_percentage: number;
   quantity: number;
-  media_id: string;
+  media: Array<{
+    media_id: string;
+    display_order: number;
+  }>;
 }
 
 export interface UpdateProductVariantRequest {

@@ -18,7 +18,7 @@ const SiteLayout = async ({ children }: { children: React.ReactNode }) => {
     <AgeVerificationProvider initiallyVerified={isAgeVerified}>
       <AosProvider />
       <AgeGate initiallyVerified={isAgeVerified} />
-      <MaintenanceNotice />
+      {/* <MaintenanceNotice /> */}
       <TopBar />
       <Navbar />
       <CartSheet />

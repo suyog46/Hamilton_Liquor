@@ -31,6 +31,7 @@ const isLinkActive = (pathname: string, href: string) =>
 const enabledAdminLinks = new Set([
   "/admin",
   "/admin/products",
+  "/admin/variants",
   "/admin/categories",
   "/admin/brands",
   "/admin/inventory",

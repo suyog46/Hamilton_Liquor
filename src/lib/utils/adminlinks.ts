@@ -11,6 +11,7 @@ export const adminNavOverview: AdminNavItem[] = [
 
 export const adminNavCatalog: AdminNavItem[] = [
   { name: "Products", href: "/admin/products", icon: "solar:box-linear" },
+  { name: "Variants", href: "/admin/variants", icon: "solar:layers-linear" },
   { name: "Categories", href: "/admin/categories", icon: "solar:folder-linear" },
   { name: "Brands", href: "/admin/brands", icon: "solar:folder-linear" },
 
@@ -37,6 +38,5 @@ export const adminNavSecondary: AdminNavItem[] = [
   { name: "Settings", href: "/admin/settings", icon: "solar:settings-linear" },
   { name: "Help & Support", href: "/admin/support", icon: "solar:question-circle-linear" },
 ];
-
 
 
