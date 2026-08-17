@@ -51,6 +51,7 @@ const LoginForm = () => {
 
       if (explicitRedirect) {
         router.push(explicitRedirect);
+        // console.lgo
       } else {
         // No explicit destination — send admins to the dashboard and
         // everyone else to the storefront.
