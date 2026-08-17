@@ -6,6 +6,20 @@ export interface MediaRef {
   url: string;
 }
 
+export interface MediaLatestRef {
+  id: string;
+  display_order: number;
+  media: MediaRef;
+}
+
+// Variant media is returned as an unordered array of display_order-tagged
+// wrappers — this picks the one that should represent the variant (lowest
+// display_order, i.e. the cover image).
+export const getPrimaryVariantMedia = (media: MediaLatestRef[]): MediaRef | null => {
+  if (media.length === 0) return null;
+  return [...media].sort((a, b) => a.display_order - b.display_order)[0].media;
+};
+
 export interface ProductRef {
   id: string;
   name: string;
@@ -24,7 +38,7 @@ export interface ProductVariant {
   alcohol_percentage: string;
   quantity: number;
   is_active: boolean;
-  media: MediaRef;
+  media: MediaLatestRef[];
 }
 
 export interface Product {

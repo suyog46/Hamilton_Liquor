@@ -35,6 +35,12 @@ const enabledAdminLinks = new Set([
   "/admin/categories",
   "/admin/brands",
   "/admin/inventory",
+  // "/admin/orders",
+  // "/admin/customers",
+  // "/admin/coupons",
+  // "/admin/discounts",
+  "/admin/store-hours",
+  "/admin/delivery-zones"
 ]);
 
 const navGroups: { label: string; items: AdminNavItem[] }[] = [

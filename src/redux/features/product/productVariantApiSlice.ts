@@ -2,6 +2,12 @@ import { apiSlice } from "@/redux/apiSlice";
 import type { ApiResponse } from "@/redux/types/api";
 import type { MediaRef } from "@/redux/features/product/productApiSlice";
 
+export interface VariantMedia {
+  id: string;
+  display_order: number;
+  media: MediaRef;
+}
+
 export interface ProductVariantDetail {
   id: string;
   product_id: string;
@@ -10,12 +16,17 @@ export interface ProductVariantDetail {
   alcohol_percentage: string;
   quantity: number;
   is_active: boolean;
-  media: MediaRef;
+  media: VariantMedia[];
   created_at: string;
   updated_at: string;
 }
 
 export type ProductVariantDetailResponse = ApiResponse<ProductVariantDetail>;
+
+export interface VariantMediaInput {
+  media_id: string;
+  display_order: number;
+}
 
 export interface CreateProductVariantRequest {
   product_id: string;
@@ -23,10 +34,7 @@ export interface CreateProductVariantRequest {
   price: number;
   alcohol_percentage: number;
   quantity: number;
-  media: Array<{
-    media_id: string;
-    display_order: number;
-  }>;
+  media: VariantMediaInput[];
 }
 
 export interface UpdateProductVariantRequest {
@@ -37,7 +45,7 @@ export interface UpdateProductVariantRequest {
   alcohol_percentage?: number;
   quantity?: number;
   is_active?: boolean;
-  media_id?: string;
+  media?: VariantMediaInput[];
 }
 
 export interface DeleteProductVariantRequest {

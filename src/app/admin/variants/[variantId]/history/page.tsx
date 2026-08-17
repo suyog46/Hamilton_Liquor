@@ -18,8 +18,7 @@ import { inventoryHistoryColumns } from "@/components/Admin/InventoryHistoryTabl
 const DEFAULT_LIMIT = 10;
 
 const VariantHistoryPage = () => {
-  const params = useParams<{ id: string; variantId: string }>();
-  const productId = params.id;
+  const params = useParams<{ variantId: string }>();
   const variantId = params.variantId;
 
   const [page, setPage] = useState(1);
@@ -61,8 +60,8 @@ const VariantHistoryPage = () => {
         <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
           <Icon icon="solar:danger-circle-linear" className="h-6 w-6 text-destructive" />
           <p className="text-xs text-muted-foreground">Failed to load this variant.</p>
-          <Button variant="secondary" size="sm" render={<Link href={`/admin/products/${productId}`} />}>
-            Back to Product
+          <Button variant="secondary" size="sm" render={<Link href="/admin/variants" />}>
+            Back to Variants
           </Button>
         </CardContent>
       </Card>
@@ -76,11 +75,11 @@ const VariantHistoryPage = () => {
         description={`Current quantity: ${variant.quantity}`}
         action={
           <div className="flex items-center gap-2">
-            <Button variant="secondary" render={<Link href={`/admin/products/${productId}`} />}>
-              Back to Product
+            <Button variant="secondary" render={<Link href={`/admin/variants/${variantId}`} />}>
+              Back to Variant
             </Button>
             <AdjustInventoryDialog
-              productId={productId}
+              productId={variant.product_id}
               variantId={variantId}
               variantLabel={`${variant.volume_ml} mL`}
               currentQuantity={variant.quantity}

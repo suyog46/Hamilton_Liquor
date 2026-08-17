@@ -8,6 +8,14 @@ import { toast } from "sonner";
 import AdminPageHeader from "@/components/Admin/AdminPageHeader/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -42,6 +50,7 @@ const NewProductPage = () => {
   const [brandId, setBrandId] = useState<string>();
   const [countryId, setCountryId] = useState<string>();
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [createdProductId, setCreatedProductId] = useState<string | null>(null);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -63,7 +72,7 @@ const NewProductPage = () => {
         country_id: countryId!,
       }).unwrap();
       toast.success("Product created successfully.");
-      router.push(`/admin/products/${response.data.id}`);
+      setCreatedProductId(response.data.id);
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
@@ -90,6 +99,33 @@ const NewProductPage = () => {
           </FieldGroup>
         </CardContent>
       </Card>
+
+      <Dialog open={!!createdProductId} onOpenChange={() => {}}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Add variants now?</DialogTitle>
+            <DialogDescription>
+              Your product was created. Do you want to add its variants (sizes, pricing, images) right now?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4">
+            <Button
+              type="button"
+              variant="ghost"
+              render={<Link href={`/admin/products/${createdProductId}`} />}
+            >
+              Skip
+            </Button>
+            <Button
+              type="button"
+              className="bg-primary-normal text-black hover:bg-primary-hover"
+              render={<Link href={`/admin/products/${createdProductId}/variant/new`} />}
+            >
+              Yes, add variant
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 };

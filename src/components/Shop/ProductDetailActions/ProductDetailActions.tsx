@@ -4,7 +4,7 @@ import { Icon } from "@iconify/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import type { ProductVariant } from "@/redux/features/product/productApiSlice";
+import { getPrimaryVariantMedia, type ProductVariant } from "@/redux/features/product/productApiSlice";
 import { isVariantInStock } from "@/lib/utils/productDisplay";
 import { cartApiSlice, useAddToCartMutation, useGetCartQuery } from "@/redux/features/cart/cartApiSlice";
 import { useGetMeQuery } from "@/redux/features/user/userApiSlice";
@@ -46,10 +46,14 @@ const ProductDetailActions = ({ variant, product }: { variant: ProductVariant | 
   const handleAddToCart = async () => {
     if (!variant || !inStock || isAtCartLimit) return;
 
+    // A cart line only needs a single thumbnail, so flatten the variant's
+    // ordered media array down to its cover image.
+    const cartMedia = getPrimaryVariantMedia(variant.media) ?? { id: variant.id, url: "" };
+
     // Guests build their cart locally — the real cart API requires auth on
     // every endpoint, so there's nothing to call until they sign in.
     if (!isLoggedIn) {
-      addGuestItem({ ...variant, product }, qty);
+      addGuestItem({ ...variant, product, media: cartMedia }, qty);
       setInCart(true);
       toast.success(`Added ${qty} to cart.`);
       openCartSheet();
@@ -57,7 +61,7 @@ const ProductDetailActions = ({ variant, product }: { variant: ProductVariant | 
     }
 
     const previousCount = cartCount;
-    const cartVariant = { ...variant, product };
+    const cartVariant = { ...variant, product, media: cartMedia };
     const now = new Date().toISOString();
     const optimisticPatch = dispatch(
       cartApiSlice.util.updateQueryData("getCart", undefined, (draft) => {

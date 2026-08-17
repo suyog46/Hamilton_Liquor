@@ -89,9 +89,17 @@ export const useCartStore = create<CartStore>()(
 // before trusting `guestItems` to avoid a flash of "empty cart" or an SSR
 // hydration mismatch.
 export const useCartHydrated = () => {
-  const [hydrated, setHydrated] = useState(() => useCartStore.persist.hasHydrated());
+  // `.persist` is attached by the zustand persist middleware and should
+  // always be present — but guard it defensively so a transient bundling
+  // hiccup (seen intermittently in dev) degrades to "treat as hydrated"
+  // instead of crashing every page that renders the cart sheet.
+  const [hydrated, setHydrated] = useState(() => useCartStore.persist?.hasHydrated() ?? true);
 
   useEffect(() => {
+    if (!useCartStore.persist) {
+      setHydrated(true);
+      return;
+    }
     if (useCartStore.persist.hasHydrated()) {
       setHydrated(true);
       return;

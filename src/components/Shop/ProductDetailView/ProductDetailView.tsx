@@ -4,8 +4,8 @@ import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import ProductDetailActions from "@/components/Shop/ProductDetailActions/ProductDetailActions";
+import ProductImageGallery from "@/components/Shop/ProductImageGallery/ProductImageGallery";
 import type { Product } from "@/redux/features/product/productApiSlice";
 import {
   Select,
@@ -58,25 +58,12 @@ const ProductDetailView = ({ product, categoryHref }: ProductDetailViewProps) =>
       <section className="bg-white py-8 sm:py-12">
         <div className="max-w-[1280px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
           {/* Image */}
-          <div className="relative h-80 sm:h-[28rem] rounded-2xl overflow-hidden bg-gray-50">
-            {selectedVariant?.media?.url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={selectedVariant.media.url}
-                alt={product.name}
-                className={cn("absolute inset-0 h-full w-full object-cover", !inStock && "opacity-50 grayscale")}
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-gray-300">
-                <Icon icon="solar:bottle-linear" className="w-16 h-16" />
-              </div>
-            )}
-            {!inStock && (
-              <span className="absolute inset-x-0 bottom-0 py-2 text-center text-xs font-semibold uppercase tracking-wide text-white bg-black/80">
-                Out of Stock
-              </span>
-            )}
-          </div>
+          <ProductImageGallery
+            key={selectedVariant?.id}
+            media={selectedVariant?.media ?? []}
+            alt={product.name}
+            inStock={inStock}
+          />
 
           {/* Info */}
           <div className="flex flex-col gap-4">
