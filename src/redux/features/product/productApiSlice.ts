@@ -47,6 +47,8 @@ export interface Product {
   slug: string;
   description: string | null;
   is_active: boolean;
+  is_staff_pick: boolean;
+  is_featured: boolean;
   brand: ProductRef;
   country: CountryRef | null;
   category: ProductRef;
@@ -94,6 +96,8 @@ export interface PublicGetProductsParams extends GetProductsParams {
   max_price?: number;
   volume_ml?: number[];
   in_stock?: boolean;
+  is_staff_pick?: boolean;
+  is_featured?: boolean;
 }
 
 export interface CreateProductRequest {
@@ -102,6 +106,8 @@ export interface CreateProductRequest {
   category_id: string;
   brand_id: string;
   country_id: string;
+  is_staff_pick: boolean;
+  is_featured: boolean;
 }
 
 export interface UpdateProductRequest {
@@ -112,6 +118,8 @@ export interface UpdateProductRequest {
   brand_id: string;
   country_id: string;
   is_active: boolean;
+  is_staff_pick: boolean;
+  is_featured: boolean;
 }
 
 export const productApiSlice = apiSlice.injectEndpoints({

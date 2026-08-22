@@ -7,7 +7,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext
 import { useGetPublicProductsQuery } from "@/redux/features/product/productApiSlice";
 
 const FeaturedProducts = () => {
-  const { data, isLoading } = useGetPublicProductsQuery({ limit: 10, sort_by: "name", sort_order: "asc" });
+  const { data, isLoading } = useGetPublicProductsQuery({ limit: 10, is_featured: true });
   const products = data?.data.items ?? [];
 
   if (!isLoading && products.length === 0) return null;

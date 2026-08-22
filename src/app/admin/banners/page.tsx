@@ -49,7 +49,7 @@ const AdminBannersPage = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {banners.map((banner) => (
           <Card key={banner.id} size="sm" className="overflow-hidden p-0">
-            <div className="relative h-32 w-full bg-muted">
+            <div className="relative h-32 w-full bg-gray-100">
               <Image src={banner.image} alt={banner.headline} fill sizes="360px" className="object-cover" />
               <Badge
                 variant={banner.active ? "success" : "outline"}

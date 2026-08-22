@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import AdminPageHeader from "@/components/Admin/AdminPageHeader/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -49,6 +50,8 @@ const NewProductPage = () => {
   const [categoryId, setCategoryId] = useState<string>();
   const [brandId, setBrandId] = useState<string>();
   const [countryId, setCountryId] = useState<string>();
+  const [isStaffPick, setIsStaffPick] = useState(false);
+  const [isFeatured, setIsFeatured] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [createdProductId, setCreatedProductId] = useState<string | null>(null);
 
@@ -70,6 +73,8 @@ const NewProductPage = () => {
         category_id: categoryId!,
         brand_id: brandId!,
         country_id: countryId!,
+        is_staff_pick: isStaffPick,
+        is_featured: isFeatured,
       }).unwrap();
       toast.success("Product created successfully.");
       setCreatedProductId(response.data.id);
@@ -96,6 +101,28 @@ const NewProductPage = () => {
               <Field data-invalid={!!errors.brand}><FieldLabel>Brand</FieldLabel><Select items={brands.map((item) => ({ value: item.id, label: item.name }))} value={brandId} onValueChange={(value) => setBrandId(value ?? undefined)}><SelectTrigger className="w-full"><SelectValue placeholder="Select brand" /></SelectTrigger><SelectContent>{brands.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent></Select>{errors.brand && <FieldError>{errors.brand}</FieldError>}</Field>
               <Field data-invalid={!!errors.country}><FieldLabel>Country</FieldLabel><Select items={countries.map((item) => ({ value: item.id, label: item.name }))} value={countryId} onValueChange={(value) => setCountryId(value ?? undefined)}><SelectTrigger className="w-full"><SelectValue placeholder="Select country" /></SelectTrigger><SelectContent>{countries.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent></Select>{errors.country && <FieldError>{errors.country}</FieldError>}</Field>
             </div>
+            <div className="rounded-xl border border-gray-200 bg-gray-100 p-4 sm:p-5">
+              <div className="mb-4">
+                <p className="text-sm font-semibold text-gray-950">How should this product be promoted?</p>
+                <p className="mt-1 text-xs text-gray-600">Choose where this product should receive extra visibility. You can select both.</p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label htmlFor="product-staff-pick" className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-all ${isStaffPick ? "border-primary-normal bg-white ring-1 ring-primary-normal" : "border-gray-200 bg-white hover:border-gray-300"}`}>
+                  <Checkbox id="product-staff-pick" checked={isStaffPick} onCheckedChange={(checked) => setIsStaffPick(checked === true)} />
+                  <span>
+                    <span className="flex items-center gap-2 text-sm font-semibold text-gray-950"><Icon icon="solar:stars-line-duotone" className="size-5 text-primary-normal" />Staff pick</span>
+                    <span className="mt-1 block text-xs leading-5 text-gray-600">Highlight this as a recommendation chosen by your team.</span>
+                  </span>
+                </label>
+                <label htmlFor="product-featured" className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-all ${isFeatured ? "border-primary-normal bg-white ring-1 ring-primary-normal" : "border-gray-200 bg-white hover:border-gray-300"}`}>
+                  <Checkbox id="product-featured" checked={isFeatured} onCheckedChange={(checked) => setIsFeatured(checked === true)} />
+                  <span>
+                    <span className="flex items-center gap-2 text-sm font-semibold text-gray-950"><Icon icon="solar:cup-star-line-duotone" className="size-5 text-primary-normal" />Featured product</span>
+                    <span className="mt-1 block text-xs leading-5 text-gray-600">Show this product in the featured collection on the storefront.</span>
+                  </span>
+                </label>
+              </div>
+            </div>
           </FieldGroup>
         </CardContent>
       </Card>
@@ -119,7 +146,7 @@ const NewProductPage = () => {
             <Button
               type="button"
               className="bg-primary-normal text-black hover:bg-primary-hover"
-              render={<Link href={`/admin/products/${createdProductId}/variant/new`} />}
+              render={<Link href={`/admin/variants/new/${createdProductId}`} />}
             >
               Yes, add variant
             </Button>

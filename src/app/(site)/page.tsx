@@ -13,9 +13,6 @@ import type {
   PublicProductListResponse,
 } from "@/redux/features/product/productApiSlice";
 
-// The catalog has no "best seller" / "staff pick" concept yet — each shelf below
-// pulls a genuinely different slice of the live catalog so the homepage isn't
-// showing the same four products three times over.
 const getProducts = async (query: string): Promise<PublicProductListItem[]> => {
   const res = await core(`products?${query}`);
   if (!res.ok) return [];
@@ -26,8 +23,8 @@ const getProducts = async (query: string): Promise<PublicProductListItem[]> => {
 const Home = async () => {
   const [newArrivals, bestSellers, staffPicks] = await Promise.all([
     getProducts("limit=4&sort_by=created_at&sort_order=desc"),
-    getProducts("limit=4&sort_by=created_at&sort_order=asc"),
-    getProducts("limit=4&sort_by=updated_at&sort_order=desc"),
+    getProducts("limit=4&in_stock=true"),
+    getProducts("limit=4&is_staff_pick=true"),
   ]);
 
   return (

@@ -68,6 +68,8 @@ const ProductDetailPage = () => {
   const [brandId, setBrandId] = useState<string | undefined>(undefined);
   const [countryId, setCountryId] = useState<string | undefined>();
   const [isActive, setIsActive] = useState(true);
+  const [isStaffPick, setIsStaffPick] = useState(false);
+  const [isFeatured, setIsFeatured] = useState(false);
   const [productErrors, setProductErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -78,6 +80,8 @@ const ProductDetailPage = () => {
     setBrandId(product.brand.id);
     setCountryId(product.country?.id);
     setIsActive(product.is_active);
+    setIsStaffPick(product.is_staff_pick);
+    setIsFeatured(product.is_featured);
   }, [product]);
 
   const [deleteProductConfirmOpen, setDeleteProductConfirmOpen] = useState(false);
@@ -102,6 +106,8 @@ const ProductDetailPage = () => {
         brand_id: brandId!,
         country_id: countryId!,
         is_active: isActive,
+        is_staff_pick: isStaffPick,
+        is_featured: isFeatured,
       }).unwrap();
       toast.success("Product updated successfully.");
     } catch (err) {
@@ -277,6 +283,29 @@ const ProductDetailPage = () => {
                   Active (visible in storefront)
                 </FieldLabel>
               </Field>
+
+              <div className="flex flex-wrap gap-6">
+                <Field orientation="horizontal">
+                  <Checkbox
+                    id="product-staff-pick"
+                    checked={isStaffPick}
+                    onCheckedChange={(checked) => setIsStaffPick(checked === true)}
+                  />
+                  <FieldLabel htmlFor="product-staff-pick" className="font-normal">
+                    Staff pick
+                  </FieldLabel>
+                </Field>
+                <Field orientation="horizontal">
+                  <Checkbox
+                    id="product-featured"
+                    checked={isFeatured}
+                    onCheckedChange={(checked) => setIsFeatured(checked === true)}
+                  />
+                  <FieldLabel htmlFor="product-featured" className="font-normal">
+                    Featured
+                  </FieldLabel>
+                </Field>
+              </div>
             </FieldGroup>
 
             <div className="mt-4 flex justify-end">

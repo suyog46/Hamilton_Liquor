@@ -83,7 +83,7 @@ const MultiMediaUpload = ({ value, onChange, disabled, className }: MultiMediaUp
             onDragEnd={handleDragEnd}
             onDrop={(e) => e.preventDefault()}
             className={cn(
-              "group relative aspect-square overflow-hidden rounded-xl border border-input bg-muted transition-shadow",
+              "group relative aspect-square overflow-hidden rounded-xl border border-input bg-gray-100 transition-shadow",
               !disabled && "cursor-grab active:cursor-grabbing",
               dragIndex === index && "opacity-40",
               overIndex === index && dragIndex !== index && "ring-2 ring-primary-normal"
@@ -116,7 +116,7 @@ const MultiMediaUpload = ({ value, onChange, disabled, className }: MultiMediaUp
           onClick={openPicker}
           disabled={disabled || isLoading}
           className={cn(
-            "flex aspect-square cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-input bg-muted/20 text-muted-foreground transition-colors",
+            "flex aspect-square cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-input bg-gray-100/20 text-muted-foreground transition-colors",
             "disabled:cursor-not-allowed disabled:opacity-60",
             !disabled && !isLoading && "hover:border-primary-normal hover:bg-brand-hover"
           )}

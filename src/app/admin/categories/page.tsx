@@ -178,7 +178,7 @@ const AdminCategoriesPage = () => {
               key={category.id}
               className="flex-row items-center gap-3 p-3 transition-colors hover:border-brand-hover-border hover:bg-brand-hover"
             >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-sm font-semibold uppercase text-muted-foreground">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-gray-100 text-sm font-semibold uppercase text-muted-foreground">
                 {category.media?.url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img

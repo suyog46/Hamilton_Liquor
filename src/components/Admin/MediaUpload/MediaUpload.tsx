@@ -48,7 +48,7 @@ const MediaUpload = ({ value, onChange, disabled, className }: MediaUploadProps)
         onClick={openPicker}
         disabled={disabled || isLoading}
         className={cn(
-          "relative flex h-56 w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-input bg-muted/20 transition-colors sm:h-64",
+          "relative flex h-56 w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-input bg-gray-100/20 transition-colors sm:h-64",
           "disabled:cursor-not-allowed disabled:opacity-60",
           !disabled && !isLoading && "hover:border-primary-normal hover:bg-brand-hover"
         )}

@@ -84,6 +84,7 @@ const CarouselPrevious = ({ className, ...props }: React.ComponentProps<typeof B
   const { scrollPrev, canScrollPrev } = useCarousel();
   return (
     <Button
+      render={<Icon icon="solar:alt-arrow-left-linear" className="h-9 w-9 p-2.5" />}
       type="button"
       variant="outline"
       size="icon"
@@ -95,9 +96,7 @@ const CarouselPrevious = ({ className, ...props }: React.ComponentProps<typeof B
         className
       )}
       {...props}
-    >
-      <Icon icon="solar:alt-arrow-left-linear" className="w-4 h-4" />
-    </Button>
+    />
   );
 };
 
@@ -105,6 +104,7 @@ const CarouselNext = ({ className, ...props }: React.ComponentProps<typeof Butto
   const { scrollNext, canScrollNext } = useCarousel();
   return (
     <Button
+      render={<Icon icon="solar:alt-arrow-right-linear" className="h-9 w-9 p-2.5" />}
       type="button"
       variant="outline"
       size="icon"
@@ -116,9 +116,7 @@ const CarouselNext = ({ className, ...props }: React.ComponentProps<typeof Butto
         className
       )}
       {...props}
-    >
-      <Icon icon="solar:alt-arrow-right-linear" className="w-4 h-4" />
-    </Button>
+    />
   );
 };
 

@@ -71,27 +71,28 @@ const VariantWizard = ({ mode, initialValues, onSubmit, isSubmitting = false }: 
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <Card className="overflow-hidden">
+      <CardHeader className="border-b border-gray-200 ">
+        <CardTitle className="flex items-center gap-3 text-sm">
           <span
             className={
               step === 1
                 ? "text-primary-normal"
-                : "text-muted-foreground"
+                : "text-gray-500"
             }
           >
             1. Details
           </span>
-          <Icon icon="solar:alt-arrow-right-linear" className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className={step === 2 ? "text-primary-normal" : "text-muted-foreground"}>2. Images</span>
+          <Icon icon="solar:alt-arrow-right-linear" className="h-3.5 w-3.5 text-gray-400" />
+          <span className={step === 2 ? "text-primary-normal" : "text-gray-500"}>2. Images</span>
         </CardTitle>
       </CardHeader>
       <CardContent>
         {step === 1 ? (
-          <div className="flex h-120 flex-col">
-            <FieldGroup className="flex flex-1 flex-col justify-start gap-6 overflow-y-auto pr-1">
-              <div className="grid grid-cols-2 gap-x-6 gap-y-6">
+          <div className="flex min-h-120 flex-col">
+            <div className="flex py-8">
+              <FieldGroup className=" w-full gap-6">
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <Field data-invalid={!!errors.volume}>
                   <FieldLabel>Volume (mL)</FieldLabel>
                   <Input
@@ -146,31 +147,31 @@ const VariantWizard = ({ mode, initialValues, onSubmit, isSubmitting = false }: 
                   />
                   {errors.quantity && <FieldError>{errors.quantity}</FieldError>}
                 </Field>
-              </div>
+                </div>
 
-              {mode === "update" && (
-                <Field orientation="horizontal">
-                  <Checkbox
-                    id="variant-active"
-                    checked={values.is_active}
-                    onCheckedChange={(checked) => patch({ is_active: checked === true })}
-                  />
-                  <FieldLabel htmlFor="variant-active" className="font-normal">
-                    Active
-                  </FieldLabel>
-                </Field>
-              )}
-            </FieldGroup>
+                {mode === "update" && (
+                  <Field orientation="horizontal">
+                    <Checkbox
+                      id="variant-active"
+                      checked={values.is_active}
+                      onCheckedChange={(checked) => patch({ is_active: checked === true })}
+                    />
+                    <FieldLabel htmlFor="variant-active" className="font-normal">
+                      Active
+                    </FieldLabel>
+                  </Field>
+                )}
+              </FieldGroup>
+            </div>
 
             <div className="flex justify-end pt-3">
               <Button type="button" className="gap-1.5 bg-primary-normal text-black hover:bg-primary-hover" onClick={handleNext}>
                 Next
-                <Icon icon="solar:alt-arrow-right-linear" className="h-4 w-4" />
               </Button>
             </div>
           </div>
         ) : (
-          <div className="flex h-120 flex-col">
+          <div className="flex min-h-120 flex-col">
             <FieldGroup className="flex-1 overflow-y-auto pr-1">
               <Field data-invalid={!!errors.media}>
                 <FieldLabel>Images</FieldLabel>
@@ -181,7 +182,6 @@ const VariantWizard = ({ mode, initialValues, onSubmit, isSubmitting = false }: 
 
             <div className="flex justify-between pt-3">
               <Button type="button" variant="secondary" className="gap-1.5" onClick={() => setStep(1)} disabled={isSubmitting}>
-                <Icon icon="solar:alt-arrow-left-linear" className="h-4 w-4" />
                 Previous
               </Button>
               <Button
@@ -190,7 +190,6 @@ const VariantWizard = ({ mode, initialValues, onSubmit, isSubmitting = false }: 
                 onClick={handlePublish}
                 disabled={isSubmitting}
               >
-                {isSubmitting && <Icon icon="svg-spinners:180-ring" className="h-4 w-4" />}
                 {mode === "create" ? "Publish" : "Save Changes"}
               </Button>
             </div>
