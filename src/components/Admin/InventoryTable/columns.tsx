@@ -19,11 +19,14 @@ function VariantsCell({ product }: { product: Product }) {
         <div key={variant.id} className="flex items-center gap-2">
           <span className="w-16 shrink-0 text-[11px] font-medium">{variant.volume_ml} mL</span>
           <Badge
-            variant={variant.quantity > 0 ? "secondary" : "outline"}
-            className="w-16 justify-center"
+            variant={variant.available_quantity > 0 ? "secondary" : "outline"}
+            className="w-24 justify-center"
           >
-            Qty {variant.quantity}
+            {variant.available_quantity} available
           </Badge>
+          <span className="whitespace-nowrap text-[11px] text-muted-foreground">
+            {variant.reserved_quantity} reserved · {variant.quantity} total
+          </span>
           <AdjustInventoryDialog
             productId={product.id}
             variantId={variant.id}

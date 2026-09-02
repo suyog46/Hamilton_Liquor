@@ -21,6 +21,7 @@ const getProduct = async (id: string): Promise<Product | null> => {
   const res = await core(`products/${id}`);
   if (!res.ok) return null;
   const json: ProductResponse = await res.json();
+  console.log("Product data:", json.data); // Log the product data for debugging
   return json.data;
 };
 

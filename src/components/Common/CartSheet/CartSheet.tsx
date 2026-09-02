@@ -44,6 +44,7 @@ const CartSheet = () => {
   const { data: cartData, isFetching } = useGetCartQuery(undefined, { skip: !isLoggedIn });
   const [updateCartItem] = useUpdateCartItemMutation();
 
+
   const lines: CartSheetLine[] = isLoggedIn
     ? (cartData?.data.items ?? []).map((item) => ({
         id: item.id,
@@ -125,12 +126,13 @@ const CartSheet = () => {
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
-              {lines.map((line) => (
-                <div key={line.id} className="flex gap-4 py-4">
+              {lines.map((line) => {
+                const media = line.variant.thumbnail;
+                return (
+                  <div key={line.id} className="flex gap-4 py-4">
                   <div className="h-20 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-50">
-                    {line.variant.media?.url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={line.variant.media.url} alt={line.variant.product.name} className="h-full w-full object-cover" />
+                    {media?.url ? (
+                      <img src={media.url} alt={line.variant.product.name} className="h-full w-full object-cover" />
                     ) : (
                       <div className="flex h-full items-center justify-center text-gray-300">
                         <Icon icon="solar:bottle-linear" className="h-7 w-7" />
@@ -165,8 +167,9 @@ const CartSheet = () => {
                       <p className="text-sm font-bold text-black">{formatPrice(Number(line.variant.price) * line.quantity)}</p>
                     </div>
                   </div>
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

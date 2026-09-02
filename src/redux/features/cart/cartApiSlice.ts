@@ -2,6 +2,8 @@ import { apiSlice } from "@/redux/apiSlice";
 import type { ApiResponse } from "@/redux/types/api";
 import type { MediaRef } from "@/redux/features/product/productApiSlice";
 
+export type CartVariantMedia = MediaRef;
+
 export interface CartProductReference {
   id: string;
   name: string;
@@ -16,7 +18,7 @@ export interface CartProductVariant {
   alcohol_percentage: string;
   quantity: number;
   is_active: boolean;
-  media: MediaRef;
+  thumbnail: CartVariantMedia;
 }
 
 export interface CartItem {

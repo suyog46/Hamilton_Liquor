@@ -53,7 +53,10 @@ const VariantPage = () => {
         alcohol_percentage: Number(values.alcohol_percentage),
         quantity: Number(values.quantity),
         is_active: values.is_active,
-        media: values.media.map((media, index) => ({ media_id: media.id, display_order: index })),
+        media: values.media.map((media, index) => ({
+          media_id: media.id,
+          display_order: index + 1,
+        })),
       }).unwrap();
       toast.success("Variant updated successfully.");
     } catch (err) {
@@ -125,6 +128,23 @@ const VariantPage = () => {
           </div>
         }
       />
+
+      <Card>
+        <CardContent className="grid grid-cols-3 gap-4">
+          <div>
+            <p className="text-xs text-muted-foreground">Available</p>
+            <p className="text-lg font-semibold">{variant.available_quantity}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Reserved</p>
+            <p className="text-lg font-semibold">{variant.reserved_quantity}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Total stock</p>
+            <p className="text-lg font-semibold">{variant.quantity}</p>
+          </div>
+        </CardContent>
+      </Card>
 
       <VariantWizard
         mode="update"

@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import ProductDetailActions from "@/components/Shop/ProductDetailActions/ProductDetailActions";
 import ProductImageGallery from "@/components/Shop/ProductImageGallery/ProductImageGallery";
-import type { Product } from "@/redux/features/product/productApiSlice";
+import type { PublicProduct } from "@/redux/features/product/productApiSlice";
 import {
   Select,
   SelectContent,
@@ -23,7 +23,7 @@ import {
 } from "@/lib/utils/productDisplay";
 
 interface ProductDetailViewProps {
-  product: Product;
+  product: PublicProduct;
   categoryHref: string;
 }
 

@@ -37,6 +37,8 @@ export interface ProductVariant {
   price: string;
   alcohol_percentage: string;
   quantity: number;
+  reserved_quantity: number;
+  available_quantity: number;
   is_active: boolean;
   media: MediaLatestRef[];
 }
@@ -61,6 +63,14 @@ export type ProductResponse = ApiResponse<Product>;
 
 export type ProductListResponse = ApiListResponse<Product>;
 
+export type PublicProductVariant = Omit<ProductVariant, "quantity" | "reserved_quantity">;
+
+export interface PublicProduct extends Omit<Product, "variants"> {
+  variants: PublicProductVariant[];
+}
+
+export type PublicProductResponse = ApiResponse<PublicProduct>;
+
 // The public storefront list endpoint (GET /products) returns a lightweight
 // per-product summary instead of the full variants array — admin's list
 // endpoint (GET /admin/products) is unaffected and still returns `Product`.
@@ -80,7 +90,7 @@ export interface PublicProductListItem {
 export interface PublicProductListVariant {
   id: string;
   volume_ml: number;
-  quantity: number;
+  available_quantity: number;
 }
 
 export type PublicProductListResponse = ApiListResponse<PublicProductListItem>;
@@ -158,7 +168,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
           : [{ type: "Product" as const, id: "PUBLIC_LIST" }],
     }),
 
-    getPublicProductDetail: builder.query<ProductResponse, string>({
+    getPublicProductDetail: builder.query<PublicProductResponse, string>({
       query: (productId) => `products/${productId}`,
       providesTags: (_result, _error, productId) => [{ type: "Product", id: productId }],
     }),

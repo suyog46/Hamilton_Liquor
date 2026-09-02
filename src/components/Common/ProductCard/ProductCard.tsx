@@ -44,7 +44,7 @@ const ProductCard = ({ product }: { product: PublicProductListItem }) => {
       ? cartData?.data.items.find((item) => item.product_variant.id === singleVariant.id)?.quantity ?? 0
       : guestItems.find((item:any) => item.variant.id === singleVariant.id)?.quantity ?? 0
     : 0;
-  const isAtCartLimit = !!singleVariant && quantityInCart >= singleVariant.quantity;
+  const isAtCartLimit = !!singleVariant && quantityInCart >= singleVariant.available_quantity;
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -58,7 +58,7 @@ const ProductCard = ({ product }: { product: PublicProductListItem }) => {
     }
 
     const variant = product.variants[0];
-    if (!variant || variant.quantity <= 0) return;
+    if (!variant || variant.available_quantity <= 0) return;
 
     const cartVariant: CartProductVariant = {
       id: variant.id,
@@ -66,9 +66,9 @@ const ProductCard = ({ product }: { product: PublicProductListItem }) => {
       volume_ml: variant.volume_ml,
       price: product.starting_price,
       alcohol_percentage: "",
-      quantity: variant.quantity,
+      quantity: variant.available_quantity,
       is_active: true,
-      media: product.thumbnail ?? { id: `product:${product.id}`, url: "" },
+      thumbnail: product.thumbnail ?? { id: `product:${product.id}`, url: "" },
     };
 
     if (!isLoggedIn) {

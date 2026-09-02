@@ -28,7 +28,6 @@ const VariantCardGrid = ({
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {variants.map((variant) => {
-        console.log("variant", variant);
         const image = (
           <div className="relative  w-full overflow-hidden rounded-lg bg-gray-100">
             {variant.media[0]?.media?.url ? (
@@ -60,7 +59,10 @@ const VariantCardGrid = ({
           <div className="min-w-0">
             <p className="font-medium">{variant.volume_ml} mL</p>
             <p className="text-[11px] text-muted-foreground">
-              ${Number(variant.price).toFixed(2)} · Qty {variant.quantity}
+              ${Number(variant.price).toFixed(2)} · {variant.available_quantity} available
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              {variant.reserved_quantity} reserved · {variant.quantity} total
             </p>
           </div>
         );

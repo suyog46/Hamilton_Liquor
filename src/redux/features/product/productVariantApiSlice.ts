@@ -15,6 +15,8 @@ export interface ProductVariantDetail {
   price: string;
   alcohol_percentage: string;
   quantity: number;
+  reserved_quantity: number;
+  available_quantity: number;
   is_active: boolean;
   media: VariantMedia[];
   created_at: string;

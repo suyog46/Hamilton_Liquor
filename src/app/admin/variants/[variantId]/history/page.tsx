@@ -72,7 +72,7 @@ const VariantHistoryPage = () => {
     <div className="flex flex-col gap-4">
       <AdminPageHeader
         title={`${variant.volume_ml} mL — Inventory History`}
-        description={`Current quantity: ${variant.quantity}`}
+        description={`${variant.available_quantity} available · ${variant.reserved_quantity} reserved · ${variant.quantity} total`}
         action={
           <div className="flex items-center gap-2">
             <Button variant="secondary" render={<Link href={`/admin/variants/${variantId}`} />}>

@@ -30,8 +30,15 @@ const formatPriceRange = (product: Product) => {
   return min === max ? `$${min.toFixed(2)}` : `$${min.toFixed(2)} – $${max.toFixed(2)}`;
 };
 
-const totalStock = (product: Product) =>
-  product.variants.reduce((sum, v) => sum + v.quantity, 0);
+const stockTotals = (product: Product) =>
+  product.variants.reduce(
+    (totals, variant) => ({
+      total: totals.total + variant.quantity,
+      available: totals.available + variant.available_quantity,
+      reserved: totals.reserved + variant.reserved_quantity,
+    }),
+    { total: 0, available: 0, reserved: 0 },
+  );
 
 function ActionsCell({ product }: { product: Product }) {
   const [deleteProduct, { isLoading }] = useDeleteProductMutation();
@@ -114,7 +121,17 @@ export const productColumns: ColumnDef<Product>[] = [
   {
     id: "stock",
     header: "Stock",
-    cell: ({ row }) => totalStock(row.original),
+    cell: ({ row }) => {
+      const stock = stockTotals(row.original);
+      return (
+        <div className="whitespace-nowrap">
+          <p className="font-medium">{stock.available} available</p>
+          <p className="text-[11px] text-muted-foreground">
+            {stock.reserved} reserved · {stock.total} total
+          </p>
+        </div>
+      );
+    },
   },
   {
     id: "status",

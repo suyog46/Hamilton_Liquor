@@ -34,7 +34,10 @@ const NewVariantPage = () => {
         price: Number(values.price),
         alcohol_percentage: Number(values.alcohol_percentage),
         quantity: Number(values.quantity),
-        media: values.media.map((media, index) => ({ media_id: media.id, display_order: index+1 })),
+        media: values.media.map((media, index) => ({
+          media_id: media.id,
+          display_order: index + 1,
+        })),
       }).unwrap();
       toast.success("Variant created successfully.");
       router.push("/admin/variants");

@@ -4,7 +4,7 @@ import { Icon } from "@iconify/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { getPrimaryVariantMedia, type ProductVariant } from "@/redux/features/product/productApiSlice";
+import { getPrimaryVariantMedia, type PublicProductVariant } from "@/redux/features/product/productApiSlice";
 import { isVariantInStock } from "@/lib/utils/productDisplay";
 import { cartApiSlice, useAddToCartMutation, useGetCartQuery } from "@/redux/features/cart/cartApiSlice";
 import { useGetMeQuery } from "@/redux/features/user/userApiSlice";
@@ -19,7 +19,7 @@ interface ProductRef {
   slug: string;
 }
 
-const ProductDetailActions = ({ variant, product }: { variant: ProductVariant | null; product: ProductRef }) => {
+const ProductDetailActions = ({ variant, product }: { variant: PublicProductVariant | null; product: ProductRef }) => {
   const [qty, setQty] = useState(1);
   const dispatch = useAppDispatch();
   const [inCart, setInCart] = useState(false);
@@ -39,7 +39,7 @@ const ProductDetailActions = ({ variant, product }: { variant: ProductVariant | 
       ? cartData?.data.items.find((item) => item.product_variant.id === variant.id)?.quantity ?? 0
       : guestItems.find((item) => item.variant.id === variant.id)?.quantity ?? 0
     : 0;
-  const remainingQuantity = variant ? Math.max(0, variant.quantity - quantityInCart) : 0;
+  const remainingQuantity = variant ? Math.max(0, variant.available_quantity - quantityInCart) : 0;
   const maxQty = Math.max(1, Math.min(24, remainingQuantity));
   const isAtCartLimit = !!variant && remainingQuantity === 0;
 
@@ -53,7 +53,7 @@ const ProductDetailActions = ({ variant, product }: { variant: ProductVariant | 
     // Guests build their cart locally — the real cart API requires auth on
     // every endpoint, so there's nothing to call until they sign in.
     if (!isLoggedIn) {
-      addGuestItem({ ...variant, product, media: cartMedia }, qty);
+      addGuestItem({ ...variant, product, thumbnail: cartMedia, quantity: variant.available_quantity }, qty);
       setInCart(true);
       toast.success(`Added ${qty} to cart.`);
       openCartSheet();
@@ -61,7 +61,12 @@ const ProductDetailActions = ({ variant, product }: { variant: ProductVariant | 
     }
 
     const previousCount = cartCount;
-    const cartVariant = { ...variant, product, media: cartMedia };
+    const cartVariant = {
+      ...variant,
+      product,
+      thumbnail: cartMedia,
+      quantity: variant.available_quantity,
+    };
     const now = new Date().toISOString();
     const optimisticPatch = dispatch(
       cartApiSlice.util.updateQueryData("getCart", undefined, (draft) => {

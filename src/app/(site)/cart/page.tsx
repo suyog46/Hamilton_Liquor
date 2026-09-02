@@ -3,11 +3,10 @@
 import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { toast } from "sonner";
 import PageBanner from "@/components/Common/PageBanner/PageBanner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   cartApiSlice,
@@ -23,10 +22,6 @@ import { formatAbv, formatPrice, formatVolume } from "@/lib/utils/productDisplay
 import { useAppDispatch } from "@/redux/hooks";
 import { apiSlice } from "@/redux/apiSlice";
 
-const DELIVERY_FEE = 4.99;
-const FREE_DELIVERY_THRESHOLD = 200;
-const DELIVERY_MINIMUM = 30;
-
 interface DisplayLine {
   id: string;
   quantity: number;
@@ -39,7 +34,7 @@ const CartPage = () => {
   const { data: meData } = useGetMeQuery();
   const isLoggedIn = !!meData?.data;
 
-  const { data, isLoading, isFetching } = useGetCartQuery(undefined, { skip: !isLoggedIn });
+  const { data, isLoading } = useGetCartQuery(undefined, { skip: !isLoggedIn });
   const [updateCartItem, { isLoading: isUpdatingCart }] = useUpdateCartItemMutation();
   const [removeCartItem] = useRemoveCartItemMutation();
   const setCartCount = useCartStore((s) => s.setCount);
@@ -47,7 +42,6 @@ const CartPage = () => {
   const updateGuestItem = useCartStore((s) => s.updateGuestItem);
   const removeGuestItem = useCartStore((s) => s.removeGuestItem);
   const hasHydrated = useCartHydrated();
-  const [fulfillment, setFulfillment] = useState<"pickup" | "delivery">("pickup");
 
   const cart = data?.data;
 
@@ -108,17 +102,13 @@ const CartPage = () => {
   const handleCheckout = () => {
     if (!isLoggedIn) {
       toast.error("You are not logged in. Log in first.");
-      router.push("/login?redirect=/cart");
+      router.push("/login?redirect=/checkout");
       return;
     }
-    toast.info("Checkout isn't available yet — check back soon.");
+    router.push("/checkout");
   };
 
   const showSkeleton = isLoggedIn ? isLoading : !hasHydrated;
-  const subtotal = items.reduce((sum, line) => sum + Number(line.product_variant.price) * line.quantity, 0);
-  const deliveryFee =
-    fulfillment === "delivery" && subtotal > 0 ? (subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE) : 0;
-  const total = subtotal + deliveryFee;
 
   return (
     <>
@@ -127,13 +117,12 @@ const CartPage = () => {
       <section className="bg-white py-10 sm:py-14">
         <div className="max-w-[1280px] mx-auto px-6">
           {showSkeleton ? (
-            <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-8 items-start">
+            <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-4">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <Skeleton key={i} className="h-28 w-full rounded-2xl" />
                 ))}
               </div>
-              <Skeleton className="h-96 w-full rounded-2xl" />
             </div>
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
@@ -147,21 +136,22 @@ const CartPage = () => {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-8 items-start">
+            <div className="mx-auto flex max-w-4xl flex-col gap-8">
               {/* Cart lines */}
               <div className="flex flex-col gap-4">
                 {items.map((line) => {
                   const variant = line.product_variant;
+                  const media = variant.thumbnail;
                   return (
                     <div
                       key={line.id}
                       className="flex gap-4 p-4 rounded-2xl border border-gray-100 shadow-sm"
                     >
                       <div className="relative w-20 h-24 sm:w-24 sm:h-28 shrink-0 rounded-xl overflow-hidden bg-gray-50">
-                        {variant.media?.url ? (
+                        {media?.url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
-                            src={variant.media.url}
+                            src={media.url}
                             alt={variant.product.name}
                             className="absolute inset-0 h-full w-full object-cover"
                           />
@@ -233,86 +223,15 @@ const CartPage = () => {
                 </Link>
               </div>
 
-              {/* Order summary */}
-              <div className="flex flex-col gap-5 p-6 rounded-2xl bg-gray-50 border border-gray-100 lg:sticky lg:top-28">
-                <h2 className="font-title text-lg font-semibold text-black">Order Summary</h2>
-
-                {/* Pickup / delivery */}
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Fulfillment</span>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => setFulfillment("pickup")}
-                      className={`flex flex-col items-center gap-1 py-3 rounded-xl border text-sm font-medium transition-colors ${
-                        fulfillment === "pickup"
-                          ? "border-primary-normal bg-primary-normal/10 text-black"
-                          : "border-gray-200 text-gray-500"
-                      }`}
-                    >
-                      <Icon icon="solar:bag-check-outline" className="w-5 h-5" />
-                      Pickup
-                    </button>
-                    <button
-                      onClick={() => setFulfillment("delivery")}
-                      className={`flex flex-col items-center gap-1 py-3 rounded-xl border text-sm font-medium transition-colors ${
-                        fulfillment === "delivery"
-                          ? "border-primary-normal bg-primary-normal/10 text-black"
-                          : "border-gray-200 text-gray-500"
-                      }`}
-                    >
-                      <Icon icon="solar:delivery-outline" className="w-5 h-5" />
-                      Delivery
-                    </button>
-                  </div>
-                  {fulfillment === "delivery" && (
-                    <p className="text-xs text-gray-500">
-                      ${DELIVERY_FEE.toFixed(2)} delivery fee &middot; free over ${FREE_DELIVERY_THRESHOLD} &middot; $
-                      {DELIVERY_MINIMUM} order minimum
-                    </p>
-                  )}
-                </div>
-
-                {/* Coupon */}
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Coupon Code</span>
-                  <div className="flex gap-2">
-                    <Input type="text" placeholder="Enter code" className="h-11 rounded-lg text-sm bg-white border-gray-200" />
-                    <Button type="button" variant="outline" className="h-11 rounded-lg px-4 text-sm shrink-0">
-                      Apply
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Totals */}
-                <div className="flex flex-col gap-2 pt-2 border-t border-gray-200 text-sm">
-                  <div className="flex items-center justify-between text-gray-600">
-                    <span>Subtotal</span>
-                    <span>{formatPrice(subtotal)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-gray-600">
-                    <span>{fulfillment === "delivery" ? "Delivery Fee" : "Pickup Fee"}</span>
-                    <span>{fulfillment === "delivery" ? (deliveryFee === 0 ? "Free" : formatPrice(deliveryFee)) : "Free"}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-black font-bold text-base pt-2 border-t border-gray-200">
-                    <span>Estimated Total</span>
-                    <span>{formatPrice(total)}</span>
-                  </div>
-                </div>
-
+              <div className="flex flex-col items-center gap-3 border-t border-gray-100 pt-6">
                 <Button
                   type="button"
                   onClick={handleCheckout}
-                  disabled={isLoggedIn && isFetching}
-                  className="h-12 rounded-lg bg-primary-normal text-black text-sm font-semibold hover:opacity-90 w-full"
+                  className="h-12 w-full rounded-lg bg-primary-normal text-sm font-semibold text-black hover:bg-primary-hover sm:w-auto sm:min-w-64"
                 >
                   Proceed to Checkout
                 </Button>
-
-                <p className="text-[11px] text-gray-500 leading-relaxed flex items-start gap-1.5">
-                  <Icon icon="solar:shield-check-linear" className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                  You must be 21+ with a valid government-issued photo ID to complete this order. We may refuse
-                  service if age cannot be verified.
-                </p>
+                <p className="text-xs text-gray-500">Review delivery and payment details on the next step.</p>
               </div>
             </div>
           )}

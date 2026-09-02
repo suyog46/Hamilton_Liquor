@@ -130,7 +130,7 @@ const NavbarClient = () => {
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52 rounded-lg p-1.5">
-        <DropdownMenuItem disabled className="rounded-md">
+        <DropdownMenuItem render={<Link href="/my-profile" />} className="rounded-md">
           <Icon icon="solar:user-linear" className="w-4 h-4" />
           My Profile
         </DropdownMenuItem>
