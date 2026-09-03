@@ -134,7 +134,7 @@ const NavbarClient = () => {
           <Icon icon="solar:user-linear" className="w-4 h-4" />
           My Profile
         </DropdownMenuItem>
-        <DropdownMenuItem disabled className="rounded-md">
+        <DropdownMenuItem render={<Link href="/order" />} className="rounded-md">
           <Icon icon="solar:bag-4-linear" className="w-4 h-4" />
           My Orders
         </DropdownMenuItem>
