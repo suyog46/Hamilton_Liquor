@@ -23,7 +23,15 @@ export const userApiSlice = apiSlice.injectEndpoints({
       query: () => "auth/me",
       providesTags: ["User"],
     }),
+    deleteMe: builder.mutation<void, void>({
+      query: () => ({
+        url: "auth/me",
+        method: "DELETE",
+      }),
+      invalidatesTags: ["User"],
+    }),
   }),
 });
 
-export const { useGetMeQuery, useLazyGetMeQuery } = userApiSlice;
+export const { useGetMeQuery, useLazyGetMeQuery, useDeleteMeMutation } =
+  userApiSlice;

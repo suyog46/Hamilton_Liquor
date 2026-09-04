@@ -38,6 +38,20 @@ export interface ResendVerificationResponse {
   data: { message: string };
 }
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ForgotPasswordResponse {
+  success: boolean;
+  data: { message: string };
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  password: string;
+}
+
 export const authApiSlice = createApi({
   reducerPath: "authApi",
   baseQuery: fetchBaseQuery({ baseUrl: "/api/auth", credentials: "include" }),
@@ -63,9 +77,32 @@ export const authApiSlice = createApi({
         body,
       }),
     }),
-    resendVerification: builder.mutation<ResendVerificationResponse, ResendVerificationRequest>({
+    resendVerification: builder.mutation<
+      ResendVerificationResponse,
+      ResendVerificationRequest
+    >({
       query: (body) => ({
         url: "resend-verification",
+        method: "POST",
+        body,
+      }),
+    }),
+    forgotPassword: builder.mutation<
+      ForgotPasswordResponse,
+      ForgotPasswordRequest
+    >({
+      query: (body) => ({
+        url: "forgot-password",
+        method: "POST",
+        body,
+      }),
+    }),
+    resetPassword: builder.mutation<
+      { success: boolean; data?: { message?: string } },
+      ResetPasswordRequest
+    >({
+      query: (body) => ({
+        url: "reset-password",
         method: "POST",
         body,
       }),
@@ -84,5 +121,7 @@ export const {
   useSignupMutation,
   useVerifyEmailMutation,
   useResendVerificationMutation,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
   useLogoutMutation,
 } = authApiSlice;

@@ -46,6 +46,8 @@ const enabledAdminLinks = new Set([
   "/admin/delivery-zones",
 ]);
 
+const enabledSecondaryLinks = new Set(["/admin/settings"]);
+
 const navGroups: { label: string; items: AdminNavItem[] }[] = [
   { label: "Overview", items: adminNavOverview },
   { label: "Catalog", items: adminNavCatalog },
@@ -119,19 +121,26 @@ const AdminSidebar = () => {
 
       <SidebarFooter>
         <SidebarMenu>
-          {adminNavSecondary.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton
-                tooltip={`${item.name} (Coming soon)`}
-                disabled
-                aria-disabled
-                className="cursor-not-allowed opacity-40"
-              >
-                <Icon icon={item.icon} className="size-4" />
-                <span>{item.name}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {adminNavSecondary.map((item) => {
+            const enabled = enabledSecondaryLinks.has(item.href);
+            return (
+              <SidebarMenuItem key={item.href}>
+                <SidebarMenuButton
+                  isActive={enabled && isLinkActive(pathname, item.href)}
+                  tooltip={enabled ? item.name : `${item.name} (Coming soon)`}
+                  render={enabled ? <Link href={item.href} /> : undefined}
+                  disabled={!enabled}
+                  aria-disabled={!enabled}
+                  className={
+                    !enabled ? "cursor-not-allowed opacity-40" : undefined
+                  }
+                >
+                  <Icon icon={item.icon} className="size-4" />
+                  <span>{item.name}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>

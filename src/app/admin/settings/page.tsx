@@ -1,4 +1,9 @@
+"use client";
+
 import { Icon } from "@iconify/react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 import AdminPageHeader from "@/components/Admin/AdminPageHeader/AdminPageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,8 +11,48 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { siteConfig } from "@/lib/utils";
+import { apiSlice } from "@/redux/apiSlice";
+import { useAppDispatch } from "@/redux/hooks";
+import {
+  useDeleteMeMutation,
+  useGetMeQuery,
+} from "@/redux/features/user/userApiSlice";
+import { useLogoutMutation } from "@/redux/features/auth/authApiSlice";
+import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
 
 const AdminSettingsPage = () => {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { data: meData } = useGetMeQuery();
+  const [deleteMe, { isLoading: isDeleting }] = useDeleteMeMutation();
+  const [logout] = useLogoutMutation();
+  const [isDeleteConfirming, setIsDeleteConfirming] = useState(false);
+
+  const deleteAccount = async () => {
+    try {
+      await deleteMe().unwrap();
+      await logout()
+        .unwrap()
+        .catch(() => undefined);
+      dispatch(apiSlice.util.resetApiState());
+      toast.success("Account deleted.");
+      router.replace("/");
+    } catch (error) {
+      const data = isFetchBaseQueryError(error)
+        ? (error.data as
+            | { message?: string; error?: { message?: string } }
+            | undefined)
+        : undefined;
+      toast.error(
+        data?.error?.message ??
+          data?.message ??
+          "Could not delete the account.",
+      );
+    } finally {
+      setIsDeleteConfirming(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <AdminPageHeader
@@ -49,6 +94,48 @@ const AdminSettingsPage = () => {
             <Label htmlFor="store-social">Social Links</Label>
             <Input id="store-social" placeholder="Facebook, Instagram URLs" />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-destructive/30">
+        <CardHeader>
+          <CardTitle>Danger zone</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-medium">Delete account</p>
+            <p className="text-[11px] text-muted-foreground">
+              Permanently remove {meData?.data?.email ?? "this account"} and its
+              data.
+            </p>
+          </div>
+          {isDeleteConfirming ? (
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={isDeleting}
+                onClick={deleteAccount}
+              >
+                {isDeleting ? "Deleting…" : "Confirm delete"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setIsDeleteConfirming(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          ) : (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => setIsDeleteConfirming(true)}
+            >
+              Delete account
+            </Button>
+          )}
         </CardContent>
       </Card>
 
