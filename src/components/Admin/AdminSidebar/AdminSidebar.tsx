@@ -40,7 +40,10 @@ const enabledAdminLinks = new Set([
   // "/admin/coupons",
   // "/admin/discounts",
   "/admin/store-hours",
-  "/admin/delivery-zones"
+  "/admin/store-information",
+  "/admin/store-location",
+  "/admin/social-links",
+  "/admin/delivery-zones",
 ]);
 
 const navGroups: { label: string; items: AdminNavItem[] }[] = [
@@ -68,8 +71,12 @@ const AdminSidebar = () => {
                 H
               </span>
               <div className="grid flex-1 text-left leading-tight">
-                <span className="truncate text-sm font-semibold">Hamilton Liquor</span>
-                <span className="truncate text-xs text-muted-foreground">Admin Panel</span>
+                <span className="truncate text-sm font-semibold">
+                  Hamilton Liquor
+                </span>
+                <span className="truncate text-xs text-muted-foreground">
+                  Admin Panel
+                </span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -88,11 +95,15 @@ const AdminSidebar = () => {
                     <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton
                         isActive={enabled && isLinkActive(pathname, item.href)}
-                        tooltip={enabled ? item.name : `${item.name} (Coming soon)`}
+                        tooltip={
+                          enabled ? item.name : `${item.name} (Coming soon)`
+                        }
                         render={enabled ? <Link href={item.href} /> : undefined}
                         disabled={!enabled}
                         aria-disabled={!enabled}
-                        className={!enabled ? "cursor-not-allowed opacity-40" : undefined}
+                        className={
+                          !enabled ? "cursor-not-allowed opacity-40" : undefined
+                        }
                       >
                         <Icon icon={item.icon} className="size-4" />
                         <span>{item.name}</span>

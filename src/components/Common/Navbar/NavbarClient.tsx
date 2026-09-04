@@ -1,16 +1,27 @@
 "use client";
 
-import { cn, navbarLinks, siteConfig } from "@/lib/utils";
+import { cn, formatOperatingHours, navbarLinks, siteConfig } from "@/lib/utils";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useAddToCartMutation, useGetCartQuery } from "@/redux/features/cart/cartApiSlice";
+import {
+  useAddToCartMutation,
+  useGetCartQuery,
+} from "@/redux/features/cart/cartApiSlice";
 import { useGetMeQuery } from "@/redux/features/user/userApiSlice";
+import {
+  useGetPublicOperatingHoursQuery,
+  useGetPublicStoreInformationQuery,
+  useGetPublicStoreLocationQuery,
+} from "@/redux/features/store/storeApiSlice";
 import { useLogoutMutation } from "@/redux/features/auth/authApiSlice";
 import { useCartStore, type CartStore } from "@/lib/stores/cartStore";
-import { getCartItemCount, getGuestCartItemCount } from "@/lib/utils/cartDisplay";
+import {
+  getCartItemCount,
+  getGuestCartItemCount,
+} from "@/lib/utils/cartDisplay";
 import { useAppDispatch } from "@/redux/hooks";
 import { apiSlice } from "@/redux/apiSlice";
 import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
@@ -42,6 +53,18 @@ const NavbarClient = () => {
   const isSolid = isScrolled || isOpen;
 
   const { data: meData, isLoading: isLoadingMe } = useGetMeQuery();
+  const { data: informationData } = useGetPublicStoreInformationQuery();
+  const { data: locationData } = useGetPublicStoreLocationQuery();
+  const { data: hoursData } = useGetPublicOperatingHoursQuery();
+  const phone = informationData?.data.primary_phone || siteConfig.phone;
+  const address = locationData?.data
+    ? `${locationData.data.address}, ${locationData.data.city}, ${locationData.data.state} ${locationData.data.postal_code}`
+    : siteConfig.address.full;
+  const mapsUrl =
+    locationData?.data?.google_maps_url || siteConfig.mapsDirectionsUrl;
+  const hoursSummary = hoursData?.data.hours
+    ? formatOperatingHours(hoursData.data.hours)
+    : "Mon–Thu 9am–10pm · Fri–Sat 9am–11pm · Sun Closed";
   const user = meData?.data;
   const isLoggedIn = !!user;
   const firstName = user?.name.trim().split(/\s+/)[0] ?? "";
@@ -54,7 +77,9 @@ const NavbarClient = () => {
   const cartCount = useCartStore((state: CartStore) => state.count);
   const setCartCount = useCartStore((state: CartStore) => state.setCount);
   const guestItems = useCartStore((state: CartStore) => state.guestItems);
-  const clearGuestItems = useCartStore((state: CartStore) => state.clearGuestItems);
+  const clearGuestItems = useCartStore(
+    (state: CartStore) => state.clearGuestItems,
+  );
   const [addToCart] = useAddToCartMutation();
 
   useEffect(() => {
@@ -72,24 +97,33 @@ const NavbarClient = () => {
       try {
         let last;
         for (const item of guestItems) {
-          last = await addToCart({ product_variant_id: item.variant.id, quantity: item.quantity }).unwrap();
+          last = await addToCart({
+            product_variant_id: item.variant.id,
+            quantity: item.quantity,
+          }).unwrap();
         }
         if (last) setCartCount(getCartItemCount(last.data));
         clearGuestItems();
         toast.success("Restored your saved cart.");
       } catch (error) {
         const errorData = isFetchBaseQueryError(error)
-          ? error.data as {
-              message?: string;
-              detail?: string | { msg?: string }[];
-              error?: { message?: string };
-            } | string | undefined
+          ? (error.data as
+              | {
+                  message?: string;
+                  detail?: string | { msg?: string }[];
+                  error?: { message?: string };
+                }
+              | string
+              | undefined)
           : undefined;
-        const message = typeof errorData === "string"
-          ? errorData
-          : errorData?.message
-            ?? (typeof errorData?.detail === "string" ? errorData.detail : errorData?.detail?.[0]?.msg)
-            ?? errorData?.error?.message;
+        const message =
+          typeof errorData === "string"
+            ? errorData
+            : (errorData?.message ??
+              (typeof errorData?.detail === "string"
+                ? errorData.detail
+                : errorData?.detail?.[0]?.msg) ??
+              errorData?.error?.message);
 
         toast.error(message || "Couldn't restore some items to your cart.");
       } finally {
@@ -98,7 +132,9 @@ const NavbarClient = () => {
     })();
   }, [isLoggedIn, guestItems, addToCart, clearGuestItems, setCartCount]);
 
-  const displayCartCount = isLoggedIn ? cartCount : getGuestCartItemCount(guestItems);
+  const displayCartCount = isLoggedIn
+    ? cartCount
+    : getGuestCartItemCount(guestItems);
   const cartBadge = displayCartCount > 0 && (
     <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4.5 h-4.5 px-1 rounded-full bg-primary-normal text-black text-[10px] font-bold">
       {displayCartCount > 99 ? "99+" : displayCartCount}
@@ -124,17 +160,28 @@ const NavbarClient = () => {
     <Skeleton className="w-6 h-6 rounded-full" />
   ) : user ? (
     <DropdownMenu>
-      <DropdownMenuTrigger className="inline-flex items-center justify-center outline-none" aria-label="Account menu">
+      <DropdownMenuTrigger
+        className="inline-flex items-center justify-center outline-none"
+        aria-label="Account menu"
+      >
         <Avatar size="sm">
-          <AvatarFallback className="bg-primary-normal text-black font-semibold">{initial}</AvatarFallback>
+          <AvatarFallback className="bg-primary-normal text-black font-semibold">
+            {initial}
+          </AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52 rounded-lg p-1.5">
-        <DropdownMenuItem render={<Link href="/my-profile" />} className="rounded-md">
+        <DropdownMenuItem
+          render={<Link href="/my-profile" />}
+          className="rounded-md"
+        >
           <Icon icon="solar:user-linear" className="w-4 h-4" />
           My Profile
         </DropdownMenuItem>
-        <DropdownMenuItem render={<Link href="/order" />} className="rounded-md">
+        <DropdownMenuItem
+          render={<Link href="/order" />}
+          className="rounded-md"
+        >
           <Icon icon="solar:bag-4-linear" className="w-4 h-4" />
           My Orders
         </DropdownMenuItem>
@@ -168,11 +215,14 @@ const NavbarClient = () => {
       id="main-navbar"
       className={cn(
         "fixed top-0 sm:top-9 left-0 z-50 w-full transition-all duration-300 ease-in-out",
-        isSolid ? "bg-white shadow-sm" : "bg-transparent"
+        isSolid ? "bg-white shadow-sm" : "bg-transparent",
       )}
     >
       <nav className="max-w-[1280px] mx-auto flex items-center justify-between px-4 sm:px-6 h-16 md:h-20">
-        <Link href="/" className="font-title text-lg sm:text-xl font-bold leading-tight shrink-0 text-primary-normal">
+        <Link
+          href="/"
+          className="font-title text-lg sm:text-xl font-bold leading-tight shrink-0 text-primary-normal"
+        >
           Hamilton Liquor
         </Link>
 
@@ -203,7 +253,10 @@ const NavbarClient = () => {
             aria-label="View cart"
             className="relative inline-flex items-center justify-center text-primary-normal hover:opacity-80 transition-opacity"
           >
-            <Icon icon="solar:cart-large-minimalistic-linear" className="w-6 h-6" />
+            <Icon
+              icon="solar:cart-large-minimalistic-linear"
+              className="w-6 h-6"
+            />
             {cartBadge}
           </Link>
           {accountControl}
@@ -216,7 +269,10 @@ const NavbarClient = () => {
             aria-label="View cart"
             className="relative inline-flex items-center justify-center p-2 text-primary-normal"
           >
-            <Icon icon="solar:cart-large-minimalistic-linear" className="w-6 h-6" />
+            <Icon
+              icon="solar:cart-large-minimalistic-linear"
+              className="w-6 h-6"
+            />
             {cartBadge}
           </button>
 
@@ -228,7 +284,10 @@ const NavbarClient = () => {
             onClick={() => setIsOpen((prev) => !prev)}
             className="inline-flex items-center justify-center p-2 text-primary-normal"
           >
-            <Icon icon={isOpen ? "material-symbols:close" : "material-symbols:menu"} className="w-6 h-6" />
+            <Icon
+              icon={isOpen ? "material-symbols:close" : "material-symbols:menu"}
+              className="w-6 h-6"
+            />
           </button>
         </div>
       </nav>
@@ -259,20 +318,32 @@ const NavbarClient = () => {
 
           {/* Store info — mobile only, since the top bar is hidden below sm */}
           <div className="px-6 py-4 flex flex-col gap-2 border-t border-gray-100 bg-gray-50">
-            <a href={siteConfig.phoneHref} className="flex items-center gap-2 text-sm font-medium text-black">
-              <Icon icon="solar:phone-linear" className="w-4 h-4 text-primary-normal" />
-              {siteConfig.phone}
+            <a
+              href={`tel:${phone.replace(/[^\d+]/g, "")}`}
+              className="flex items-center gap-2 text-sm font-medium text-black"
+            >
+              <Icon
+                icon="solar:phone-linear"
+                className="w-4 h-4 text-primary-normal"
+              />
+              {phone}
             </a>
             <span className="flex items-center gap-2 text-xs text-gray-600">
-              <Icon icon="solar:map-point-linear" className="w-4 h-4 text-primary-normal shrink-0" />
-              {siteConfig.address.full}
+              <Icon
+                icon="solar:map-point-linear"
+                className="w-4 h-4 text-primary-normal shrink-0"
+              />
+              {address}
             </span>
             <span className="flex items-center gap-2 text-xs text-gray-600">
-              <Icon icon="solar:clock-circle-linear" className="w-4 h-4 text-primary-normal shrink-0" />
-              Mon&ndash;Thu 9am&ndash;10pm &middot; Fri&ndash;Sat 9am&ndash;11pm &middot; Sun Closed
+              <Icon
+                icon="solar:clock-circle-linear"
+                className="w-4 h-4 text-primary-normal shrink-0"
+              />
+              {hoursSummary}
             </span>
             <a
-              href={siteConfig.mapsDirectionsUrl}
+              href={mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-black text-white text-xs font-semibold w-fit"
