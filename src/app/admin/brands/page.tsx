@@ -18,8 +18,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
-import MediaUpload, { type MediaValue } from "@/components/Admin/MediaUpload/MediaUpload";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import MediaUpload, {
+  type MediaValue,
+} from "@/components/Admin/MediaUpload/MediaUpload";
 import { ConfirmDialog } from "@/components/Admin/ConfirmDialog/ConfirmDialog";
 import {
   useCreateBrandMutation,
@@ -51,7 +58,9 @@ const AdminBrandsPage = () => {
   const [nameError, setNameError] = useState<string | null>(null);
   const [media, setMedia] = useState<MediaValue | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [brandPendingDelete, setBrandPendingDelete] = useState<Brand | null>(null);
+  const [brandPendingDelete, setBrandPendingDelete] = useState<Brand | null>(
+    null,
+  );
 
   const brands = data?.data.items ?? [];
   const isSaving = isCreating || isUpdating;
@@ -107,7 +116,7 @@ const AdminBrandsPage = () => {
     } catch (err) {
       const message = getErrorMessage(
         err,
-        editingBrand ? "Failed to update brand." : "Failed to create brand."
+        editingBrand ? "Failed to update brand." : "Failed to create brand.",
       );
       setNameError(message);
       toast.error(message);
@@ -156,15 +165,25 @@ const AdminBrandsPage = () => {
       ) : isError ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
-            <Icon icon="solar:danger-circle-linear" className="h-6 w-6 text-destructive" />
-            <p className="text-xs text-muted-foreground">Failed to load brands.</p>
+            <Icon
+              icon="solar:danger-circle-linear"
+              className="h-6 w-6 text-destructive"
+            />
+            <p className="text-xs text-muted-foreground">
+              Failed to load brands.
+            </p>
           </CardContent>
         </Card>
       ) : brands.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
-            <Icon icon="solar:tag-linear" className="h-6 w-6 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">No brands yet. Add your first one.</p>
+            <Icon
+              icon="solar:tag-linear"
+              className="h-6 w-6 text-muted-foreground"
+            />
+            <p className="text-xs text-muted-foreground">
+              No brands yet. Add your first one.
+            </p>
           </CardContent>
         </Card>
       ) : (
@@ -195,7 +214,9 @@ const AdminBrandsPage = () => {
                         {brand.is_active ? "Active" : "Inactive"}
                       </Badge>
                     </div>
-                    <p className="text-[11px] text-muted-foreground">/{brand.slug}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      /{brand.slug}
+                    </p>
                   </div>
                   <div className="flex items-center gap-3">
                     <button
@@ -214,9 +235,15 @@ const AdminBrandsPage = () => {
                       className="cursor-pointer text-muted-foreground transition-colors hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isDeleting && deletingId === brand.id ? (
-                        <Icon icon="svg-spinners:180-ring" className="h-4 w-4 text-destructive" />
+                        <Icon
+                          icon="svg-spinners:180-ring"
+                          className="h-4 w-4 text-destructive"
+                        />
                       ) : (
-                        <Icon icon="solar:trash-bin-minimalistic-linear" className="h-4 w-4" />
+                        <Icon
+                          icon="solar:trash-bin-minimalistic-linear"
+                          className="h-4 w-4"
+                        />
                       )}
                     </button>
                   </div>
@@ -236,7 +263,9 @@ const AdminBrandsPage = () => {
         <DialogContent>
           <form onSubmit={handleSubmit}>
             <DialogHeader>
-              <DialogTitle>{editingBrand ? "Edit Brand" : "Add Brand"}</DialogTitle>
+              <DialogTitle>
+                {editingBrand ? "Edit Brand" : "Add Brand"}
+              </DialogTitle>
               <DialogDescription>
                 {editingBrand
                   ? "Update this brand's details."
@@ -274,7 +303,11 @@ const AdminBrandsPage = () => {
 
               <Field>
                 <FieldLabel>Image (optional)</FieldLabel>
-                <MediaUpload value={media} onChange={setMedia} disabled={isSaving} />
+                <MediaUpload
+                  value={media}
+                  onChange={setMedia}
+                  disabled={isSaving}
+                />
               </Field>
             </FieldGroup>
 
@@ -292,7 +325,9 @@ const AdminBrandsPage = () => {
                 className="gap-1.5 bg-primary-normal text-black hover:bg-primary-hover"
                 disabled={isSaving}
               >
-                {isSaving && <Icon icon="svg-spinners:180-ring" className="h-4 w-4" />}
+                {isSaving && (
+                  <Icon icon="svg-spinners:180-ring" className="h-4 w-4" />
+                )}
                 {editingBrand ? "Save Changes" : "Create Brand"}
               </Button>
             </DialogFooter>

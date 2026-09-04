@@ -12,17 +12,47 @@ import {
 } from "@/components/ui/table";
 
 const stats = [
-  { label: "Revenue (30 days)", value: "$24,850", change: "+12.4%", icon: "solar:wallet-money-linear" },
-  { label: "Orders (30 days)", value: "312", change: "+8.1%", icon: "solar:bag-check-linear" },
-  { label: "Average Order Value", value: "$79.65", change: "+2.9%", icon: "solar:chart-2-linear" },
-  { label: "New Customers", value: "58", change: "+5.0%", icon: "solar:user-plus-linear" },
+  {
+    label: "Revenue (30 days)",
+    value: "$24,850",
+    change: "+12.4%",
+    icon: "solar:wallet-money-linear",
+  },
+  {
+    label: "Orders (30 days)",
+    value: "312",
+    change: "+8.1%",
+    icon: "solar:bag-check-linear",
+  },
+  {
+    label: "Average Order Value",
+    value: "$79.65",
+    change: "+2.9%",
+    icon: "solar:chart-2-linear",
+  },
+  {
+    label: "New Customers",
+    value: "58",
+    change: "+5.0%",
+    icon: "solar:user-plus-linear",
+  },
 ];
 
 const topProducts = [
-  { name: "Ashford Reserve", category: "Whiskey", unitsSold: 64, revenue: 4352 },
+  {
+    name: "Ashford Reserve",
+    category: "Whiskey",
+    unitsSold: 64,
+    revenue: 4352,
+  },
   { name: "Golden Barrel", category: "Whiskey", unitsSold: 41, revenue: 3649 },
   { name: "Chateau Noir", category: "Wine", unitsSold: 58, revenue: 2436 },
-  { name: "Amber Craft Lager", category: "Beer", unitsSold: 120, revenue: 2160 },
+  {
+    name: "Amber Craft Lager",
+    category: "Beer",
+    unitsSold: 120,
+    revenue: 2160,
+  },
   { name: "Silver Peak", category: "Vodka", unitsSold: 52, revenue: 1820 },
 ];
 
@@ -44,13 +74,17 @@ const AdminReportsPage = () => {
         {stats.map((stat) => (
           <Card key={stat.label}>
             <CardHeader className="flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-xs font-normal text-muted-foreground">{stat.label}</CardTitle>
+              <CardTitle className="text-xs font-normal text-muted-foreground">
+                {stat.label}
+              </CardTitle>
               <Icon icon={stat.icon} className="h-4 w-4 text-primary-normal" />
             </CardHeader>
             <CardContent>
               <div className="flex items-baseline gap-2">
                 <p className="text-xl font-semibold">{stat.value}</p>
-                <span className="text-[11px] font-medium text-success">{stat.change}</span>
+                <span className="text-[11px] font-medium text-success">
+                  {stat.change}
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -74,10 +108,14 @@ const AdminReportsPage = () => {
             <TableBody>
               {topProducts.map((product) => (
                 <TableRow key={product.name}>
-                  <TableCell className="pl-4 font-medium">{product.name}</TableCell>
+                  <TableCell className="pl-4 font-medium">
+                    {product.name}
+                  </TableCell>
                   <TableCell>{product.category}</TableCell>
                   <TableCell>{product.unitsSold}</TableCell>
-                  <TableCell className="pr-4">${product.revenue.toLocaleString()}</TableCell>
+                  <TableCell className="pr-4">
+                    ${product.revenue.toLocaleString()}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

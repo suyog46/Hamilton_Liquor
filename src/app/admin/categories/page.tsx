@@ -17,8 +17,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
-import MediaUpload, { type MediaValue } from "@/components/Admin/MediaUpload/MediaUpload";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import MediaUpload, {
+  type MediaValue,
+} from "@/components/Admin/MediaUpload/MediaUpload";
 import { ConfirmDialog } from "@/components/Admin/ConfirmDialog/ConfirmDialog";
 import {
   useCreateCategoryMutation,
@@ -39,9 +46,12 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 
 const AdminCategoriesPage = () => {
   const { data, isLoading, isError } = useGetCategoriesQuery();
-  const [createCategory, { isLoading: isCreating }] = useCreateCategoryMutation();
-  const [updateCategory, { isLoading: isUpdating }] = useUpdateCategoryMutation();
-  const [deleteCategory, { isLoading: isDeleting }] = useDeleteCategoryMutation();
+  const [createCategory, { isLoading: isCreating }] =
+    useCreateCategoryMutation();
+  const [updateCategory, { isLoading: isUpdating }] =
+    useUpdateCategoryMutation();
+  const [deleteCategory, { isLoading: isDeleting }] =
+    useDeleteCategoryMutation();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -50,7 +60,8 @@ const AdminCategoriesPage = () => {
   const [media, setMedia] = useState<MediaValue | null>(null);
   const [mediaError, setMediaError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [categoryPendingDelete, setCategoryPendingDelete] = useState<Category | null>(null);
+  const [categoryPendingDelete, setCategoryPendingDelete] =
+    useState<Category | null>(null);
 
   const categories = data?.data.items ?? [];
   const isSaving = isCreating || isUpdating;
@@ -104,14 +115,19 @@ const AdminCategoriesPage = () => {
         }).unwrap();
         toast.success("Category updated successfully.");
       } else {
-        await createCategory({ name: trimmedName, media_id: media!.id }).unwrap();
+        await createCategory({
+          name: trimmedName,
+          media_id: media!.id,
+        }).unwrap();
         toast.success("Category created successfully.");
       }
       setDialogOpen(false);
     } catch (err) {
       const message = getErrorMessage(
         err,
-        editingCategory ? "Failed to update category." : "Failed to create category."
+        editingCategory
+          ? "Failed to update category."
+          : "Failed to create category.",
       );
       setNameError(message);
       toast.error(message);
@@ -160,15 +176,25 @@ const AdminCategoriesPage = () => {
       ) : isError ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
-            <Icon icon="solar:danger-circle-linear" className="h-6 w-6 text-destructive" />
-            <p className="text-xs text-muted-foreground">Failed to load categories.</p>
+            <Icon
+              icon="solar:danger-circle-linear"
+              className="h-6 w-6 text-destructive"
+            />
+            <p className="text-xs text-muted-foreground">
+              Failed to load categories.
+            </p>
           </CardContent>
         </Card>
       ) : categories.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
-            <Icon icon="solar:folder-linear" className="h-6 w-6 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">No categories yet. Add your first one.</p>
+            <Icon
+              icon="solar:folder-linear"
+              className="h-6 w-6 text-muted-foreground"
+            />
+            <p className="text-xs text-muted-foreground">
+              No categories yet. Add your first one.
+            </p>
           </CardContent>
         </Card>
       ) : (
@@ -195,11 +221,15 @@ const AdminCategoriesPage = () => {
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="font-medium">{category.name}</p>
-                      <Badge variant={category.is_active ? "success" : "outline"}>
+                      <Badge
+                        variant={category.is_active ? "success" : "outline"}
+                      >
                         {category.is_active ? "Active" : "Inactive"}
                       </Badge>
                     </div>
-                    <p className="text-[11px] text-muted-foreground">/{category.slug}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      /{category.slug}
+                    </p>
                   </div>
                   <div className="flex items-center gap-3">
                     <button
@@ -218,9 +248,15 @@ const AdminCategoriesPage = () => {
                       className="cursor-pointer text-muted-foreground transition-colors hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isDeleting && deletingId === category.id ? (
-                        <Icon icon="svg-spinners:180-ring" className="h-4 w-4 text-destructive" />
+                        <Icon
+                          icon="svg-spinners:180-ring"
+                          className="h-4 w-4 text-destructive"
+                        />
                       ) : (
-                        <Icon icon="solar:trash-bin-minimalistic-linear" className="h-4 w-4" />
+                        <Icon
+                          icon="solar:trash-bin-minimalistic-linear"
+                          className="h-4 w-4"
+                        />
                       )}
                     </button>
                   </div>
@@ -235,7 +271,9 @@ const AdminCategoriesPage = () => {
         <DialogContent>
           <form onSubmit={handleSubmit}>
             <DialogHeader>
-              <DialogTitle>{editingCategory ? "Edit Category" : "Add Category"}</DialogTitle>
+              <DialogTitle>
+                {editingCategory ? "Edit Category" : "Add Category"}
+              </DialogTitle>
               <DialogDescription>
                 {editingCategory
                   ? "Update the name of this category."
@@ -260,7 +298,11 @@ const AdminCategoriesPage = () => {
 
               <Field data-invalid={!!mediaError}>
                 <FieldLabel>Image</FieldLabel>
-                <MediaUpload value={media} onChange={setMedia} disabled={isSaving} />
+                <MediaUpload
+                  value={media}
+                  onChange={setMedia}
+                  disabled={isSaving}
+                />
                 {mediaError && <FieldError>{mediaError}</FieldError>}
               </Field>
             </FieldGroup>
@@ -279,7 +321,9 @@ const AdminCategoriesPage = () => {
                 className="gap-1.5 bg-primary-normal text-black hover:bg-primary-hover"
                 disabled={isSaving}
               >
-                {isSaving && <Icon icon="svg-spinners:180-ring" className="h-4 w-4" />}
+                {isSaving && (
+                  <Icon icon="svg-spinners:180-ring" className="h-4 w-4" />
+                )}
                 {editingCategory ? "Save Changes" : "Create Category"}
               </Button>
             </DialogFooter>

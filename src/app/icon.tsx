@@ -23,7 +23,7 @@ const Icon = () =>
         H
       </div>
     ),
-    { ...size }
+    { ...size },
   );
 
 export default Icon;

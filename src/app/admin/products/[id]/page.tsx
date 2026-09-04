@@ -12,7 +12,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import {
   Select,
   SelectContent,
@@ -50,8 +55,10 @@ const ProductDetailPage = () => {
   const { data: brandsData } = useGetBrandsQuery();
   const { data: countriesData } = useGetCountriesQuery();
 
-  const [updateProduct, { isLoading: isSavingProduct }] = useUpdateProductMutation();
-  const [deleteProduct, { isLoading: isDeletingProduct }] = useDeleteProductMutation();
+  const [updateProduct, { isLoading: isSavingProduct }] =
+    useUpdateProductMutation();
+  const [deleteProduct, { isLoading: isDeletingProduct }] =
+    useDeleteProductMutation();
 
   const product = data?.data;
   const categories = categoriesData?.data.items ?? [];
@@ -70,7 +77,9 @@ const ProductDetailPage = () => {
   const [isActive, setIsActive] = useState(true);
   const [isStaffPick, setIsStaffPick] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
-  const [productErrors, setProductErrors] = useState<Record<string, string>>({});
+  const [productErrors, setProductErrors] = useState<Record<string, string>>(
+    {},
+  );
 
   useEffect(() => {
     if (!product) return;
@@ -84,7 +93,8 @@ const ProductDetailPage = () => {
     setIsFeatured(product.is_featured);
   }, [product]);
 
-  const [deleteProductConfirmOpen, setDeleteProductConfirmOpen] = useState(false);
+  const [deleteProductConfirmOpen, setDeleteProductConfirmOpen] =
+    useState(false);
 
   const handleProductSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -141,9 +151,18 @@ const ProductDetailPage = () => {
     return (
       <Card>
         <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
-          <Icon icon="solar:danger-circle-linear" className="h-6 w-6 text-destructive" />
-          <p className="text-xs text-muted-foreground">Failed to load this product.</p>
-          <Button variant="secondary" size="sm" render={<Link href="/admin/products" />}>
+          <Icon
+            icon="solar:danger-circle-linear"
+            className="h-6 w-6 text-destructive"
+          />
+          <p className="text-xs text-muted-foreground">
+            Failed to load this product.
+          </p>
+          <Button
+            variant="secondary"
+            size="sm"
+            render={<Link href="/admin/products" />}
+          >
             Back to Products
           </Button>
         </CardContent>
@@ -158,7 +177,10 @@ const ProductDetailPage = () => {
         description={`/${product.slug}`}
         action={
           <div className="flex items-center gap-2">
-            <Button variant="secondary" render={<Link href="/admin/products" />}>
+            <Button
+              variant="secondary"
+              render={<Link href="/admin/products" />}
+            >
               Back
             </Button>
             <Button
@@ -171,7 +193,10 @@ const ProductDetailPage = () => {
               {isDeletingProduct ? (
                 <Icon icon="svg-spinners:180-ring" className="h-4 w-4" />
               ) : (
-                <Icon icon="solar:trash-bin-minimalistic-linear" className="h-4 w-4" />
+                <Icon
+                  icon="solar:trash-bin-minimalistic-linear"
+                  className="h-4 w-4"
+                />
               )}
               Delete Product
             </Button>
@@ -194,11 +219,15 @@ const ProductDetailPage = () => {
                   onChange={(e) => setName(e.target.value)}
                   className="focus-visible:border-primary-normal focus-visible:ring-primary-normal/40"
                 />
-                {productErrors.name && <FieldError>{productErrors.name}</FieldError>}
+                {productErrors.name && (
+                  <FieldError>{productErrors.name}</FieldError>
+                )}
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="product-description">Description</FieldLabel>
+                <FieldLabel htmlFor="product-description">
+                  Description
+                </FieldLabel>
                 <Textarea
                   id="product-description"
                   value={description}
@@ -227,7 +256,9 @@ const ProductDetailPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  {productErrors.category && <FieldError>{productErrors.category}</FieldError>}
+                  {productErrors.category && (
+                    <FieldError>{productErrors.category}</FieldError>
+                  )}
                 </Field>
 
                 <Field data-invalid={!!productErrors.brand}>
@@ -248,7 +279,9 @@ const ProductDetailPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  {productErrors.brand && <FieldError>{productErrors.brand}</FieldError>}
+                  {productErrors.brand && (
+                    <FieldError>{productErrors.brand}</FieldError>
+                  )}
                 </Field>
 
                 <Field data-invalid={!!productErrors.country}>
@@ -269,7 +302,9 @@ const ProductDetailPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  {productErrors.country && <FieldError>{productErrors.country}</FieldError>}
+                  {productErrors.country && (
+                    <FieldError>{productErrors.country}</FieldError>
+                  )}
                 </Field>
               </div>
 
@@ -289,9 +324,14 @@ const ProductDetailPage = () => {
                   <Checkbox
                     id="product-staff-pick"
                     checked={isStaffPick}
-                    onCheckedChange={(checked) => setIsStaffPick(checked === true)}
+                    onCheckedChange={(checked) =>
+                      setIsStaffPick(checked === true)
+                    }
                   />
-                  <FieldLabel htmlFor="product-staff-pick" className="font-normal">
+                  <FieldLabel
+                    htmlFor="product-staff-pick"
+                    className="font-normal"
+                  >
                     Staff pick
                   </FieldLabel>
                 </Field>
@@ -299,9 +339,14 @@ const ProductDetailPage = () => {
                   <Checkbox
                     id="product-featured"
                     checked={isFeatured}
-                    onCheckedChange={(checked) => setIsFeatured(checked === true)}
+                    onCheckedChange={(checked) =>
+                      setIsFeatured(checked === true)
+                    }
                   />
-                  <FieldLabel htmlFor="product-featured" className="font-normal">
+                  <FieldLabel
+                    htmlFor="product-featured"
+                    className="font-normal"
+                  >
                     Featured
                   </FieldLabel>
                 </Field>
@@ -314,7 +359,9 @@ const ProductDetailPage = () => {
                 className="gap-1.5 bg-primary-normal text-black hover:bg-primary-hover"
                 disabled={isSavingProduct}
               >
-                {isSavingProduct && <Icon icon="svg-spinners:180-ring" className="h-4 w-4" />}
+                {isSavingProduct && (
+                  <Icon icon="svg-spinners:180-ring" className="h-4 w-4" />
+                )}
                 Save Changes
               </Button>
             </div>
@@ -337,7 +384,11 @@ const ProductDetailPage = () => {
           </Button>
         </CardHeader>
         <CardContent>
-          <VariantCardGrid productId={productId} variants={product.variants} compact />
+          <VariantCardGrid
+            productId={productId}
+            variants={product.variants}
+            compact
+          />
         </CardContent>
       </Card>
 

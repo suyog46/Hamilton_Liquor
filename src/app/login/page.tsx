@@ -6,7 +6,8 @@ import LoginForm from "@/components/Auth/LoginForm";
 
 export const metadata: Metadata = {
   title: "Sign In | Liquor",
-  description: "Sign in to your Liquor account to manage orders, track deliveries, and shop faster.",
+  description:
+    "Sign in to your Liquor account to manage orders, track deliveries, and shop faster.",
 };
 
 const isSafeRedirect = (path: string | undefined): path is string =>
@@ -18,7 +19,9 @@ interface LoginPageProps {
 
 const LoginPage = async ({ searchParams }: LoginPageProps) => {
   const { redirect } = await searchParams;
-  const registerHref = isSafeRedirect(redirect) ? `/register?redirect=${encodeURIComponent(redirect)}` : "/register";
+  const registerHref = isSafeRedirect(redirect)
+    ? `/register?redirect=${encodeURIComponent(redirect)}`
+    : "/register";
 
   return (
     <main className="relative flex min-h-svh w-full items-center justify-center overflow-hidden bg-black px-6 py-16">
@@ -35,7 +38,9 @@ const LoginPage = async ({ searchParams }: LoginPageProps) => {
 
         <div className="border border-white/10 bg-white/[0.03] p-8 backdrop-blur-sm sm:p-10">
           <div className="mb-8 text-center">
-            <h1 className="font-title text-2xl font-semibold text-white">Welcome back</h1>
+            <h1 className="font-title text-2xl font-semibold text-white">
+              Welcome back
+            </h1>
             <p className="mt-2 text-xs text-white/50">
               Sign in to manage your orders and reorder your favorites.
             </p>
@@ -48,7 +53,10 @@ const LoginPage = async ({ searchParams }: LoginPageProps) => {
 
         <p className="mt-6 text-center text-xs text-white/50">
           Don&apos;t have an account?{" "}
-          <Link href={registerHref} className="text-primary-normal hover:underline underline-offset-4">
+          <Link
+            href={registerHref}
+            className="text-primary-normal hover:underline underline-offset-4"
+          >
             Create one
           </Link>
         </p>
@@ -60,7 +68,7 @@ const LoginPage = async ({ searchParams }: LoginPageProps) => {
           <Icon icon="solar:arrow-left-linear" className="h-3.5 w-3.5" />
           Back to store
         </Link>
-      </div>  
+      </div>
     </main>
   );
 };

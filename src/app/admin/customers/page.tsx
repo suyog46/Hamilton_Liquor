@@ -13,12 +13,60 @@ import {
 } from "@/components/ui/table";
 
 const customers = [
-  { name: "Michael Reyes", initials: "MR", email: "michael.reyes@email.com", phone: "(443) 555-0142", orders: 12, spent: 642.5, signedUp: true },
-  { name: "Sarah Thompson", initials: "ST", email: "sarah.t@email.com", phone: "(443) 555-0187", orders: 8, spent: 411.2, signedUp: true },
-  { name: "James Kim", initials: "JK", email: "james.kim@email.com", phone: "(410) 555-0199", orders: 3, spent: 96.0, signedUp: false },
-  { name: "Ava Patel", initials: "AP", email: "ava.patel@email.com", phone: "(443) 555-0122", orders: 5, spent: 214.75, signedUp: true },
-  { name: "Daniel Cho", initials: "DC", email: "daniel.cho@email.com", phone: "(410) 555-0165", orders: 2, spent: 88.4, signedUp: false },
-  { name: "Lena Brooks", initials: "LB", email: "lena.brooks@email.com", phone: "(443) 555-0108", orders: 6, spent: 305.0, signedUp: true },
+  {
+    name: "Michael Reyes",
+    initials: "MR",
+    email: "michael.reyes@email.com",
+    phone: "(443) 555-0142",
+    orders: 12,
+    spent: 642.5,
+    signedUp: true,
+  },
+  {
+    name: "Sarah Thompson",
+    initials: "ST",
+    email: "sarah.t@email.com",
+    phone: "(443) 555-0187",
+    orders: 8,
+    spent: 411.2,
+    signedUp: true,
+  },
+  {
+    name: "James Kim",
+    initials: "JK",
+    email: "james.kim@email.com",
+    phone: "(410) 555-0199",
+    orders: 3,
+    spent: 96.0,
+    signedUp: false,
+  },
+  {
+    name: "Ava Patel",
+    initials: "AP",
+    email: "ava.patel@email.com",
+    phone: "(443) 555-0122",
+    orders: 5,
+    spent: 214.75,
+    signedUp: true,
+  },
+  {
+    name: "Daniel Cho",
+    initials: "DC",
+    email: "daniel.cho@email.com",
+    phone: "(410) 555-0165",
+    orders: 2,
+    spent: 88.4,
+    signedUp: false,
+  },
+  {
+    name: "Lena Brooks",
+    initials: "LB",
+    email: "lena.brooks@email.com",
+    phone: "(443) 555-0108",
+    orders: 6,
+    spent: 305.0,
+    signedUp: true,
+  },
 ];
 
 const AdminCustomersPage = () => {
@@ -63,7 +111,9 @@ const AdminCustomersPage = () => {
                 <TableCell>
                   <div className="flex flex-col">
                     <span>{customer.email}</span>
-                    <span className="text-[11px] text-muted-foreground">{customer.phone}</span>
+                    <span className="text-[11px] text-muted-foreground">
+                      {customer.phone}
+                    </span>
                   </div>
                 </TableCell>
                 <TableCell>{customer.orders}</TableCell>

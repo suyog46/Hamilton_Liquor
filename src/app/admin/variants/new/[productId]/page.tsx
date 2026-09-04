@@ -5,7 +5,9 @@ import Link from "next/link";
 import { toast } from "sonner";
 import AdminPageHeader from "@/components/Admin/AdminPageHeader/AdminPageHeader";
 import { Button } from "@/components/ui/button";
-import VariantWizard, { type VariantWizardValues } from "@/components/Admin/VariantWizard/VariantWizard";
+import VariantWizard, {
+  type VariantWizardValues,
+} from "@/components/Admin/VariantWizard/VariantWizard";
 import { useGetProductDetailQuery } from "@/redux/features/product/productApiSlice";
 import { useCreateProductVariantMutation } from "@/redux/features/product/productVariantApiSlice";
 import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
@@ -41,9 +43,9 @@ const NewVariantPage = () => {
       }).unwrap();
       toast.success("Variant created successfully.");
       router.push("/admin/variants");
-    } catch (err:any) {
+    } catch (err: any) {
       console.log("err is ", err);
-      toast.error(err?.data?.error?.message ??  "Failed to create variant." );
+      toast.error(err?.data?.error?.message ?? "Failed to create variant.");
     }
   };
 
@@ -59,7 +61,11 @@ const NewVariantPage = () => {
         }
       />
 
-      <VariantWizard mode="create" onSubmit={handleSubmit} isSubmitting={isLoading} />
+      <VariantWizard
+        mode="create"
+        onSubmit={handleSubmit}
+        isSubmitting={isLoading}
+      />
     </div>
   );
 };

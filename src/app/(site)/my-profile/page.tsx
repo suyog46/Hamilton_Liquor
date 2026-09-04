@@ -12,11 +12,16 @@ export default function MyProfilePage() {
   const { data, isLoading, isError } = useGetMeQuery();
 
   useEffect(() => {
-    if (!isLoading && (isError || !data?.data)) router.replace("/login?redirect=/my-profile");
+    if (!isLoading && (isError || !data?.data))
+      router.replace("/login?redirect=/my-profile");
   }, [data, isError, isLoading, router]);
 
   if (isLoading || !data?.data) {
-    return <div className="mx-auto max-w-5xl px-6 py-32"><Skeleton className="h-96 rounded-xl" /></div>;
+    return (
+      <div className="mx-auto max-w-5xl px-6 py-32">
+        <Skeleton className="h-96 rounded-xl" />
+      </div>
+    );
   }
 
   const user = data.data;
@@ -24,7 +29,9 @@ export default function MyProfilePage() {
     <div className="min-h-screen bg-gray-50 pt-28 pb-16">
       <div className="mx-auto max-w-5xl space-y-8 px-6">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-primary-normal">My account</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary-normal">
+            My account
+          </p>
           <h1 className="mt-1 font-title text-3xl font-bold">My profile</h1>
         </div>
         <div className="rounded-xl bg-white p-6 ring-1 ring-gray-200">

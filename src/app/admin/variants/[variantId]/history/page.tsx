@@ -30,11 +30,12 @@ const VariantHistoryPage = () => {
     isError: isVariantError,
   } = useGetProductVariantDetailQuery(variantId);
 
-  const { data, isLoading, isFetching, isError } = useGetInventoryAdjustmentsQuery({
-    product_variant_id: variantId,
-    page,
-    limit,
-  });
+  const { data, isLoading, isFetching, isError } =
+    useGetInventoryAdjustmentsQuery({
+      product_variant_id: variantId,
+      page,
+      limit,
+    });
 
   const variant = variantData?.data;
   const adjustments = data?.data.items ?? [];
@@ -58,9 +59,18 @@ const VariantHistoryPage = () => {
     return (
       <Card>
         <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
-          <Icon icon="solar:danger-circle-linear" className="h-6 w-6 text-destructive" />
-          <p className="text-xs text-muted-foreground">Failed to load this variant.</p>
-          <Button variant="secondary" size="sm" render={<Link href="/admin/variants" />}>
+          <Icon
+            icon="solar:danger-circle-linear"
+            className="h-6 w-6 text-destructive"
+          />
+          <p className="text-xs text-muted-foreground">
+            Failed to load this variant.
+          </p>
+          <Button
+            variant="secondary"
+            size="sm"
+            render={<Link href="/admin/variants" />}
+          >
             Back to Variants
           </Button>
         </CardContent>
@@ -75,7 +85,10 @@ const VariantHistoryPage = () => {
         description={`${variant.available_quantity} available · ${variant.reserved_quantity} reserved · ${variant.quantity} total`}
         action={
           <div className="flex items-center gap-2">
-            <Button variant="secondary" render={<Link href={`/admin/variants/${variantId}`} />}>
+            <Button
+              variant="secondary"
+              render={<Link href={`/admin/variants/${variantId}`} />}
+            >
               Back to Variant
             </Button>
             <AdjustInventoryDialog
@@ -92,14 +105,22 @@ const VariantHistoryPage = () => {
       {isError ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
-            <Icon icon="solar:danger-circle-linear" className="h-6 w-6 text-destructive" />
-            <p className="text-xs text-muted-foreground">Failed to load inventory history.</p>
+            <Icon
+              icon="solar:danger-circle-linear"
+              className="h-6 w-6 text-destructive"
+            />
+            <p className="text-xs text-muted-foreground">
+              Failed to load inventory history.
+            </p>
           </CardContent>
         </Card>
       ) : !isLoading && adjustments.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
-            <Icon icon="solar:history-linear" className="h-6 w-6 text-muted-foreground" />
+            <Icon
+              icon="solar:history-linear"
+              className="h-6 w-6 text-muted-foreground"
+            />
             <p className="text-xs text-muted-foreground">
               No inventory adjustments yet for this variant.
             </p>

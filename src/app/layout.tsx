@@ -6,8 +6,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import StoreProvider from "@/redux/StoreProvider";
 
-const jetbrainsMono = JetBrains_Mono({subsets:['latin'],variable:'--font-mono'});
-
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+});
 
 // const geistSans = Geist({
 //   variable: "--font-geist-sans",
@@ -29,7 +31,6 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-
 export const metadata: Metadata = {
   title: "Hamilton Liquor Store | Baltimore, MD",
   description:
@@ -44,9 +45,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn(cinzel.variable, inter.variable, jetbrainsMono.variable, "font-body")}
+      className={cn(
+        cinzel.variable,
+        inter.variable,
+        jetbrainsMono.variable,
+        "font-body",
+      )}
     >
-
       <body>
         <StoreProvider>
           <TooltipProvider>{children}</TooltipProvider>

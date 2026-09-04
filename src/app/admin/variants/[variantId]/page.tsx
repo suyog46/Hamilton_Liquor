@@ -12,7 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import VariantWizard, { type VariantWizardValues } from "@/components/Admin/VariantWizard/VariantWizard";
+import VariantWizard, {
+  type VariantWizardValues,
+} from "@/components/Admin/VariantWizard/VariantWizard";
 import {
   useDeleteProductVariantMutation,
   useGetProductVariantDetailQuery,
@@ -35,9 +37,12 @@ const VariantPage = () => {
   const variantId = params.variantId;
   const router = useRouter();
 
-  const { data, isLoading, isError } = useGetProductVariantDetailQuery(variantId);
-  const [updateVariant, { isLoading: isSaving }] = useUpdateProductVariantMutation();
-  const [deleteVariant, { isLoading: isDeleting }] = useDeleteProductVariantMutation();
+  const { data, isLoading, isError } =
+    useGetProductVariantDetailQuery(variantId);
+  const [updateVariant, { isLoading: isSaving }] =
+    useUpdateProductVariantMutation();
+  const [deleteVariant, { isLoading: isDeleting }] =
+    useDeleteProductVariantMutation();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const variant = data?.data;
@@ -67,7 +72,10 @@ const VariantPage = () => {
   const handleDelete = async () => {
     if (!variant) return;
     try {
-      await deleteVariant({ variant_id: variantId, product_id: variant.product_id }).unwrap();
+      await deleteVariant({
+        variant_id: variantId,
+        product_id: variant.product_id,
+      }).unwrap();
       toast.success("Variant deleted.");
       router.push("/admin/variants");
     } catch (err) {
@@ -88,9 +96,18 @@ const VariantPage = () => {
     return (
       <Card>
         <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
-          <Icon icon="solar:danger-circle-linear" className="h-6 w-6 text-destructive" />
-          <p className="text-xs text-muted-foreground">Failed to load this variant.</p>
-          <Button variant="secondary" size="sm" render={<Link href="/admin/variants" />}>
+          <Icon
+            icon="solar:danger-circle-linear"
+            className="h-6 w-6 text-destructive"
+          />
+          <p className="text-xs text-muted-foreground">
+            Failed to load this variant.
+          </p>
+          <Button
+            variant="secondary"
+            size="sm"
+            render={<Link href="/admin/variants" />}
+          >
             Back to Variants
           </Button>
         </CardContent>
@@ -108,7 +125,10 @@ const VariantPage = () => {
             <Badge variant={variant.is_active ? "success" : "outline"}>
               {variant.is_active ? "Active" : "Inactive"}
             </Badge>
-            <Button variant="secondary" render={<Link href="/admin/variants" />}>
+            <Button
+              variant="secondary"
+              render={<Link href="/admin/variants" />}
+            >
               Back
             </Button>
             <Button
@@ -121,7 +141,10 @@ const VariantPage = () => {
               {isDeleting ? (
                 <Icon icon="svg-spinners:180-ring" className="h-4 w-4" />
               ) : (
-                <Icon icon="solar:trash-bin-minimalistic-linear" className="h-4 w-4" />
+                <Icon
+                  icon="solar:trash-bin-minimalistic-linear"
+                  className="h-4 w-4"
+                />
               )}
               Delete
             </Button>
@@ -133,7 +156,9 @@ const VariantPage = () => {
         <CardContent className="grid grid-cols-3 gap-4">
           <div>
             <p className="text-xs text-muted-foreground">Available</p>
-            <p className="text-lg font-semibold">{variant.available_quantity}</p>
+            <p className="text-lg font-semibold">
+              {variant.available_quantity}
+            </p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Reserved</p>

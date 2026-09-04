@@ -12,11 +12,46 @@ import {
 } from "@/components/ui/table";
 
 const coupons = [
-  { code: "WELCOME10", type: "Percent", value: "10% off", usage: "142 / ∞", status: "Active", expires: "No expiry" },
-  { code: "FIRSTORDER", type: "Percent", value: "10% off first order", usage: "58 / ∞", status: "Active", expires: "No expiry" },
-  { code: "HOLIDAY25", type: "Fixed", value: "$25 off $150+", usage: "34 / 200", status: "Active", expires: "Dec 31, 2026" },
-  { code: "WINEWKND", type: "Percent", value: "15% off wine", usage: "19 / 100", status: "Scheduled", expires: "Starts Aug 1, 2026" },
-  { code: "SUMMER22", type: "Fixed", value: "$10 off $50+", usage: "200 / 200", status: "Expired", expires: "Jun 30, 2026" },
+  {
+    code: "WELCOME10",
+    type: "Percent",
+    value: "10% off",
+    usage: "142 / ∞",
+    status: "Active",
+    expires: "No expiry",
+  },
+  {
+    code: "FIRSTORDER",
+    type: "Percent",
+    value: "10% off first order",
+    usage: "58 / ∞",
+    status: "Active",
+    expires: "No expiry",
+  },
+  {
+    code: "HOLIDAY25",
+    type: "Fixed",
+    value: "$25 off $150+",
+    usage: "34 / 200",
+    status: "Active",
+    expires: "Dec 31, 2026",
+  },
+  {
+    code: "WINEWKND",
+    type: "Percent",
+    value: "15% off wine",
+    usage: "19 / 100",
+    status: "Scheduled",
+    expires: "Starts Aug 1, 2026",
+  },
+  {
+    code: "SUMMER22",
+    type: "Fixed",
+    value: "$10 off $50+",
+    usage: "200 / 200",
+    status: "Expired",
+    expires: "Jun 30, 2026",
+  },
 ];
 
 const statusVariant: Record<string, "success" | "outline" | "destructive"> = {
@@ -32,7 +67,10 @@ const AdminCouponsPage = () => {
         title="Coupons & Promotions"
         description="Create and manage discount codes for weekly specials and campaigns."
         action={
-          <Button type="button" className="gap-1.5 bg-primary-normal text-black hover:opacity-90">
+          <Button
+            type="button"
+            className="gap-1.5 bg-primary-normal text-black hover:opacity-90"
+          >
             <Icon icon="solar:add-circle-linear" className="h-4 w-4" />
             Create Coupon
           </Button>
@@ -60,9 +98,13 @@ const AdminCouponsPage = () => {
                 <TableCell>{coupon.value}</TableCell>
                 <TableCell>{coupon.usage}</TableCell>
                 <TableCell>
-                  <Badge variant={statusVariant[coupon.status]}>{coupon.status}</Badge>
+                  <Badge variant={statusVariant[coupon.status]}>
+                    {coupon.status}
+                  </Badge>
                 </TableCell>
-                <TableCell className="text-muted-foreground">{coupon.expires}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {coupon.expires}
+                </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-3">
                     <button
@@ -77,7 +119,10 @@ const AdminCouponsPage = () => {
                       aria-label="Delete coupon"
                       className="cursor-pointer text-muted-foreground transition-colors hover:text-destructive"
                     >
-                      <Icon icon="solar:trash-bin-minimalistic-linear" className="h-4 w-4" />
+                      <Icon
+                        icon="solar:trash-bin-minimalistic-linear"
+                        className="h-4 w-4"
+                      />
                     </button>
                   </div>
                 </TableCell>

@@ -18,7 +18,11 @@ import {
 import { useGetMeQuery } from "@/redux/features/user/userApiSlice";
 import { useCartStore, useCartHydrated } from "@/lib/stores/cartStore";
 import { getCartItemCount } from "@/lib/utils/cartDisplay";
-import { formatAbv, formatPrice, formatVolume } from "@/lib/utils/productDisplay";
+import {
+  formatAbv,
+  formatPrice,
+  formatVolume,
+} from "@/lib/utils/productDisplay";
 import { useAppDispatch } from "@/redux/hooks";
 import { apiSlice } from "@/redux/apiSlice";
 
@@ -35,7 +39,8 @@ const CartPage = () => {
   const isLoggedIn = !!meData?.data;
 
   const { data, isLoading } = useGetCartQuery(undefined, { skip: !isLoggedIn });
-  const [updateCartItem, { isLoading: isUpdatingCart }] = useUpdateCartItemMutation();
+  const [updateCartItem, { isLoading: isUpdatingCart }] =
+    useUpdateCartItemMutation();
   const [removeCartItem] = useRemoveCartItemMutation();
   const setCartCount = useCartStore((s) => s.setCount);
   const guestItems = useCartStore((s) => s.guestItems);
@@ -50,11 +55,18 @@ const CartPage = () => {
   }, [isLoggedIn, cart, setCartCount]);
 
   const items: DisplayLine[] = isLoggedIn
-    ? cart?.items ?? []
-    : guestItems.map((item) => ({ id: item.variant.id, quantity: item.quantity, product_variant: item.variant }));
+    ? (cart?.items ?? [])
+    : guestItems.map((item) => ({
+        id: item.variant.id,
+        quantity: item.quantity,
+        product_variant: item.variant,
+      }));
 
   const updateQty = async (line: DisplayLine, quantity: number) => {
-    const nextQuantity = Math.max(1, Math.min(quantity, line.product_variant.quantity));
+    const nextQuantity = Math.max(
+      1,
+      Math.min(quantity, line.product_variant.quantity),
+    );
     if (nextQuantity === line.quantity) return;
 
     if (!isLoggedIn) {
@@ -66,20 +78,29 @@ const CartPage = () => {
     const delta = nextQuantity - line.quantity;
     const optimisticPatch = dispatch(
       cartApiSlice.util.updateQueryData("getCart", undefined, (draft) => {
-        const item = draft.data.items.find((cartItem) => cartItem.id === line.id);
+        const item = draft.data.items.find(
+          (cartItem) => cartItem.id === line.id,
+        );
         if (item) item.quantity = nextQuantity;
-      })
+      }),
     );
     setCartCount(previousCount + delta);
 
     try {
-      const response = await updateCartItem({ item_id: line.id, quantity: nextQuantity }).unwrap();
+      const response = await updateCartItem({
+        item_id: line.id,
+        quantity: nextQuantity,
+      }).unwrap();
       setCartCount(getCartItemCount(response.data));
-      dispatch(cartApiSlice.util.upsertQueryData("getCart", undefined, response));
-      dispatch(apiSlice.util.invalidateTags([
-        { type: "Product", id: line.product_variant.product.id },
-        { type: "Product", id: "PUBLIC_LIST" },
-      ]));
+      dispatch(
+        cartApiSlice.util.upsertQueryData("getCart", undefined, response),
+      );
+      dispatch(
+        apiSlice.util.invalidateTags([
+          { type: "Product", id: line.product_variant.product.id },
+          { type: "Product", id: "PUBLIC_LIST" },
+        ]),
+      );
     } catch {
       optimisticPatch.undo();
       setCartCount(previousCount);
@@ -112,7 +133,11 @@ const CartPage = () => {
 
   return (
     <>
-      <PageBanner eyebrow="Review Order" title="Your Cart" breadcrumbs={[{ name: "Cart" }]} />
+      <PageBanner
+        eyebrow="Review Order"
+        title="Your Cart"
+        breadcrumbs={[{ name: "Cart" }]}
+      />
 
       <section className="bg-white py-10 sm:py-14">
         <div className="max-w-[1280px] mx-auto px-6">
@@ -126,7 +151,10 @@ const CartPage = () => {
             </div>
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
-              <Icon icon="solar:cart-large-minimalistic-linear" className="w-12 h-12 text-gray-300" />
+              <Icon
+                icon="solar:cart-large-minimalistic-linear"
+                className="w-12 h-12 text-gray-300"
+              />
               <p className="text-sm text-gray-500">Your cart is empty.</p>
               <Link
                 href="/shop"
@@ -157,7 +185,10 @@ const CartPage = () => {
                           />
                         ) : (
                           <div className="absolute inset-0 flex items-center justify-center text-gray-300">
-                            <Icon icon="solar:bottle-linear" className="w-8 h-8" />
+                            <Icon
+                              icon="solar:bottle-linear"
+                              className="w-8 h-8"
+                            />
                           </div>
                         )}
                       </div>
@@ -173,7 +204,13 @@ const CartPage = () => {
                             </Link>
                             <p className="text-xs text-gray-500 mt-0.5">
                               {formatVolume(variant.volume_ml)}
-                              {variant.alcohol_percentage && <> &middot; {formatAbv(variant.alcohol_percentage)}</>}
+                              {variant.alcohol_percentage && (
+                                <>
+                                  {" "}
+                                  &middot;{" "}
+                                  {formatAbv(variant.alcohol_percentage)}
+                                </>
+                              )}
                             </p>
                           </div>
                           <button
@@ -181,7 +218,10 @@ const CartPage = () => {
                             onClick={() => removeLine(line)}
                             className="text-gray-300 hover:text-red-500 transition-colors shrink-0"
                           >
-                            <Icon icon="solar:trash-bin-minimalistic-linear" className="w-5 h-5" />
+                            <Icon
+                              icon="solar:trash-bin-minimalistic-linear"
+                              className="w-5 h-5"
+                            />
                           </button>
                         </div>
 
@@ -190,19 +230,33 @@ const CartPage = () => {
                             <button
                               aria-label="Decrease quantity"
                               onClick={() => updateQty(line, line.quantity - 1)}
-                              disabled={line.quantity <= 1 || (isLoggedIn && isUpdatingCart)}
+                              disabled={
+                                line.quantity <= 1 ||
+                                (isLoggedIn && isUpdatingCart)
+                              }
                               className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-black disabled:opacity-30"
                             >
-                              <Icon icon="solar:minus-circle-linear" className="w-4 h-4" />
+                              <Icon
+                                icon="solar:minus-circle-linear"
+                                className="w-4 h-4"
+                              />
                             </button>
-                            <span className="text-sm font-semibold w-4 text-center">{line.quantity}</span>
+                            <span className="text-sm font-semibold w-4 text-center">
+                              {line.quantity}
+                            </span>
                             <button
                               aria-label="Increase quantity"
                               onClick={() => updateQty(line, line.quantity + 1)}
-                              disabled={line.quantity >= variant.quantity || (isLoggedIn && isUpdatingCart)}
+                              disabled={
+                                line.quantity >= variant.quantity ||
+                                (isLoggedIn && isUpdatingCart)
+                              }
                               className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-black disabled:opacity-30"
                             >
-                              <Icon icon="solar:add-circle-linear" className="w-4 h-4" />
+                              <Icon
+                                icon="solar:add-circle-linear"
+                                className="w-4 h-4"
+                              />
                             </button>
                           </div>
                           <span className="text-sm sm:text-base font-bold text-black">
@@ -231,7 +285,9 @@ const CartPage = () => {
                 >
                   Proceed to Checkout
                 </Button>
-                <p className="text-xs text-gray-500">Review delivery and payment details on the next step.</p>
+                <p className="text-xs text-gray-500">
+                  Review delivery and payment details on the next step.
+                </p>
               </div>
             </div>
           )}

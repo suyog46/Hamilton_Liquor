@@ -22,7 +22,7 @@ const AppleIcon = () =>
         H
       </div>
     ),
-    { ...size }
+    { ...size },
   );
 
 export default AppleIcon;

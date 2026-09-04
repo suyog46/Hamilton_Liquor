@@ -15,11 +15,19 @@ import {
 } from "@/components/ui/table";
 
 const signups = [
-  { contact: "michael.reyes@email.com", channel: "Email", joined: "Mar 12, 2026" },
+  {
+    contact: "michael.reyes@email.com",
+    channel: "Email",
+    joined: "Mar 12, 2026",
+  },
   { contact: "(443) 555-0187", channel: "SMS", joined: "Mar 10, 2026" },
   { contact: "ava.patel@email.com", channel: "Email", joined: "Mar 8, 2026" },
   { contact: "(410) 555-0165", channel: "SMS", joined: "Mar 3, 2026" },
-  { contact: "lena.brooks@email.com", channel: "Email", joined: "Feb 27, 2026" },
+  {
+    contact: "lena.brooks@email.com",
+    channel: "Email",
+    joined: "Feb 27, 2026",
+  },
 ];
 
 const AdminMarketingPage = () => {
@@ -49,11 +57,15 @@ const AdminMarketingPage = () => {
             <TableBody>
               {signups.map((signup) => (
                 <TableRow key={signup.contact}>
-                  <TableCell className="font-medium">{signup.contact}</TableCell>
+                  <TableCell className="font-medium">
+                    {signup.contact}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline">{signup.channel}</Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{signup.joined}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {signup.joined}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -67,7 +79,10 @@ const AdminMarketingPage = () => {
           <CardContent className="flex flex-col gap-3">
             <Input placeholder="Subject / SMS headline" />
             <Textarea placeholder="Write your message…" rows={5} />
-            <Button type="button" className="bg-primary-normal text-black hover:opacity-90">
+            <Button
+              type="button"
+              className="bg-primary-normal text-black hover:opacity-90"
+            >
               Send to {signups.length} subscribers
             </Button>
           </CardContent>

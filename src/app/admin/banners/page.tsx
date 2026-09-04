@@ -39,7 +39,10 @@ const AdminBannersPage = () => {
         title="Homepage Banners"
         description="Manage the hero banner and promotional banners shown on the homepage."
         action={
-          <Button type="button" className="gap-1.5 bg-primary-normal text-black hover:opacity-90">
+          <Button
+            type="button"
+            className="gap-1.5 bg-primary-normal text-black hover:opacity-90"
+          >
             <Icon icon="solar:add-circle-linear" className="h-4 w-4" />
             Add Banner
           </Button>
@@ -50,7 +53,13 @@ const AdminBannersPage = () => {
         {banners.map((banner) => (
           <Card key={banner.id} size="sm" className="overflow-hidden p-0">
             <div className="relative h-32 w-full bg-gray-100">
-              <Image src={banner.image} alt={banner.headline} fill sizes="360px" className="object-cover" />
+              <Image
+                src={banner.image}
+                alt={banner.headline}
+                fill
+                sizes="360px"
+                className="object-cover"
+              />
               <Badge
                 variant={banner.active ? "success" : "outline"}
                 className="absolute top-2 right-2"
@@ -59,11 +68,20 @@ const AdminBannersPage = () => {
               </Badge>
             </div>
             <CardContent className="flex flex-col gap-1 py-3">
-              <p className="text-[11px] text-muted-foreground">{banner.label}</p>
+              <p className="text-[11px] text-muted-foreground">
+                {banner.label}
+              </p>
               <p className="font-medium">{banner.headline}</p>
-              <p className="text-[11px] text-muted-foreground">{banner.placement}</p>
+              <p className="text-[11px] text-muted-foreground">
+                {banner.placement}
+              </p>
               <div className="flex items-center gap-2 mt-2">
-                <Button type="button" variant="secondary" size="sm" className="flex-1 gap-1.5">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="flex-1 gap-1.5"
+                >
                   <Icon icon="solar:pen-linear" className="h-3.5 w-3.5" />
                   Edit
                 </Button>
@@ -72,7 +90,10 @@ const AdminBannersPage = () => {
                   aria-label="Delete banner"
                   className="cursor-pointer text-muted-foreground transition-colors hover:text-destructive"
                 >
-                  <Icon icon="solar:trash-bin-minimalistic-linear" className="h-4 w-4" />
+                  <Icon
+                    icon="solar:trash-bin-minimalistic-linear"
+                    className="h-4 w-4"
+                  />
                 </button>
               </div>
             </CardContent>

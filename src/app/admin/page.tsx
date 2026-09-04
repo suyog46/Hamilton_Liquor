@@ -12,24 +12,72 @@ import {
 } from "@/components/ui/table";
 
 const stats = [
-  { label: "Total Revenue", value: "$24,850", icon: "solar:wallet-money-linear" },
+  {
+    label: "Total Revenue",
+    value: "$24,850",
+    icon: "solar:wallet-money-linear",
+  },
   { label: "Orders", value: "312", icon: "solar:bag-check-linear" },
-  { label: "Customers", value: "1,204", icon: "solar:users-group-rounded-linear" },
+  {
+    label: "Customers",
+    value: "1,204",
+    icon: "solar:users-group-rounded-linear",
+  },
   { label: "Products", value: "86", icon: "solar:box-linear" },
 ];
 
 const quickLinks = [
-  { name: "Add Product", href: "/admin/products", icon: "solar:add-circle-linear" },
-  { name: "View Orders", href: "/admin/orders", icon: "solar:bag-check-linear" },
-  { name: "Create Coupon", href: "/admin/coupons", icon: "solar:tag-price-linear" },
-  { name: "Edit Store Hours", href: "/admin/store-hours", icon: "solar:clock-circle-linear" },
+  {
+    name: "Add Product",
+    href: "/admin/products",
+    icon: "solar:add-circle-linear",
+  },
+  {
+    name: "View Orders",
+    href: "/admin/orders",
+    icon: "solar:bag-check-linear",
+  },
+  {
+    name: "Create Coupon",
+    href: "/admin/coupons",
+    icon: "solar:tag-price-linear",
+  },
+  {
+    name: "Edit Store Hours",
+    href: "/admin/store-hours",
+    icon: "solar:clock-circle-linear",
+  },
 ];
 
 const recentOrders = [
-  { id: "HLS-1042", customer: "Michael Reyes", fulfillment: "Pickup", total: "$84.50", status: "New" },
-  { id: "HLS-1041", customer: "Sarah Thompson", fulfillment: "Delivery", total: "$132.20", status: "Confirmed" },
-  { id: "HLS-1040", customer: "James Kim", fulfillment: "Pickup", total: "$22.00", status: "Preparing" },
-  { id: "HLS-1039", customer: "Ava Patel", fulfillment: "Pickup", total: "$58.75", status: "Ready for Pickup" },
+  {
+    id: "HLS-1042",
+    customer: "Michael Reyes",
+    fulfillment: "Pickup",
+    total: "$84.50",
+    status: "New",
+  },
+  {
+    id: "HLS-1041",
+    customer: "Sarah Thompson",
+    fulfillment: "Delivery",
+    total: "$132.20",
+    status: "Confirmed",
+  },
+  {
+    id: "HLS-1040",
+    customer: "James Kim",
+    fulfillment: "Pickup",
+    total: "$22.00",
+    status: "Preparing",
+  },
+  {
+    id: "HLS-1039",
+    customer: "Ava Patel",
+    fulfillment: "Pickup",
+    total: "$58.75",
+    status: "Ready for Pickup",
+  },
 ];
 
 const AdminDashboardPage = () => {
@@ -37,14 +85,18 @@ const AdminDashboardPage = () => {
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="text-lg font-semibold">Dashboard</h1>
-        <p className="text-xs text-muted-foreground">Overview of your store&apos;s performance.</p>
+        <p className="text-xs text-muted-foreground">
+          Overview of your store&apos;s performance.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.label}>
             <CardHeader className="flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-xs font-normal text-muted-foreground">{stat.label}</CardTitle>
+              <CardTitle className="text-xs font-normal text-muted-foreground">
+                {stat.label}
+              </CardTitle>
               <Icon icon={stat.icon} className="h-4 w-4 text-primary-normal" />
             </CardHeader>
             <CardContent>
@@ -70,7 +122,10 @@ const AdminDashboardPage = () => {
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle>Recent Orders</CardTitle>
-          <Link href="/admin/orders" className="text-xs font-medium text-primary-normal hover:opacity-80">
+          <Link
+            href="/admin/orders"
+            className="text-xs font-medium text-primary-normal hover:opacity-80"
+          >
             View all &rarr;
           </Link>
         </CardHeader>

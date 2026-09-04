@@ -6,7 +6,8 @@ import RegisterForm from "@/components/Auth/RegisterForm";
 
 export const metadata: Metadata = {
   title: "Create Account | Liquor",
-  description: "Create a Liquor account to manage orders, track deliveries, and shop faster.",
+  description:
+    "Create a Liquor account to manage orders, track deliveries, and shop faster.",
 };
 
 const isSafeRedirect = (path: string | undefined): path is string =>
@@ -18,7 +19,9 @@ interface RegisterPageProps {
 
 const RegisterPage = async ({ searchParams }: RegisterPageProps) => {
   const { redirect } = await searchParams;
-  const loginHref = isSafeRedirect(redirect) ? `/login?redirect=${encodeURIComponent(redirect)}` : "/login";
+  const loginHref = isSafeRedirect(redirect)
+    ? `/login?redirect=${encodeURIComponent(redirect)}`
+    : "/login";
 
   return (
     <main className="relative flex min-h-svh w-full items-center justify-center overflow-hidden bg-black px-6 py-16">
@@ -35,7 +38,9 @@ const RegisterPage = async ({ searchParams }: RegisterPageProps) => {
 
         <div className="border border-white/10 bg-white/[0.03] p-8 backdrop-blur-sm sm:p-10">
           <div className="mb-8 text-center">
-            <h1 className="font-title text-2xl font-semibold text-white">Create your account</h1>
+            <h1 className="font-title text-2xl font-semibold text-white">
+              Create your account
+            </h1>
             <p className="mt-2 text-xs text-white/50">
               Sign up to manage your orders and reorder your favorites.
             </p>
@@ -48,7 +53,10 @@ const RegisterPage = async ({ searchParams }: RegisterPageProps) => {
 
         <p className="mt-6 text-center text-xs text-white/50">
           Already have an account?{" "}
-          <Link href={loginHref} className="text-primary-normal hover:underline underline-offset-4">
+          <Link
+            href={loginHref}
+            className="text-primary-normal hover:underline underline-offset-4"
+          >
             Sign in
           </Link>
         </p>

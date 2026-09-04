@@ -14,7 +14,10 @@ const AdminSettingsPage = () => {
         title="Settings"
         description="Store information, payments, and admin access."
         action={
-          <Button type="button" className="gap-1.5 bg-primary-normal text-black hover:opacity-90">
+          <Button
+            type="button"
+            className="gap-1.5 bg-primary-normal text-black hover:opacity-90"
+          >
             <Icon icon="solar:diskette-linear" className="h-4 w-4" />
             Save Changes
           </Button>
@@ -56,14 +59,18 @@ const AdminSettingsPage = () => {
         <CardContent className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Icon icon="solar:card-linear" className="h-4 w-4 text-primary-normal" />
+              <Icon
+                icon="solar:card-linear"
+                className="h-4 w-4 text-primary-normal"
+              />
               <span className="font-medium">SpotOn</span>
             </div>
             <Badge variant="outline">Pending Verification</Badge>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            Online checkout integration is pending confirmation of SpotOn API access and card-not-present support
-            for alcohol e-commerce. A backup processor will be configured if needed.
+            Online checkout integration is pending confirmation of SpotOn API
+            access and card-not-present support for alcohol e-commerce. A backup
+            processor will be configured if needed.
           </p>
         </CardContent>
       </Card>
@@ -76,7 +83,9 @@ const AdminSettingsPage = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium">Store Admin</p>
-              <p className="text-[11px] text-muted-foreground">admin@hamiltonliquorstore.com</p>
+              <p className="text-[11px] text-muted-foreground">
+                admin@hamiltonliquorstore.com
+              </p>
             </div>
             <Badge variant="secondary">Owner</Badge>
           </div>
