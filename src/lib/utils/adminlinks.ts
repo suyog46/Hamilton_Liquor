@@ -33,6 +33,11 @@ export const adminNavSales: AdminNavItem[] = [
     icon: "solar:users-group-rounded-linear",
   },
   { name: "Coupons", href: "/admin/coupons", icon: "solar:tag-price-linear" },
+  {
+    name: "Messages",
+    href: "/admin/contact-messages",
+    icon: "solar:chat-round-dots-linear",
+  },
 ];
 
 export const adminNavMarketing: AdminNavItem[] = [
@@ -77,7 +82,7 @@ export const adminNavStore: AdminNavItem[] = [
 ];
 
 export const adminNavSecondary: AdminNavItem[] = [
-  { name: "Settings", href: "/admin/settings", icon: "solar:settings-linear" },
+  // { name: "Settings", href: "/admin/settings", icon: "solar:settings-linear" },
   {
     name: "Help & Support",
     href: "/admin/support",
