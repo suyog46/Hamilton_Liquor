@@ -101,6 +101,7 @@ export default function AdminStoreLocationPage() {
         description="Manage the address and map details shown to customers."
         action={
           <Button
+            type="submit"
             disabled={isSaving}
             className="gap-1.5 bg-primary-normal text-black hover:bg-primary-hover"
           >
