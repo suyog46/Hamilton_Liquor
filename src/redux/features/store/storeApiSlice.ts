@@ -6,9 +6,9 @@ export type SocialPlatform = "FACEBOOK" | "INSTAGRAM" | "TIKTOK" | "X";
 export interface StoreInformation {
   id: string;
   primary_phone: string;
-  secondary_phone: string;
+  secondary_phone: string | null;
   email: string;
-  description: string;
+  description: string | null;
 }
 
 export interface StoreLocation {
@@ -46,10 +46,10 @@ export interface SocialLink {
 }
 
 export interface StoreInformationRequest {
-  primary_phone: string;
-  secondary_phone: string;
-  email: string;
-  description: string;
+  primary_phone?: string | null;
+  secondary_phone?: string | null;
+  email?: string | null;
+  description?: string | null;
 }
 
 export interface StoreLocationRequest {

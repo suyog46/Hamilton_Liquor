@@ -22,7 +22,7 @@ const SiteLayout = async ({ children }: { children: React.ReactNode }) => {
       <TopBar />
       <Navbar />
       <CartSheet />
-      <main>{children}</main>
+      <main className="min-h-screen">{children}</main>
       <Footer />
     </AgeVerificationProvider>
   );

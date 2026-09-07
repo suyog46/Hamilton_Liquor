@@ -47,10 +47,10 @@ export default function AdminStoreInformationPage() {
     event.preventDefault();
     try {
       await updateInformation({
-        primary_phone: primaryPhone.trim(),
-        secondary_phone: secondaryPhone.trim(),
-        email: email.trim(),
-        description: description.trim(),
+        primary_phone: primaryPhone.trim() || null,
+        secondary_phone: secondaryPhone.trim() || null,
+        email: email.trim() || null,
+        description: description.trim() || null,
       }).unwrap();
       toast.success("Store information updated.");
     } catch (error) {
@@ -85,6 +85,7 @@ export default function AdminStoreInformationPage() {
         description="Manage the contact details shown across the storefront."
         action={
           <Button
+          type="submit"
             disabled={isSaving}
             className="gap-1.5 bg-primary-normal text-black hover:bg-primary-hover"
           >
