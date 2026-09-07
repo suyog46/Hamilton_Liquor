@@ -45,7 +45,7 @@ const AboutPage = () => {
         <div className="max-w-[1280px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
           <div className="relative h-72 sm:h-96 lg:h-[26rem] rounded-2xl overflow-hidden bg-gray-100 order-1 lg:order-none">
             <Image
-              src="/Home/about.jpg"
+              src="/category/mixers.jpeg"
               alt="Inside Hamilton Liquor Store"
               fill
               sizes="(max-width: 1024px) 100vw, 50vw"

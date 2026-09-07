@@ -22,9 +22,9 @@ const getProducts = async (query: string): Promise<PublicProductListItem[]> => {
 
 const Home = async () => {
   const [newArrivals, bestSellers, staffPicks] = await Promise.all([
-    getProducts("limit=4&sort_by=created_at&sort_order=desc"),
-    getProducts("limit=4&in_stock=true"),
-    getProducts("limit=4&is_staff_pick=true"),
+    getProducts("limit=8&sort_by=created_at&sort_order=desc"),
+    getProducts("limit=8&in_stock=true"),
+    getProducts("limit=8&is_staff_pick=true"),
   ]);
 
   return (

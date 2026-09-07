@@ -58,7 +58,7 @@ const NavbarClient = () => {
   const { data: hoursData } = useGetPublicOperatingHoursQuery();
   const phone = informationData?.data.primary_phone || siteConfig.phone;
   const address = locationData?.data
-    ? `${locationData.data.address}, ${locationData.data.city}, ${locationData.data.state} ${locationData.data.postal_code}`
+    ? `${locationData.data.address}, ${locationData.data.city}, ${locationData.data.state} ${locationData.data.zip_code}`
     : siteConfig.address.full;
   const mapsUrl =
     locationData?.data?.google_maps_url || siteConfig.mapsDirectionsUrl;

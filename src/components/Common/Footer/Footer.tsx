@@ -6,6 +6,7 @@ import {
   footerShopLinks,
   formatOperatingHours,
   siteConfig,
+  socialPlatforms,
 } from "@/lib/utils";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
@@ -24,7 +25,7 @@ const Footer = () => {
   const information = informationData?.data;
   const location = locationData?.data;
   const address = location
-    ? `${location.address}, ${location.city}, ${location.state} ${location.postal_code}`
+    ? `${location.address}, ${location.city}, ${location.state} ${location.zip_code}`
     : siteConfig.address.full;
   const phone = information?.primary_phone || siteConfig.phone;
   const phoneHref = phone.replace(/[^\d+]/g, "");
@@ -34,8 +35,6 @@ const Footer = () => {
   const socialByPlatform = new Map(
     socialLinks.map((link) => [link.platform, link.url]),
   );
-  const tiktokUrl = socialByPlatform.get("TIKTOK");
-  const xUrl = socialByPlatform.get("X");
   const hoursSummary = hoursData?.data.hours?.length
     ? formatOperatingHours(hoursData.data.hours)
     : siteConfig.hours
@@ -57,42 +56,20 @@ const Footer = () => {
               `${siteConfig.name} — Baltimore&apos;s trusted neighborhood spot for wine, spirits, beer &amp; more.`}
           </p>
           <div className="flex items-center gap-3 mt-1">
-            <a
-              href={
-                socialByPlatform.get("FACEBOOK") || siteConfig.social.facebook
-              }
-              aria-label="Facebook"
-              className="flex items-center justify-center w-9 h-9 rounded-full bg-white/5 hover:bg-primary-normal hover:text-black transition-colors"
-            >
-              <Icon icon="mdi:facebook" className="w-4 h-4" />
-            </a>
-            <a
-              href={
-                socialByPlatform.get("INSTAGRAM") || siteConfig.social.instagram
-              }
-              aria-label="Instagram"
-              className="flex items-center justify-center w-9 h-9 rounded-full bg-white/5 hover:bg-primary-normal hover:text-black transition-colors"
-            >
-              <Icon icon="mdi:instagram" className="w-4 h-4" />
-            </a>
-            {tiktokUrl && (
-              <a
-                href={tiktokUrl}
-                aria-label="TikTok"
-                className="flex items-center justify-center w-9 h-9 rounded-full bg-white/5 hover:bg-primary-normal hover:text-black transition-colors"
-              >
-                <Icon icon="mdi:music-note" className="w-4 h-4" />
-              </a>
-            )}
-            {xUrl && (
-              <a
-                href={xUrl}
-                aria-label="X"
-                className="flex items-center justify-center w-9 h-9 rounded-full bg-white/5 hover:bg-primary-normal hover:text-black transition-colors"
-              >
-                <Icon icon="mdi:alpha-x" className="w-4 h-4" />
-              </a>
-            )}
+            {socialPlatforms.map(({ value, label, icon }) => {
+              const url = socialByPlatform.get(value);
+              if (!url) return null;
+              return (
+                <a
+                  key={value}
+                  href={url}
+                  aria-label={label}
+                  className="flex items-center justify-center w-9 h-9 rounded-full bg-white/5 hover:bg-primary-normal hover:text-black transition-colors"
+                >
+                  <Icon icon={icon} className="w-4 h-4" />
+                </a>
+              );
+            })}
           </div>
         </div>
 

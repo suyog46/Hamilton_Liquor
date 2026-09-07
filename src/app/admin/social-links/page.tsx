@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
+import { socialPlatformMap, socialPlatforms as platforms } from "@/lib/utils";
 import {
   type SocialPlatform,
   useCreateSocialLinkMutation,
@@ -24,13 +25,6 @@ import {
   useGetSocialLinksQuery,
   useUpdateSocialLinkMutation,
 } from "@/redux/features/store/storeApiSlice";
-
-const platforms: Array<{ value: SocialPlatform; label: string }> = [
-  { value: "FACEBOOK", label: "Facebook" },
-  { value: "INSTAGRAM", label: "Instagram" },
-  { value: "TIKTOK", label: "TikTok" },
-  { value: "X", label: "X" },
-];
 
 const getErrorMessage = (error: unknown) => {
   if (!isFetchBaseQueryError(error)) return "Unable to update social links.";
@@ -142,11 +136,22 @@ export default function AdminSocialLinksPage() {
                   onValueChange={(value) => value && setPlatform(value)}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue />
+                    <SelectValue>
+                      {(value: SocialPlatform) => (
+                        <span className="flex items-center gap-2">
+                          <Icon
+                            icon={socialPlatformMap[value].icon}
+                            className="size-4"
+                          />
+                          {socialPlatformMap[value].label}
+                        </span>
+                      )}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {availablePlatforms.map((item) => (
                       <SelectItem key={item.value} value={item.value}>
+                        <Icon icon={item.icon} className="size-4" />
                         {item.label}
                       </SelectItem>
                     ))}
@@ -186,16 +191,23 @@ export default function AdminSocialLinksPage() {
         <CardContent className="flex flex-col gap-3">
           {links.length ? (
             links.map((link) => {
-              const label =
-                platforms.find((item) => item.value === link.platform)?.label ??
-                link.platform;
+              const meta = socialPlatformMap[link.platform];
+              const label = meta?.label ?? link.platform;
               return (
                 <div
                   key={link.id}
                   className="flex flex-col gap-3 border-b pb-3 last:border-0 last:pb-0 sm:flex-row sm:items-end"
                 >
                   <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                    <Label htmlFor={`social-${link.id}`}>{label}</Label>
+                    <Label
+                      htmlFor={`social-${link.id}`}
+                      className="flex items-center gap-1.5"
+                    >
+                      {meta && (
+                        <Icon icon={meta.icon} className="size-4 shrink-0" />
+                      )}
+                      {label}
+                    </Label>
                     <Input
                       id={`social-${link.id}`}
                       value={editingId === link.id ? editingUrl : link.url}

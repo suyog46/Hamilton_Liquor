@@ -1,5 +1,6 @@
 import { Icon } from "@iconify/react";
 import PageBanner from "@/components/Common/PageBanner/PageBanner";
+import StoreInfoCard from "@/components/Common/StoreInfoCard/StoreInfoCard";
 import { siteConfig } from "@/lib/utils";
 
 const LocationHoursPage = () => {
@@ -24,66 +25,10 @@ const LocationHoursPage = () => {
             />
           </div>
 
-          <div className="flex flex-col gap-6 p-6 sm:p-8 bg-black">
-            <div className="flex items-start gap-3">
-              <Icon
-                icon="solar:map-point-linear"
-                className="w-5 h-5 text-primary-normal shrink-0 mt-0.5"
-              />
-              <div>
-                <p className="text-sm font-semibold text-white">
-                  {siteConfig.name}
-                </p>
-                <p className="text-sm text-white/60">
-                  {siteConfig.address.full}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Icon
-                icon="solar:phone-linear"
-                className="w-5 h-5 text-primary-normal shrink-0 mt-0.5"
-              />
-              <a
-                href={siteConfig.phoneHref}
-                className="text-sm text-white/60 hover:text-primary-normal transition-colors"
-              >
-                {siteConfig.phone}
-              </a>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Icon
-                icon="solar:clock-circle-linear"
-                className="w-5 h-5 text-primary-normal shrink-0 mt-0.5"
-              />
-              <div className="flex flex-col gap-1 text-sm text-white/60 w-full">
-                {siteConfig.hours.map((entry) => (
-                  <div
-                    key={entry.day}
-                    className="flex items-center justify-between gap-4 max-w-xs"
-                  >
-                    <span>{entry.day}</span>
-                    <span>{entry.time}</span>
-                  </div>
-                ))}
-                <p className="text-xs text-white/40 mt-2">
-                  {siteConfig.holidayNote}
-                </p>
-              </div>
-            </div>
-
-            <a
-              href={siteConfig.mapsDirectionsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary-normal text-black text-sm font-semibold hover:opacity-90 transition w-full sm:w-fit"
-            >
-              <Icon icon="solar:routing-2-linear" className="w-4 h-4" />
-              Get Directions
-            </a>
-          </div>
+          <StoreInfoCard
+            className="rounded-none justify-center"
+            note={siteConfig.holidayNote}
+          />
         </div>
       </section>
 

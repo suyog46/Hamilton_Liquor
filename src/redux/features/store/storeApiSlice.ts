@@ -16,7 +16,7 @@ export interface StoreLocation {
   address: string;
   city: string;
   state: string;
-  postal_code: string;
+  zip_code: string;
   latitude: string;
   longitude: string;
   google_maps_url: string;
@@ -56,10 +56,10 @@ export interface StoreLocationRequest {
   address: string;
   city: string;
   state: string;
-  postal_code: string;
-  latitude: number;
-  longitude: number;
-  google_maps_url: string;
+  zip_code: string;
+  latitude?: number;
+  longitude?: number;
+  google_maps_url?: string;
 }
 
 export interface OperatingHoursRequest {

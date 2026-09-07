@@ -6,10 +6,12 @@ import { toast } from "sonner";
 import AdminPageHeader from "@/components/Admin/AdminPageHeader/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
+import { cn } from "@/lib/utils";
 import {
   type DayOfWeek,
   type OperatingHour,
@@ -17,15 +19,18 @@ import {
   useUpdateOperatingHoursMutation,
 } from "@/redux/features/store/storeApiSlice";
 
-const days: Array<{ value: DayOfWeek; label: string }> = [
-  { value: "MONDAY", label: "Monday" },
-  { value: "TUESDAY", label: "Tuesday" },
-  { value: "WEDNESDAY", label: "Wednesday" },
-  { value: "THURSDAY", label: "Thursday" },
-  { value: "FRIDAY", label: "Friday" },
-  { value: "SATURDAY", label: "Saturday" },
-  { value: "SUNDAY", label: "Sunday" },
+const days: Array<{ value: DayOfWeek; label: string; short: string }> = [
+  { value: "MONDAY", label: "Monday", short: "Mon" },
+  { value: "TUESDAY", label: "Tuesday", short: "Tue" },
+  { value: "WEDNESDAY", label: "Wednesday", short: "Wed" },
+  { value: "THURSDAY", label: "Thursday", short: "Thu" },
+  { value: "FRIDAY", label: "Friday", short: "Fri" },
+  { value: "SATURDAY", label: "Saturday", short: "Sat" },
+  { value: "SUNDAY", label: "Sunday", short: "Sun" },
 ];
+const weekdays: DayOfWeek[] = days.slice(0, 5).map((d) => d.value);
+const weekend: DayOfWeek[] = days.slice(5).map((d) => d.value);
+const allDays: DayOfWeek[] = days.map((d) => d.value);
 
 const toInputTime = (value: string) => value.slice(0, 5);
 const toApiTime = (value: string) => `${value || "00:00"}:00.000Z`;
@@ -49,6 +54,13 @@ export default function AdminStoreHoursPage() {
   const [updateHours, { isLoading: isSaving }] =
     useUpdateOperatingHoursMutation();
   const [hours, setHours] = useState<HourForm[]>([]);
+
+  const [bulkDays, setBulkDays] = useState<Set<DayOfWeek>>(
+    new Set(allDays),
+  );
+  const [bulkOpen, setBulkOpen] = useState("09:00");
+  const [bulkClose, setBulkClose] = useState("22:00");
+  const [bulkClosed, setBulkClosed] = useState(false);
 
   useEffect(() => {
     if (!data?.data.hours) return;
@@ -82,6 +94,34 @@ export default function AdminStoreHoursPage() {
       current.map((hour, hourIndex) =>
         hourIndex === index ? { ...hour, ...changes } : hour,
       ),
+    );
+  };
+
+  const toggleBulkDay = (day: DayOfWeek) => {
+    setBulkDays((current) => {
+      const next = new Set(current);
+      if (next.has(day)) next.delete(day);
+      else next.add(day);
+      return next;
+    });
+  };
+
+  const applyBulk = () => {
+    if (bulkDays.size === 0) return;
+    setHours((current) =>
+      current.map((hour) =>
+        bulkDays.has(hour.day_of_week)
+          ? {
+              ...hour,
+              is_closed: bulkClosed,
+              open_time: bulkClosed ? hour.open_time : bulkOpen,
+              close_time: bulkClosed ? hour.close_time : bulkClose,
+            }
+          : hour,
+      ),
+    );
+    toast.success(
+      `Applied to ${bulkDays.size} day${bulkDays.size === 1 ? "" : "s"}. Review below, then save.`,
     );
   };
 
@@ -142,11 +182,109 @@ export default function AdminStoreHoursPage() {
           </Button>
         }
       />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick set</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Pick the days that share the same hours, set the times once, and
+            apply — no need to enter every day one by one. You can still fine-tune
+            any single day below.
+          </p>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {days.map((day) => (
+              <button
+                key={day.value}
+                type="button"
+                onClick={() => toggleBulkDay(day.value)}
+                aria-pressed={bulkDays.has(day.value)}
+                className={cn(
+                  "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                  bulkDays.has(day.value)
+                    ? "border-primary-normal bg-primary-normal/10 text-primary-active"
+                    : "border-gray-200 text-muted-foreground hover:border-gray-300",
+                )}
+              >
+                {day.short}
+              </button>
+            ))}
+
+            <span className="mx-1 h-4 w-px bg-gray-200" />
+
+            <button
+              type="button"
+              onClick={() => setBulkDays(new Set(allDays))}
+              className="text-xs font-medium text-primary-active hover:underline"
+            >
+              Every day
+            </button>
+            <button
+              type="button"
+              onClick={() => setBulkDays(new Set(weekdays))}
+              className="text-xs font-medium text-primary-active hover:underline"
+            >
+              Weekdays
+            </button>
+            <button
+              type="button"
+              onClick={() => setBulkDays(new Set(weekend))}
+              className="text-xs font-medium text-primary-active hover:underline"
+            >
+              Weekend
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs">Opens</Label>
+              <Input
+                type="time"
+                value={bulkOpen}
+                disabled={bulkClosed}
+                onChange={(event) => setBulkOpen(event.target.value)}
+                className="w-32"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs">Closes</Label>
+              <Input
+                type="time"
+                value={bulkClose}
+                disabled={bulkClosed}
+                onChange={(event) => setBulkClose(event.target.value)}
+                className="w-32"
+              />
+            </div>
+            <label className="flex items-center gap-2 pb-2 text-xs text-muted-foreground">
+              <Checkbox
+                checked={bulkClosed}
+                onCheckedChange={(checked) => setBulkClosed(checked === true)}
+              />
+              Closed
+            </label>
+
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={applyBulk}
+              disabled={bulkDays.size === 0}
+              className="ml-auto"
+            >
+              Apply to {bulkDays.size || 0} day
+              {bulkDays.size === 1 ? "" : "s"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Weekly schedule</CardTitle>
           <p className="text-xs text-muted-foreground">
-            Enter opening and closing times in your local timezone.
+            Review or override any individual day here.
           </p>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
@@ -177,13 +315,11 @@ export default function AdminStoreHoursPage() {
                   }
                 />
                 <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={hour.is_closed}
-                    onChange={(event) =>
-                      updateHour(index, { is_closed: event.target.checked })
+                    onCheckedChange={(checked) =>
+                      updateHour(index, { is_closed: checked === true })
                     }
-                    className="size-3.5 accent-[var(--primary-normal)]"
                   />
                   Closed
                 </label>

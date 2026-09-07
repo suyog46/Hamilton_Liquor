@@ -10,13 +10,14 @@ import {
 
 interface StoreInfoCardProps {
   className?: string;
+  note?: string;
 }
 
 // Shared "visit us" details card — same store info (address, hours, phone,
 // email, directions) rendered on the homepage (GoogleMapSection) and the
 // /contact page, both backed by the live store API instead of duplicated,
 // hardcoded copies.
-const StoreInfoCard = ({ className }: StoreInfoCardProps) => {
+const StoreInfoCard = ({ className, note }: StoreInfoCardProps) => {
   const { data: informationData } = useGetPublicStoreInformationQuery();
   const { data: locationData } = useGetPublicStoreLocationQuery();
   const { data: hoursData } = useGetPublicOperatingHoursQuery();
@@ -24,7 +25,7 @@ const StoreInfoCard = ({ className }: StoreInfoCardProps) => {
   const information = informationData?.data;
   const location = locationData?.data;
   const address = location
-    ? `${location.address}, ${location.city}, ${location.state} ${location.postal_code}`
+    ? `${location.address}, ${location.city}, ${location.state} ${location.zip_code}`
     : siteConfig.address.full;
   const phone = information?.primary_phone || siteConfig.phone;
   const phoneHref = phone.replace(/[^\d+]/g, "") || siteConfig.phoneHref;
@@ -96,6 +97,8 @@ const StoreInfoCard = ({ className }: StoreInfoCardProps) => {
           {email}
         </a>
       </div>
+
+      {note && <p className="text-xs text-white/40">{note}</p>}
 
       <a
         href={mapsUrl}

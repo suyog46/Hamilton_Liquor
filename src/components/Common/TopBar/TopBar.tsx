@@ -14,7 +14,7 @@ const TopBar = () => {
   const { data: hoursData } = useGetPublicOperatingHoursQuery();
   const phone = informationData?.data.primary_phone || siteConfig.phone;
   const address = locationData?.data
-    ? `${locationData.data.address}, ${locationData.data.city}, ${locationData.data.state} ${locationData.data.postal_code}`
+    ? `${locationData.data.address}, ${locationData.data.city}, ${locationData.data.state} ${locationData.data.zip_code}`
     : siteConfig.address.full;
   const mapsUrl =
     locationData?.data?.google_maps_url || siteConfig.mapsDirectionsUrl;
@@ -23,7 +23,7 @@ const TopBar = () => {
     : "Mon–Thu: 9am–10pm · Fri–Sat: 9am–11pm · Sun: Closed";
 
   return (
-    <div className="hidden sm:flex fixed top-0 left-0 z-40 w-full h-9 items-center bg-black text-white/70 text-xs border-b border-white/10">
+    <div className="hidden sm:flex fixed top-0 left-0 z-50 w-full h-9 items-center bg-black text-white/70 text-xs border-b border-white/10">
       <div className="max-w-[1280px] mx-auto w-full px-6 flex items-center justify-between">
         <div className="flex items-center gap-5">
           <a

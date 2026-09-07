@@ -26,8 +26,9 @@ const getErrorMessage = (error: unknown) => {
 };
 
 const parseCoordinate = (value: string) => {
+  if (!value.trim()) return undefined;
   const coordinate = Number(value);
-  return Number.isFinite(coordinate) ? coordinate : 0;
+  return Number.isFinite(coordinate) ? coordinate : undefined;
 };
 
 export default function AdminStoreLocationPage() {
@@ -38,7 +39,7 @@ export default function AdminStoreLocationPage() {
     address: "",
     city: "",
     state: "",
-    postal_code: "",
+    zip_code: "",
     latitude: "",
     longitude: "",
     google_maps_url: "",
@@ -63,10 +64,10 @@ export default function AdminStoreLocationPage() {
         address: form.address.trim(),
         city: form.city.trim(),
         state: form.state.trim(),
-        postal_code: form.postal_code.trim(),
+        zip_code: form.zip_code.trim(),
         latitude: parseCoordinate(form.latitude),
         longitude: parseCoordinate(form.longitude),
-        google_maps_url: form.google_maps_url.trim(),
+        google_maps_url: form.google_maps_url.trim() || undefined,
       }).unwrap();
       toast.success("Store location updated.");
     } catch (error) {
@@ -145,13 +146,13 @@ export default function AdminStoreLocationPage() {
             <Label htmlFor="postal-code">Postal code</Label>
             <Input
               id="postal-code"
-              value={form.postal_code}
+              value={form.zip_code}
               onChange={(event) =>
-                updateField("postal_code", event.target.value)
+                updateField("zip_code", event.target.value)
               }
             />
           </div>
-          <div className="flex flex-col gap-1.5">
+          {/* <div className="flex flex-col gap-1.5">
             <Label htmlFor="maps-url">Google Maps URL</Label>
             <Input
               id="maps-url"
@@ -162,10 +163,10 @@ export default function AdminStoreLocationPage() {
               }
               placeholder="https://maps.google.com/…"
             />
-          </div>
+          </div> */}
         </CardContent>
       </Card>
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle>Coordinates</CardTitle>
           <p className="text-xs text-muted-foreground">
@@ -194,7 +195,7 @@ export default function AdminStoreLocationPage() {
             />
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </form>
   );
 }
