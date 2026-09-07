@@ -25,6 +25,7 @@ import {
 } from "@/lib/utils/productDisplay";
 import { useAppDispatch } from "@/redux/hooks";
 import { apiSlice } from "@/redux/apiSlice";
+import { useVariantAvailability } from "@/hooks/use-variant-availability";
 
 interface DisplayLine {
   id: string;
@@ -62,11 +63,18 @@ const CartPage = () => {
         product_variant: item.variant,
       }));
 
+  // The cart API's own `quantity` field on a variant is the gross/total
+  // stock, not what's actually purchasable — fetch the real per-variant
+  // available_quantity independently so quantity steppers cap correctly.
+  const availabilityByVariantId = useVariantAvailability(
+    items.map((line) => line.product_variant.product.slug),
+  );
+  const getMaxQuantity = (line: DisplayLine) =>
+    availabilityByVariantId[line.product_variant.id] ??
+    line.product_variant.quantity;
+
   const updateQty = async (line: DisplayLine, quantity: number) => {
-    const nextQuantity = Math.max(
-      1,
-      Math.min(quantity, line.product_variant.quantity),
-    );
+    const nextQuantity = Math.max(1, Math.min(quantity, getMaxQuantity(line)));
     if (nextQuantity === line.quantity) return;
 
     if (!isLoggedIn) {
@@ -248,7 +256,7 @@ const CartPage = () => {
                               aria-label="Increase quantity"
                               onClick={() => updateQty(line, line.quantity + 1)}
                               disabled={
-                                line.quantity >= variant.quantity ||
+                                line.quantity >= getMaxQuantity(line) ||
                                 (isLoggedIn && isUpdatingCart)
                               }
                               className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-black disabled:opacity-30"

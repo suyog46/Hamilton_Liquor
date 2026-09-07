@@ -4,10 +4,10 @@ import ProductCard from "@/components/Common/ProductCard/ProductCard";
 import ProductDetailView from "@/components/Shop/ProductDetailView/ProductDetailView";
 import { core } from "@/lib/api/core";
 import type {
-  Product,
-  ProductResponse,
+  PublicProduct,
   PublicProductListItem,
   PublicProductListResponse,
+  PublicProductResponse,
 } from "@/redux/features/product/productApiSlice";
 import type { CategoryListResponse } from "@/redux/features/category/categoryApiSlice";
 
@@ -17,11 +17,10 @@ interface ProductPageProps {
 
 const RELATED_POOL_SIZE = 40;
 
-const getProduct = async (id: string): Promise<Product | null> => {
+const getProduct = async (id: string): Promise<PublicProduct | null> => {
   const res = await core(`products/${id}`);
   if (!res.ok) return null;
-  const json: ProductResponse = await res.json();
-  console.log("Product data:", json.data); // Log the product data for debugging
+  const json: PublicProductResponse = await res.json();
   return json.data;
 };
 

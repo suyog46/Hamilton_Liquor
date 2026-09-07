@@ -11,8 +11,6 @@ async function handler(
 ) {
   const { path } = await context.params;
   const accessToken = req.cookies.get("access_token")?.value;
-console.log("[proxy] accessToken:", accessToken);
-  console.log("[proxy] forwarding request to backend:", path.join("/"));
 
   const url = new URL(`${process.env.SITE_API_URL}${path.join("/")}`);
   url.search = req.nextUrl.search;
@@ -31,7 +29,6 @@ console.log("[proxy] accessToken:", accessToken);
 
   const hasBody = !["GET", "HEAD"].includes(req.method);
 
-  console.log("[proxy] forwarding request to backend:", url.toString(), "method:", req.method, "hasBody:", hasBody);
   const backendRes = await fetch(url, {
     method: req.method,
     headers,
@@ -40,7 +37,6 @@ console.log("[proxy] accessToken:", accessToken);
     ...(hasBody ? { duplex: "half" } : {}),
   } as RequestInit);
 
-  console.log("[proxy] backend response status:", backendRes);
   const responseHeaders = new Headers();
   const contentType = backendRes.headers.get("content-type");
   if (contentType) responseHeaders.set("content-type", contentType);

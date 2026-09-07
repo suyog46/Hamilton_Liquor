@@ -29,6 +29,7 @@ import { formatPrice, formatVolume } from "@/lib/utils/productDisplay";
 import { getCartItemCount } from "@/lib/utils/cartDisplay";
 import { useAppDispatch } from "@/redux/hooks";
 import { apiSlice } from "@/redux/apiSlice";
+import { useVariantAvailability } from "@/hooks/use-variant-availability";
 
 const CartSheet = () => {
   const dispatch = useAppDispatch();
@@ -60,6 +61,15 @@ const CartSheet = () => {
   const subtotal = lines.reduce((sum, line) => sum + Number(line.variant.price) * line.quantity, 0);
   const loading = isLoggedIn ? isFetching && lines.length === 0 : !hydrated;
 
+  // The cart API's own `quantity` field on a variant is the gross/total
+  // stock, not what's actually purchasable — fetch the real per-variant
+  // available_quantity independently so quantity steppers cap correctly.
+  const availabilityByVariantId = useVariantAvailability(
+    lines.map((line) => line.variant.product.slug),
+  );
+  const getMaxQuantity = (line: CartSheetLine) =>
+    availabilityByVariantId[line.variant.id] ?? line.variant.quantity;
+
   // Only the network synchronization is debounced. The click handler below
   // updates the RTK cache and badge synchronously before calling this.
   const updateQuantityOnServer = useDebouncedCallback(async ({ itemId, productId, quantity }: CartQuantityApiUpdate) => {
@@ -78,7 +88,7 @@ const CartSheet = () => {
   }, 500);
 
   const updateQuantity = (line: CartSheetLine, quantity: number) => {
-    const nextQuantity = Math.max(1, Math.min(quantity, line.variant.quantity));
+    const nextQuantity = Math.max(1, Math.min(quantity, getMaxQuantity(line)));
     if (nextQuantity === line.quantity) return;
 
     if (!isLoggedIn) {
@@ -158,7 +168,7 @@ const CartSheet = () => {
                           type="button"
                           aria-label={`Increase ${line.variant.product.name} quantity`}
                           onClick={() => updateQuantity(line, line.quantity + 1)}
-                          disabled={line.id.startsWith("optimistic:") || line.quantity >= line.variant.quantity}
+                          disabled={line.id.startsWith("optimistic:") || line.quantity >= getMaxQuantity(line)}
                           className="flex h-6 w-6 items-center justify-center text-gray-500 hover:text-black disabled:cursor-not-allowed disabled:opacity-30"
                         >
                           <Icon icon="solar:add-circle-linear" className="h-4 w-4" />

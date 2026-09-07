@@ -12,7 +12,6 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
 
   let backendRes: Response;
-  console.log("[auth/login] forwarding request to backend: and the env is ", body,process.env.NEXT_PUBLIC_SITE_API_URL);
   try {
     backendRes = await fetch(`${process.env.NEXT_PUBLIC_SITE_API_URL}auth/login`, {
       method: "POST",

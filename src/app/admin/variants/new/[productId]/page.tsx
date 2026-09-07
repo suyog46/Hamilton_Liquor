@@ -44,7 +44,6 @@ const NewVariantPage = () => {
       toast.success("Variant created successfully.");
       router.push("/admin/variants");
     } catch (err: any) {
-      console.log("err is ", err);
       toast.error(err?.data?.error?.message ?? "Failed to create variant.");
     }
   };
