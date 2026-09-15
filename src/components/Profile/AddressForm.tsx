@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
@@ -138,6 +138,8 @@ export default function AddressForm({ open, onOpenChange, address }: AddressForm
   const [searchResults, setSearchResults] = useState<NominatimResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isReverseGeocoding, setIsReverseGeocoding] = useState(false);
+  const [isResultsVisible, setIsResultsVisible] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const [getDetail, { isFetching: isLoadingDetail }] = useLazyGetAddressDetailQuery();
   const [createAddress, { isLoading: isCreating }] = useCreateAddressMutation();
@@ -150,6 +152,7 @@ export default function AddressForm({ open, onOpenChange, address }: AddressForm
     setErrors({});
     setSearchQuery("");
     setSearchResults([]);
+    setIsResultsVisible(false);
 
     if (address) {
       setForm(toInput(address));
@@ -176,7 +179,10 @@ export default function AddressForm({ open, onOpenChange, address }: AddressForm
     )
       .then((res) => (res.ok ? res.json() : []))
       .then((results: NominatimResult[]) => {
-        if (!cancelled) setSearchResults(results);
+        if (!cancelled) {
+          setSearchResults(results);
+          setIsResultsVisible(results.length > 0);
+        }
       })
       .catch(() => {
         if (!cancelled) setSearchResults([]);
@@ -189,6 +195,19 @@ export default function AddressForm({ open, onOpenChange, address }: AddressForm
       cancelled = true;
     };
   }, [debouncedSearchQuery]);
+
+  // Close the results dropdown on an outside click — it otherwise stays
+  // open until the query changes again or a result is picked.
+  useEffect(() => {
+    if (!isResultsVisible) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!searchContainerRef.current?.contains(event.target as Node)) {
+        setIsResultsVisible(false);
+      }
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [isResultsVisible]);
 
   const patch = <K extends keyof AddressInput>(key: K, value: AddressInput[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -204,7 +223,6 @@ export default function AddressForm({ open, onOpenChange, address }: AddressForm
       );
       if (!res.ok) return;
       const data: { address?: NominatimReverseAddress } = await res.json();
-      console.log("Reverse geocode result:", data);
       const addr = data.address ?? {};
       const line1 = [addr.house_number, addr.road].filter(Boolean).join(" ");
       const city = addr.city || addr.town || addr.village || addr.county || "";
@@ -217,7 +235,7 @@ export default function AddressForm({ open, onOpenChange, address }: AddressForm
         zip_code: addr.postcode || current.zip_code,
       }));
     } catch {
-      console.error("Error in reverse geocoding");
+      // Reverse geocoding is a convenience — the customer can fill step 2 by hand.
     } finally {
       setIsReverseGeocoding(false);
     }
@@ -233,6 +251,7 @@ export default function AddressForm({ open, onOpenChange, address }: AddressForm
     applyLocation(Number(result.lat), Number(result.lon));
     setSearchQuery(result.display_name);
     setSearchResults([]);
+    setIsResultsVisible(false);
   };
 
   const hasLocation = form.latitude !== 0 || form.longitude !== 0;
@@ -299,7 +318,7 @@ export default function AddressForm({ open, onOpenChange, address }: AddressForm
 
         {step === 1 ? (
           <div className="flex flex-col gap-3 py-2">
-            <div className="relative">
+            <div className="relative" ref={searchContainerRef}>
               <Icon
                 icon="solar:magnifer-linear"
                 className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
@@ -307,6 +326,9 @@ export default function AddressForm({ open, onOpenChange, address }: AddressForm
               <Input
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
+                onFocus={() => {
+                  if (searchResults.length > 0) setIsResultsVisible(true);
+                }}
                 placeholder="Search for an address…"
                 className="pl-9"
               />
@@ -316,7 +338,7 @@ export default function AddressForm({ open, onOpenChange, address }: AddressForm
                   className="absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground"
                 />
               )}
-              {searchResults.length > 0 && (
+              {isResultsVisible && searchResults.length > 0 && (
                 <div className="absolute z-[999999] mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
                   {searchResults.map((result) => (
                     <button
@@ -425,44 +447,3 @@ export default function AddressForm({ open, onOpenChange, address }: AddressForm
     </Dialog>
   );
 }
-
-
-
-
-// response 
-// {
-//   "address": {
-//     "ISO3166-2-lvl4": "GB-ENG",
-//     "ISO3166-2-lvl6": "GB-KEN",
-//     "building": "4 Elizabeth Court",
-//     "city": "Thanet",
-//     "country": "United Kingdom",
-//     "country_code": "gb",
-//     "county": "Kent",
-//     "house_number": "4",
-//     "postcode": "CT10 3NJ",
-//     "road": "North Foreland Road",
-//     "state": "England",
-//     "suburb": "Kingsgate",
-//     "town": "Broadstairs"
-//   },
-//   "addresstype": "building",
-//   "boundingbox": [
-//     "51.3693503",
-//     "51.3695486",
-//     "1.4436234",
-//     "1.4440297"
-//   ],
-//   "class": "building",
-//   "display_name": "4 Elizabeth Court, 4, North Foreland Road, Kingsgate, Broadstairs and St Peters, Broadstairs, Thanet, Kent, England, CT10 3NJ, United Kingdom",
-//   "importance": 0.00005218051422899241,
-//   "lat": "51.3694495",
-//   "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
-//   "lon": "1.4438266",
-//   "name": "4 Elizabeth Court",
-//   "osm_id": 277776776,
-//   "osm_type": "way",
-//   "place_id": 100975894,
-//   "place_rank": 30,
-//   "type": "apartments"
-// }
