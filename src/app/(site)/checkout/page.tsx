@@ -6,8 +6,19 @@ import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
 import PageBanner from "@/components/Common/PageBanner/PageBanner";
+import AddressSection from "@/components/Profile/AddressSection";
+import DateOptionPicker, {
+  getTodayValue,
+} from "@/components/Checkout/DateOptionPicker";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -18,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
+import { cn, formatStoreTime } from "@/lib/utils";
 import { siteConfig } from "@/lib/utils/siteConfig";
 import { formatPrice, formatVolume } from "@/lib/utils/productDisplay";
 import { useGetAddressesQuery } from "@/redux/features/address/addressApiSlice";
@@ -26,6 +38,12 @@ import {
   type FulfillmentMethod,
   useCheckoutMutation,
 } from "@/redux/features/order/orderApiSlice";
+import {
+  type DayOfWeek,
+  type OperatingHour,
+  useGetPublicDeliverySlotsQuery,
+  useGetPublicOperatingHoursQuery,
+} from "@/redux/features/store/storeApiSlice";
 import { useGetMeQuery } from "@/redux/features/user/userApiSlice";
 
 interface TimeSlot {
@@ -35,41 +53,62 @@ interface TimeSlot {
   end: string;
 }
 
-const buildTimeSlots = (): TimeSlot[] => {
+const DAY_OF_WEEK_BY_INDEX: DayOfWeek[] = [
+  "SUNDAY",
+  "MONDAY",
+  "TUESDAY",
+  "WEDNESDAY",
+  "THURSDAY",
+  "FRIDAY",
+  "SATURDAY",
+];
+
+// A delivery slot's start_time is a time-of-day only ("HH:MM:SS") — when
+// showing today's slots, anything at or before the current time is disabled
+// rather than hidden, so the list of times stays stable.
+const isSlotPastForToday = (startTime: string, isToday: boolean) => {
+  if (!isToday) return false;
+  const [hour, minute] = startTime.slice(0, 5).split(":").map(Number);
+  const slotMoment = new Date();
+  slotMoment.setHours(hour, minute, 0, 0);
+  return slotMoment.getTime() <= Date.now();
+};
+
+// Pickup has no persisted "slot" resource — it's just the store's regular
+// operating hours, cut into hourly windows for the chosen date.
+const buildPickupSlots = (
+  dateValue: string,
+  hours: OperatingHour[],
+): TimeSlot[] => {
+  if (!dateValue || hours.length === 0) return [];
+
+  const date = new Date(`${dateValue}T00:00:00`);
+  const dayOfWeek = DAY_OF_WEEK_BY_INDEX[date.getDay()];
+  const today = hours.find((hour) => hour.day_of_week === dayOfWeek);
+  if (!today || today.is_closed || !today.open_time || !today.close_time) {
+    return [];
+  }
+
+  const [openHour, openMinute] = today.open_time.slice(0, 5).split(":").map(Number);
+  const [closeHour, closeMinute] = today.close_time.slice(0, 5).split(":").map(Number);
+  const openMinutes = openHour * 60 + openMinute;
+  const closeMinutes = closeHour * 60 + closeMinute;
+
+  const isToday = dateValue === getTodayValue();
+  const earliest = new Date(Date.now() + 60 * 60 * 1000);
+
   const slots: TimeSlot[] = [];
-  const now = new Date();
-  const earliest = new Date(now.getTime() + 60 * 60 * 1000);
-
-  for (let dayOffset = 0; dayOffset < 8; dayOffset += 1) {
-    const day = new Date(now);
-    day.setHours(0, 0, 0, 0);
-    day.setDate(day.getDate() + dayOffset);
-    if (day.getDay() === 0) continue;
-
-    const closingHour = day.getDay() === 5 || day.getDay() === 6 ? 23 : 22;
-    for (let hour = 9; hour < closingHour; hour += 1) {
-      const start = new Date(day);
-      start.setHours(hour, 0, 0, 0);
-      if (start < earliest) continue;
-      const end = new Date(start.getTime() + 60 * 60 * 1000);
-      const label = `${start.toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-      })}, ${start.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-      })} – ${end.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-      })}`;
-      slots.push({
-        value: start.toISOString(),
-        label,
-        start: start.toISOString(),
-        end: end.toISOString(),
-      });
-    }
+  for (let minutes = openMinutes; minutes + 60 <= closeMinutes; minutes += 60) {
+    const start = new Date(date);
+    start.setHours(0, minutes, 0, 0);
+    if (isToday && start < earliest) continue;
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    slots.push({
+      value: start.toISOString(),
+      label: `${start.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} – ${end.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`,
+      start: start.toISOString(),
+      end: end.toISOString(),
+    });
   }
 
   return slots;
@@ -93,7 +132,11 @@ export default function CheckoutPage() {
   const [method, setMethod] = useState<FulfillmentMethod>("PICKUP");
   const [step, setStep] = useState(1);
   const [addressId, setAddressId] = useState("");
-  const [timeValue, setTimeValue] = useState("");
+  const [addressModalOpen, setAddressModalOpen] = useState(false);
+  const [pickupDate, setPickupDate] = useState(getTodayValue);
+  const [pickupSlotValue, setPickupSlotValue] = useState("");
+  const [deliveryDate, setDeliveryDate] = useState(getTodayValue);
+  const [deliverySlotId, setDeliverySlotId] = useState("");
   const [instructions, setInstructions] = useState("");
 
   const {
@@ -108,11 +151,28 @@ export default function CheckoutPage() {
   );
   const { data: addressData, isLoading: isLoadingAddresses } =
     useGetAddressesQuery({ page: 1, limit: 100 }, { skip: !isLoggedIn });
+  const { data: hoursData } = useGetPublicOperatingHoursQuery();
+  const isDeliveryToday = deliveryDate === getTodayValue();
+  const { data: deliverySlotsData, isFetching: isLoadingDeliverySlots } =
+    useGetPublicDeliverySlotsQuery(
+      { date: isDeliveryToday ? "today" : "tomorrow" },
+      { skip: !isLoggedIn || method !== "DELIVERY" || !deliveryDate },
+    );
   const [checkout, { isLoading: isCheckingOut }] = useCheckoutMutation();
-  const timeSlots = useMemo(buildTimeSlots, []);
+
+  const pickupSlots = useMemo(
+    () => buildPickupSlots(pickupDate, hoursData?.data.hours ?? []),
+    [pickupDate, hoursData],
+  );
+  const deliverySlots = deliverySlotsData?.data.items ?? [];
+  const selectedPickupSlot = pickupSlots.find((slot) => slot.value === pickupSlotValue);
+  const selectedDeliverySlot = deliverySlots.find(
+    (slot) =>
+      slot.id === deliverySlotId && !isSlotPastForToday(slot.start_time, isDeliveryToday),
+  );
+
   const cart = cartData?.data;
   const addresses = addressData?.data.items ?? [];
-  const selectedSlot = timeSlots.find((slot) => slot.value === timeValue);
   const subtotal = (cart?.items ?? []).reduce(
     (sum, item) => sum + Number(item.product_variant.price) * item.quantity,
     0,
@@ -135,14 +195,27 @@ export default function CheckoutPage() {
   const selectMethod = (nextMethod: FulfillmentMethod) => {
     setMethod(nextMethod);
     setStep(1);
-    setTimeValue("");
+    setPickupSlotValue("");
+    setDeliverySlotId("");
+  };
+
+  const changePickupDate = (date: string) => {
+    setPickupDate(date);
+    setPickupSlotValue("");
+  };
+
+  const changeDeliveryDate = (date: string) => {
+    setDeliveryDate(date);
+    setDeliverySlotId("");
   };
 
   const submitCheckout = async () => {
-    if (!cart?.items.length || !selectedSlot) {
-      toast.error(
-        !selectedSlot ? "Choose an available time." : "Your cart is empty.",
-      );
+    if (!cart?.items.length) {
+      toast.error("Your cart is empty.");
+      return;
+    }
+    if (method === "PICKUP" && !selectedPickupSlot) {
+      toast.error("Choose an available pickup time.");
       return;
     }
     if (method === "DELIVERY" && !addressId) {
@@ -150,17 +223,21 @@ export default function CheckoutPage() {
       setStep(2);
       return;
     }
+    if (method === "DELIVERY" && !selectedDeliverySlot) {
+      toast.error("Choose an available delivery time.");
+      return;
+    }
 
     try {
       const schedule =
         method === "PICKUP"
           ? {
-              pickup_scheduled_start_at: selectedSlot.start,
-              pickup_scheduled_end_at: selectedSlot.end,
+              pickup_scheduled_start_at: selectedPickupSlot!.start,
+              pickup_scheduled_end_at: selectedPickupSlot!.end,
             }
           : {
-              delivery_scheduled_start_at: selectedSlot.start,
-              delivery_scheduled_end_at: selectedSlot.end,
+              delivery_date: deliveryDate,
+              delivery_slot_id: selectedDeliverySlot!.id,
             };
       const response = await checkout({
         items: cart.items.map((item) => ({
@@ -305,30 +382,48 @@ export default function CheckoutPage() {
                 </div>
 
                 {method === "PICKUP" && (
-                  <div className="mt-7">
-                    <label className="mb-2 block text-sm font-semibold">
-                      Pickup time
-                    </label>
-                    <Select
-                      value={timeValue || null}
-                      onValueChange={(value) => setTimeValue(value ?? "")}
-                    >
-                      <SelectTrigger className="h-12 w-full rounded-lg border-gray-200 px-4 text-sm">
-                        <SelectValue placeholder="Choose an available pickup time" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-lg">
-                        {timeSlots.map((slot) => (
-                          <SelectItem
-                            key={slot.value}
-                            value={slot.value}
-                            className="py-3"
-                          >
-                            {slot.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <>
+                    <div className="mt-7">
+                      <label className="mb-2 block text-sm font-semibold">
+                        Pickup date
+                      </label>
+                      <DateOptionPicker
+                        value={pickupDate}
+                        onChange={changePickupDate}
+                      />
+                    </div>
+                    <div className="mt-5">
+                      <label className="mb-2 block text-sm font-semibold">
+                        Pickup time
+                      </label>
+                      {pickupSlots.length === 0 ? (
+                        <p className="rounded-lg border border-dashed border-gray-200 p-4 text-sm text-gray-500">
+                          We&apos;re closed or fully booked on this date —
+                          choose another day.
+                        </p>
+                      ) : (
+                        <Select
+                          value={pickupSlotValue || null}
+                          onValueChange={(value) => setPickupSlotValue(value ?? "")}
+                        >
+                          <SelectTrigger className="h-12 w-full rounded-lg border-gray-200 px-4 text-sm">
+                            <SelectValue placeholder="Choose an available pickup time" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-lg">
+                            {pickupSlots.map((slot) => (
+                              <SelectItem
+                                key={slot.value}
+                                value={slot.value}
+                                className="py-3"
+                              >
+                                {slot.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  </>
                 )}
 
                 <div className="mt-8 flex justify-end">
@@ -342,7 +437,7 @@ export default function CheckoutPage() {
                   ) : (
                     <Button
                       onClick={submitCheckout}
-                      disabled={!timeValue || isCheckingOut}
+                      disabled={!pickupSlotValue || isCheckingOut}
                       className="h-12 bg-primary-normal px-8 text-black hover:bg-primary-hover"
                     >
                       {isCheckingOut && (
@@ -357,12 +452,26 @@ export default function CheckoutPage() {
 
             {step === 2 && method === "DELIVERY" && (
               <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-200 sm:p-8">
-                <h2 className="font-title text-2xl font-semibold">
-                  Choose a delivery address
-                </h2>
-                <p className="mt-2 text-sm text-gray-500">
-                  Select from your saved addresses.
-                </p>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="font-title text-2xl font-semibold">
+                      Choose a delivery address
+                    </h2>
+                    <p className="mt-2 text-sm text-gray-500">
+                      Select from your saved addresses.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAddressModalOpen(true)}
+                    className="shrink-0 gap-1.5"
+                  >
+                    <Icon icon="solar:add-circle-linear" className="size-4" />
+                    Add / manage
+                  </Button>
+                </div>
                 {isLoadingAddresses ? (
                   <div className="mt-6 grid gap-4 sm:grid-cols-2">
                     <Skeleton className="h-40" />
@@ -377,12 +486,13 @@ export default function CheckoutPage() {
                     <p className="mt-3 text-sm font-semibold">
                       No saved addresses
                     </p>
-                    <Link
-                      href="/my-profile"
-                      className="mt-2 inline-block text-sm font-semibold text-primary-active"
+                    <button
+                      type="button"
+                      onClick={() => setAddressModalOpen(true)}
+                      className="mt-2 inline-block text-sm font-semibold text-primary-active hover:underline"
                     >
-                      Add an address in your profile
-                    </Link>
+                      Add an address
+                    </button>
                   </div>
                 ) : (
                   <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -454,27 +564,60 @@ export default function CheckoutPage() {
                 </p>
                 <div className="mt-7">
                   <label className="mb-2 block text-sm font-semibold">
+                    Delivery date
+                  </label>
+                  <DateOptionPicker value={deliveryDate} onChange={changeDeliveryDate} />
+                </div>
+                <div className="mt-5">
+                  <label className="mb-2 block text-sm font-semibold">
                     Delivery time
                   </label>
-                  <Select
-                    value={timeValue || null}
-                    onValueChange={(value) => setTimeValue(value ?? "")}
-                  >
-                    <SelectTrigger className="h-12 w-full rounded-lg border-gray-200 px-4 text-sm">
-                      <SelectValue placeholder="Choose an available delivery time" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-lg">
-                      {timeSlots.map((slot) => (
-                        <SelectItem
-                          key={slot.value}
-                          value={slot.value}
-                          className="py-3"
-                        >
-                          {slot.label}
-                        </SelectItem>
+                  {isLoadingDeliverySlots ? (
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      {Array.from({ length: 6 }).map((_, index) => (
+                        <Skeleton key={index} className="h-16" />
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </div>
+                  ) : deliverySlots.length === 0 ? (
+                    <p className="rounded-lg border border-dashed border-gray-200 p-4 text-sm text-gray-500">
+                      No delivery slots are available on this date — try
+                      another day.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      {deliverySlots.map((slot) => {
+                        const isPast = isSlotPastForToday(slot.start_time, isDeliveryToday);
+                        const bookable = !isPast && slot.is_available && slot.remaining > 0;
+                        return (
+                          <button
+                            key={slot.id}
+                            type="button"
+                            disabled={!bookable}
+                            onClick={() => setDeliverySlotId(slot.id)}
+                            className={cn(
+                              "flex flex-col items-start gap-1 rounded-lg border-2 p-3 text-left transition",
+                              deliverySlotId === slot.id
+                                ? "border-primary-normal bg-primary-normal/5"
+                                : "border-gray-200 hover:border-gray-300",
+                              !bookable && "cursor-not-allowed opacity-40 hover:border-gray-200",
+                            )}
+                          >
+                            <span className="text-sm font-semibold">
+                              {formatStoreTime(slot.start_time)} –{" "}
+                              {formatStoreTime(slot.end_time)}
+                            </span>
+                            <span className="text-[11px] text-gray-500">
+                              {isPast
+                                ? "Past"
+                                : bookable
+                                  ? `${slot.remaining} left`
+                                  : "Full"}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
                 <div className="mt-6">
                   <label
@@ -508,7 +651,7 @@ export default function CheckoutPage() {
                   </Button>
                   <Button
                     onClick={submitCheckout}
-                    disabled={!timeValue || isCheckingOut}
+                    disabled={!deliverySlotId || isCheckingOut}
                     className="h-12 bg-primary-normal px-8 text-black hover:bg-primary-hover"
                   >
                     {isCheckingOut && (
@@ -580,6 +723,20 @@ export default function CheckoutPage() {
           </aside>
         </div>
       </section>
+
+      <Dialog open={addressModalOpen} onOpenChange={setAddressModalOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl rounded-lg p-10">
+          <DialogHeader>
+            <DialogTitle>Delivery addresses</DialogTitle>
+            <DialogDescription>
+              Add a new address or edit an existing one — it&apos;ll be ready
+              to pick as soon as you close this.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <AddressSection />
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

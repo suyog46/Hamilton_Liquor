@@ -14,6 +14,8 @@ export interface Address {
   city: string;
   state: string;
   zip_code: string;
+  latitude: string;
+  longitude: string;
   label: string;
   is_default: boolean;
   created_at: string;
@@ -28,6 +30,8 @@ export interface AddressInput {
   city: string;
   state: string;
   zip_code: string;
+  latitude: number;
+  longitude: number;
   label: string;
   is_default: boolean;
 }

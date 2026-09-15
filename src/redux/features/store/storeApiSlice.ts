@@ -1,5 +1,5 @@
 import { apiSlice } from "@/redux/apiSlice";
-import type { ApiResponse } from "@/redux/types/api";
+import type { ApiListResponse, ApiResponse, ListData } from "@/redux/types/api";
 
 export type SocialPlatform = "FACEBOOK" | "INSTAGRAM" | "TIKTOK" | "X";
 
@@ -69,6 +69,55 @@ export interface OperatingHoursRequest {
     close_time: string | null;
     is_closed: boolean;
   }>;
+}
+
+export interface DeliverySlot {
+  id: string;
+  day_of_week: DayOfWeek;
+  start_time: string;
+  end_time: string;
+  capacity: number;
+  is_active: boolean;
+}
+
+export interface CreateDeliverySlotRequest {
+  day_of_week: DayOfWeek;
+  start_time: string;
+  end_time: string;
+  capacity: number;
+  is_active?: boolean;
+}
+
+export interface UpdateDeliverySlotRequest {
+  day_of_week?: DayOfWeek;
+  start_time?: string;
+  end_time?: string;
+  capacity?: number;
+  is_active?: boolean;
+}
+
+export interface GetAdminDeliverySlotsParams {
+  page?: number;
+  limit?: number;
+  day_of_week?: DayOfWeek;
+}
+
+export interface DeliverySlotAvailability {
+  id: string;
+  start_time: string;
+  end_time: string;
+  capacity: number;
+  booked: number;
+  remaining: number;
+  is_available: boolean;
+}
+
+export type DeliveryDateOption = "today" | "tomorrow";
+
+export interface GetPublicDeliverySlotsParams {
+  date: DeliveryDateOption;
+  page?: number;
+  limit?: number;
 }
 
 export interface CreateSocialLinkRequest {
@@ -152,6 +201,70 @@ export const storeApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: [{ type: "Store", id: "HOURS" }],
     }),
 
+    getAdminDeliverySlots: builder.query<
+      ApiListResponse<DeliverySlot>,
+      GetAdminDeliverySlotsParams | void
+    >({
+      query: (params) => ({
+        url: "admin/store/delivery-slots",
+        params: params ?? undefined,
+      }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.data.items.map(({ id }) => ({
+                type: "Store" as const,
+                id: `DELIVERY-SLOT-${id}`,
+              })),
+              { type: "Store" as const, id: "DELIVERY-SLOTS" },
+            ]
+          : [{ type: "Store" as const, id: "DELIVERY-SLOTS" }],
+    }),
+    createDeliverySlot: builder.mutation<
+      ApiResponse<DeliverySlot>,
+      CreateDeliverySlotRequest
+    >({
+      query: (body) => ({
+        url: "admin/store/delivery-slots",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [{ type: "Store", id: "DELIVERY-SLOTS" }],
+    }),
+    updateDeliverySlot: builder.mutation<
+      ApiResponse<DeliverySlot>,
+      UpdateDeliverySlotRequest & { slot_id: string }
+    >({
+      query: ({ slot_id, ...body }) => ({
+        url: `admin/store/delivery-slots/${slot_id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: (_result, _error, { slot_id }) => [
+        { type: "Store", id: `DELIVERY-SLOT-${slot_id}` },
+        { type: "Store", id: "DELIVERY-SLOTS" },
+      ],
+    }),
+    deleteDeliverySlot: builder.mutation<void, string>({
+      query: (slotId) => ({
+        url: `admin/store/delivery-slots/${slotId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [{ type: "Store", id: "DELIVERY-SLOTS" }],
+    }),
+    getPublicDeliverySlots: builder.query<
+      ApiResponse<ListData<DeliverySlotAvailability> & { date: string }>,
+      GetPublicDeliverySlotsParams
+    >({
+      query: ({ date, page, limit }) => ({
+        url: "store/delivery-slots",
+        params: { date, page, limit },
+      }),
+      providesTags: (_result, _error, { date }) => [
+        { type: "Store", id: `PUBLIC-DELIVERY-SLOTS-${date}` },
+      ],
+    }),
+
     getSocialLinks: builder.query<ApiResponse<SocialLink[]>, void>({
       query: () => "admin/store/social-links",
       providesTags: (result) =>
@@ -208,6 +321,11 @@ export const {
   useGetOperatingHoursQuery,
   useGetPublicOperatingHoursQuery,
   useUpdateOperatingHoursMutation,
+  useGetAdminDeliverySlotsQuery,
+  useCreateDeliverySlotMutation,
+  useUpdateDeliverySlotMutation,
+  useDeleteDeliverySlotMutation,
+  useGetPublicDeliverySlotsQuery,
   useGetSocialLinksQuery,
   useGetPublicSocialLinksQuery,
   useCreateSocialLinkMutation,

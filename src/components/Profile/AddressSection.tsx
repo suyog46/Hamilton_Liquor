@@ -6,162 +6,39 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDialog } from "@/components/Admin/ConfirmDialog/ConfirmDialog";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Field, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
+import AddressForm from "./AddressForm";
 import {
   type Address,
-  type AddressInput,
-  useCreateAddressMutation,
   useDeleteAddressMutation,
   useGetAddressesQuery,
-  useLazyGetAddressDetailQuery,
   useSetDefaultAddressMutation,
-  useUpdateAddressMutation,
 } from "@/redux/features/address/addressApiSlice";
-
-const blankAddress = (): AddressInput => ({
-  recipient_first_name: "",
-  recipient_last_name: "",
-  address_line1: "",
-  address_line2: "",
-  city: "",
-  state: "",
-  zip_code: "",
-  label: "",
-  is_default: false,
-});
-
-const toInput = (address: Address): AddressInput => ({
-  recipient_first_name: address.recipient_first_name,
-  recipient_last_name: address.recipient_last_name,
-  address_line1: address.address_line1,
-  address_line2: address.address_line2 ?? "",
-  city: address.city,
-  state: address.state,
-  zip_code: address.zip_code,
-  label: address.label,
-  is_default: address.is_default,
-});
-
-const requiredFields: Array<keyof AddressInput> = [
-  "recipient_first_name",
-  "recipient_last_name",
-  "address_line1",
-  "city",
-  "state",
-  "zip_code",
-  "label",
-];
-
-interface AddressApiErrorData {
-  error?: {
-    message?: string;
-    details?: Array<{ field?: string; message?: string }>;
-  };
-}
-
-const getAddressErrorMessage = (error: unknown, fallback: string) => {
-  if (!isFetchBaseQueryError(error)) return fallback;
-
-  const data = error.data as AddressApiErrorData | undefined;
-  const message = data?.error?.message;
-  const details = data?.error?.details
-    ?.filter((detail) => detail.message)
-    .map((detail) => detail.field ? `${detail.field}: ${detail.message}` : detail.message)
-    .join(" · ");
-
-  if (message && details) return `${message} ${details}`;
-  return details || message || fallback;
-};
 
 export default function AddressSection() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [formOpen, setFormOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<AddressInput>(blankAddress);
-  const [errors, setErrors] = useState<Partial<Record<keyof AddressInput, string>>>({});
+  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Address | null>(null);
 
   const { data, isLoading, isFetching } = useGetAddressesQuery({ page, limit });
-  const [getDetail, { isFetching: isLoadingDetail }] = useLazyGetAddressDetailQuery();
-  const [createAddress, { isLoading: isCreating }] = useCreateAddressMutation();
-  const [updateAddress, { isLoading: isUpdating }] = useUpdateAddressMutation();
   const [deleteAddress, { isLoading: isDeleting }] = useDeleteAddressMutation();
   const [setDefaultAddress, { isLoading: isSettingDefault }] = useSetDefaultAddressMutation();
 
   const addresses = data?.data.items ?? [];
   const pagination = data?.data.pagination;
-  const isSaving = isCreating || isUpdating;
-
-  const patch = <K extends keyof AddressInput>(key: K, value: AddressInput[K]) => {
-    setForm((current) => ({ ...current, [key]: value }));
-    setErrors((current) => ({ ...current, [key]: undefined }));
-  };
 
   const openCreate = () => {
-    setEditingId(null);
-    setForm(blankAddress());
-    setErrors({});
+    setEditingAddress(null);
     setFormOpen(true);
   };
 
-  const openEdit = async (address: Address) => {
-    setEditingId(address.id);
-    setForm(toInput(address));
-    setErrors({});
+  const openEdit = (address: Address) => {
+    setEditingAddress(address);
     setFormOpen(true);
-    try {
-      const detail = await getDetail(address.id).unwrap();
-      setForm(toInput(detail.data));
-    } catch {
-      toast.error("Failed to load the address details.");
-      setFormOpen(false);
-    }
-  };
-
-  const saveAddress = async () => {
-    const nextErrors: Partial<Record<keyof AddressInput, string>> = {};
-    requiredFields.forEach((field) => {
-      if (typeof form[field] === "string" && !form[field].trim()) nextErrors[field] = "Required";
-    });
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
-
-    const body = Object.fromEntries(
-      Object.entries(form).map(([key, value]) => [key, typeof value === "string" ? value.trim() : value]),
-    ) as unknown as AddressInput;
-
-    try {
-      if (editingId) {
-        await updateAddress({ address_id: editingId, ...body }).unwrap();
-        toast.success("Address updated.");
-      } else {
-        await createAddress(body).unwrap();
-        toast.success("Address added.");
-      }
-      setFormOpen(false);
-    } catch (error) {
-      toast.error(
-        getAddressErrorMessage(
-          error,
-          `Failed to ${editingId ? "update" : "add"} the address.`,
-        ),
-      );
-    }
   };
 
   const confirmDelete = async () => {
@@ -261,43 +138,7 @@ export default function AddressSection() {
         />
       )}
 
-      <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{editingId ? "Edit address" : "Add address"}</DialogTitle>
-            <DialogDescription>Enter the recipient and delivery details.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-2 sm:grid-cols-2">
-            {([
-              ["recipient_first_name", "First name"],
-              ["recipient_last_name", "Last name"],
-              ["address_line1", "Address line 1"],
-              ["address_line2", "Address line 2 (optional)"],
-              ["city", "City"],
-              ["state", "State"],
-              ["zip_code", "ZIP code"],
-              ["label", "Label (Home, Work, etc.)"],
-            ] as Array<[keyof AddressInput, string]>).map(([key, label]) => (
-              <Field key={key} data-invalid={!!errors[key]} className={key.startsWith("address_line") ? "sm:col-span-2" : undefined}>
-                <FieldLabel htmlFor={`address-${key}`}>{label}</FieldLabel>
-                <Input id={`address-${key}`} value={String(form[key])} onChange={(event) => patch(key, event.target.value)} disabled={isSaving || isLoadingDetail} />
-                {errors[key] && <p className="text-[11px] text-destructive">{errors[key]}</p>}
-              </Field>
-            ))}
-            <Field orientation="horizontal" className="sm:col-span-2">
-              <Checkbox id="address-default" checked={form.is_default} onCheckedChange={(checked) => patch("is_default", checked === true)} disabled={isSaving || isLoadingDetail} />
-              <FieldLabel htmlFor="address-default" className="font-normal">Use as my default address</FieldLabel>
-            </Field>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setFormOpen(false)} disabled={isSaving}>Cancel</Button>
-            <Button onClick={saveAddress} disabled={isSaving || isLoadingDetail} className="gap-2 bg-primary-normal text-black hover:bg-primary-hover">
-              {(isSaving || isLoadingDetail) && <Icon icon="svg-spinners:180-ring" className="size-4" />}
-              {editingId ? "Save changes" : "Add address"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AddressForm open={formOpen} onOpenChange={setFormOpen} address={editingAddress} />
 
       <ConfirmDialog
         open={!!deleteTarget}

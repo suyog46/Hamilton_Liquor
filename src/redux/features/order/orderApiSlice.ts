@@ -75,8 +75,8 @@ export interface CheckoutRequest {
   handoff_instructions?: string;
   pickup_scheduled_start_at?: string;
   pickup_scheduled_end_at?: string;
-  delivery_scheduled_start_at?: string;
-  delivery_scheduled_end_at?: string;
+  delivery_date?: string;
+  delivery_slot_id?: string;
 }
 
 export interface Order {

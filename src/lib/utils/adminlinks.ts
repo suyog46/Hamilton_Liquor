@@ -70,6 +70,11 @@ export const adminNavStore: AdminNavItem[] = [
     icon: "solar:clock-circle-linear",
   },
   {
+    name: "Delivery Slots",
+    href: "/admin/delivery-slots",
+    icon: "solar:delivery-linear",
+  },
+  {
     name: "Social Links",
     href: "/admin/social-links",
     icon: "solar:share-linear",
