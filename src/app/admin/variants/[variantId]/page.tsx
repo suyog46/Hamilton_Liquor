@@ -20,7 +20,9 @@ import {
   useGetProductVariantDetailQuery,
   useUpdateProductVariantMutation,
 } from "@/redux/features/product/productVariantApiSlice";
+import { useGetProductDetailQuery } from "@/redux/features/product/productApiSlice";
 import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
+import { isLiquorParentCategory } from "@/lib/utils/categoryDisplay";
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (isFetchBaseQueryError(error)) {
@@ -46,6 +48,12 @@ const VariantPage = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const variant = data?.data;
+  const { data: productData } = useGetProductDetailQuery(
+    variant?.product_id ?? "",
+    { skip: !variant?.product_id },
+  );
+  const showLiquorFields = isLiquorParentCategory(productData?.data);
+  const variantLabel = variant?.display_name || `${variant?.volume_ml ?? ""} mL`;
 
   const handleSubmit = async (values: VariantWizardValues) => {
     if (!variant) return;
@@ -53,9 +61,15 @@ const VariantPage = () => {
       await updateVariant({
         variant_id: variantId,
         product_id: variant.product_id,
-        volume_ml: Number(values.volume_ml),
+        sku: values.sku.trim(),
+        display_name: values.display_name.trim(),
+        ...(showLiquorFields
+          ? {
+              volume_ml: Number(values.volume_ml),
+              alcohol_percentage: Number(values.alcohol_percentage),
+            }
+          : {}),
         price: Number(values.price),
-        alcohol_percentage: Number(values.alcohol_percentage),
         quantity: Number(values.quantity),
         is_active: values.is_active,
         media: values.media.map((media, index) => ({
@@ -118,8 +132,12 @@ const VariantPage = () => {
   return (
     <div className="flex flex-col gap-4">
       <AdminPageHeader
-        title={`${variant.volume_ml} mL Variant`}
-        description={`$${Number(variant.price).toFixed(2)} · ${Number(variant.alcohol_percentage)}% ABV`}
+        title={variantLabel}
+        description={[
+          variant.sku,
+          `$${Number(variant.price).toFixed(2)}`,
+          showLiquorFields ? `${Number(variant.alcohol_percentage)}% ABV` : null,
+        ].filter(Boolean).join(" · ")}
         action={
           <div className="flex items-center gap-2">
             <Badge variant={variant.is_active ? "success" : "outline"}>
@@ -174,6 +192,8 @@ const VariantPage = () => {
       <VariantWizard
         mode="update"
         initialValues={{
+          sku: variant.sku,
+          display_name: variant.display_name,
           volume_ml: String(variant.volume_ml),
           price: variant.price,
           alcohol_percentage: variant.alcohol_percentage,
@@ -185,6 +205,7 @@ const VariantPage = () => {
         }}
         onSubmit={handleSubmit}
         isSubmitting={isSaving}
+        showLiquorFields={showLiquorFields}
       />
 
       <Card>
@@ -192,7 +213,7 @@ const VariantPage = () => {
           <AdjustInventoryDialog
             productId={variant.product_id}
             variantId={variantId}
-            variantLabel={`${variant.volume_ml} mL`}
+            variantLabel={variantLabel}
             currentQuantity={variant.quantity}
             trigger="button"
           />

@@ -11,6 +11,7 @@ import VariantWizard, {
 import { useGetProductDetailQuery } from "@/redux/features/product/productApiSlice";
 import { useCreateProductVariantMutation } from "@/redux/features/product/productVariantApiSlice";
 import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
+import { isLiquorParentCategory } from "@/lib/utils/categoryDisplay";
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (isFetchBaseQueryError(error)) {
@@ -27,14 +28,22 @@ const NewVariantPage = () => {
 
   const { data } = useGetProductDetailQuery(productId);
   const [createVariant, { isLoading }] = useCreateProductVariantMutation();
+  const product = data?.data;
+  const showLiquorFields = isLiquorParentCategory(product);
 
   const handleSubmit = async (values: VariantWizardValues) => {
     try {
       await createVariant({
         product_id: productId,
-        volume_ml: Number(values.volume_ml),
+        sku: values.sku.trim(),
+        display_name: values.display_name.trim(),
+        ...(showLiquorFields
+          ? {
+              volume_ml: Number(values.volume_ml),
+              alcohol_percentage: Number(values.alcohol_percentage),
+            }
+          : {}),
         price: Number(values.price),
-        alcohol_percentage: Number(values.alcohol_percentage),
         quantity: Number(values.quantity),
         media: values.media.map((media, index) => ({
           media_id: media.id,
@@ -43,8 +52,8 @@ const NewVariantPage = () => {
       }).unwrap();
       toast.success("Variant created successfully.");
       router.push("/admin/variants");
-    } catch (err: any) {
-      toast.error(err?.data?.error?.message ?? "Failed to create variant.");
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Failed to create variant."));
     }
   };
 
@@ -64,6 +73,7 @@ const NewVariantPage = () => {
         mode="create"
         onSubmit={handleSubmit}
         isSubmitting={isLoading}
+        showLiquorFields={showLiquorFields}
       />
     </div>
   );

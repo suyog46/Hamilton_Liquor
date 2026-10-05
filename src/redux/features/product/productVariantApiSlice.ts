@@ -11,6 +11,8 @@ export interface VariantMedia {
 export interface ProductVariantDetail {
   id: string;
   product_id: string;
+  sku: string;
+  display_name: string;
   volume_ml: number;
   price: string;
   alcohol_percentage: string;
@@ -32,9 +34,11 @@ export interface VariantMediaInput {
 
 export interface CreateProductVariantRequest {
   product_id: string;
-  volume_ml: number;
+  sku: string;
+  display_name: string;
+  volume_ml?: number;
   price: number;
-  alcohol_percentage: number;
+  alcohol_percentage?: number;
   quantity: number;
   media: VariantMediaInput[];
 }
@@ -42,6 +46,8 @@ export interface CreateProductVariantRequest {
 export interface UpdateProductVariantRequest {
   variant_id: string;
   product_id: string;
+  sku?: string;
+  display_name?: string;
   volume_ml?: number;
   price?: number;
   alcohol_percentage?: number;

@@ -11,6 +11,8 @@ import MultiMediaUpload from "@/components/Admin/MultiMediaUpload/MultiMediaUplo
 import type { MediaValue } from "@/components/Admin/MediaUpload/MediaUpload";
 
 export interface VariantWizardValues {
+  sku: string;
+  display_name: string;
   volume_ml: string;
   price: string;
   alcohol_percentage: string;
@@ -24,9 +26,12 @@ interface VariantWizardProps {
   initialValues?: Partial<VariantWizardValues>;
   onSubmit: (values: VariantWizardValues) => void;
   isSubmitting?: boolean;
+  showLiquorFields?: boolean;
 }
 
 const emptyValues = (): VariantWizardValues => ({
+  sku: "",
+  display_name: "",
   volume_ml: "",
   price: "",
   alcohol_percentage: "",
@@ -35,7 +40,13 @@ const emptyValues = (): VariantWizardValues => ({
   media: [],
 });
 
-const VariantWizard = ({ mode, initialValues, onSubmit, isSubmitting = false }: VariantWizardProps) => {
+const VariantWizard = ({
+  mode,
+  initialValues,
+  onSubmit,
+  isSubmitting = false,
+  showLiquorFields = true,
+}: VariantWizardProps) => {
   const [step, setStep] = useState<1 | 2>(1);
   const [values, setValues] = useState<VariantWizardValues>({ ...emptyValues(), ...initialValues });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -49,9 +60,11 @@ const VariantWizard = ({ mode, initialValues, onSubmit, isSubmitting = false }: 
     const quantity = Number(values.quantity);
 
     const nextErrors: Record<string, string> = {};
-    if (!values.volume_ml || !(volume > 0)) nextErrors.volume = "Enter a volume greater than 0.";
+    if (!values.sku.trim()) nextErrors.sku = "SKU is required.";
+    if (!values.display_name.trim()) nextErrors.displayName = "Display name is required.";
+    if (showLiquorFields && (!values.volume_ml || !(volume > 0))) nextErrors.volume = "Enter a volume greater than 0.";
     if (!values.price || !(price > 0)) nextErrors.price = "Enter a price greater than 0.";
-    if (values.alcohol_percentage === "" || alcohol < 0 || alcohol > 100)
+    if (showLiquorFields && (values.alcohol_percentage === "" || alcohol < 0 || alcohol > 100))
       nextErrors.alcohol = "Enter a value between 0 and 100.";
     if (values.quantity === "" || quantity < 0) nextErrors.quantity = "Enter a valid quantity.";
     setErrors(nextErrors);
@@ -93,18 +106,44 @@ const VariantWizard = ({ mode, initialValues, onSubmit, isSubmitting = false }: 
             <div className="flex py-8">
               <FieldGroup className=" w-full gap-6">
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <Field data-invalid={!!errors.volume}>
-                  <FieldLabel>Volume (mL)</FieldLabel>
+                <Field data-invalid={!!errors.sku}>
+                  <FieldLabel>SKU</FieldLabel>
                   <Input
-                    type="number"
-                    min={1}
+                    type="text"
                     className="h-10 text-sm"
-                    value={values.volume_ml}
-                    onChange={(e) => patch({ volume_ml: e.target.value })}
-                    placeholder="750"
+                    value={values.sku}
+                    onChange={(e) => patch({ sku: e.target.value })}
+                    placeholder="WINE-750-001"
                   />
-                  {errors.volume && <FieldError>{errors.volume}</FieldError>}
+                  {errors.sku && <FieldError>{errors.sku}</FieldError>}
                 </Field>
+
+                <Field data-invalid={!!errors.displayName}>
+                  <FieldLabel>Display name</FieldLabel>
+                  <Input
+                    type="text"
+                    className="h-10 text-sm"
+                    value={values.display_name}
+                    onChange={(e) => patch({ display_name: e.target.value })}
+                    placeholder="750 mL Bottle"
+                  />
+                  {errors.displayName && <FieldError>{errors.displayName}</FieldError>}
+                </Field>
+
+                {showLiquorFields && (
+                  <Field data-invalid={!!errors.volume}>
+                    <FieldLabel>Volume (mL)</FieldLabel>
+                    <Input
+                      type="number"
+                      min={1}
+                      className="h-10 text-sm"
+                      value={values.volume_ml}
+                      onChange={(e) => patch({ volume_ml: e.target.value })}
+                      placeholder="750"
+                    />
+                    {errors.volume && <FieldError>{errors.volume}</FieldError>}
+                  </Field>
+                )}
 
                 <Field data-invalid={!!errors.price}>
                   <FieldLabel>Price ($)</FieldLabel>
@@ -120,20 +159,22 @@ const VariantWizard = ({ mode, initialValues, onSubmit, isSubmitting = false }: 
                   {errors.price && <FieldError>{errors.price}</FieldError>}
                 </Field>
 
-                <Field data-invalid={!!errors.alcohol}>
-                  <FieldLabel>Alcohol %</FieldLabel>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    step="0.01"
-                    className="h-10 text-sm"
-                    value={values.alcohol_percentage}
-                    onChange={(e) => patch({ alcohol_percentage: e.target.value })}
-                    placeholder="40"
-                  />
-                  {errors.alcohol && <FieldError>{errors.alcohol}</FieldError>}
-                </Field>
+                {showLiquorFields && (
+                  <Field data-invalid={!!errors.alcohol}>
+                    <FieldLabel>Alcohol %</FieldLabel>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step="0.01"
+                      className="h-10 text-sm"
+                      value={values.alcohol_percentage}
+                      onChange={(e) => patch({ alcohol_percentage: e.target.value })}
+                      placeholder="40"
+                    />
+                    {errors.alcohol && <FieldError>{errors.alcohol}</FieldError>}
+                  </Field>
+                )}
 
                 <Field data-invalid={!!errors.quantity}>
                   <FieldLabel>Quantity</FieldLabel>

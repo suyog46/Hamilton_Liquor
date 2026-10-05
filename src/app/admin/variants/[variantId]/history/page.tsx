@@ -38,6 +38,7 @@ const VariantHistoryPage = () => {
     });
 
   const variant = variantData?.data;
+  const variantLabel = variant?.display_name || `${variant?.volume_ml ?? ""} mL`;
   const adjustments = data?.data.items ?? [];
   const pagination = data?.data.pagination;
 
@@ -81,8 +82,8 @@ const VariantHistoryPage = () => {
   return (
     <div className="flex flex-col gap-4">
       <AdminPageHeader
-        title={`${variant.volume_ml} mL — Inventory History`}
-        description={`${variant.available_quantity} available · ${variant.reserved_quantity} reserved · ${variant.quantity} total`}
+        title={`${variantLabel} — Inventory History`}
+        description={`${variant.sku} · ${variant.available_quantity} available · ${variant.reserved_quantity} reserved · ${variant.quantity} total`}
         action={
           <div className="flex items-center gap-2">
             <Button
@@ -94,7 +95,7 @@ const VariantHistoryPage = () => {
             <AdjustInventoryDialog
               productId={variant.product_id}
               variantId={variantId}
-              variantLabel={`${variant.volume_ml} mL`}
+              variantLabel={variantLabel}
               currentQuantity={variant.quantity}
               trigger="button"
             />

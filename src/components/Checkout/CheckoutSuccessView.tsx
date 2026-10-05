@@ -7,6 +7,7 @@ import PageBanner from "@/components/Common/PageBanner/PageBanner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatOrderDate, formatOrderMoney, fulfillmentLabel } from "@/components/Order/orderDisplay";
 import { apiSlice } from "@/redux/apiSlice";
+import { useClearCartMutation } from "@/redux/features/cart/cartApiSlice";
 import { useGetOrderQuery } from "@/redux/features/order/orderApiSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { useCartStore } from "@/lib/stores/cartStore";
@@ -19,11 +20,14 @@ export default function CheckoutSuccessView({ orderId }: CheckoutSuccessViewProp
   const dispatch = useAppDispatch();
   const setCartCount = useCartStore((state) => state.setCount);
   const { data, isLoading, isError, refetch } = useGetOrderQuery(orderId, { skip: !orderId });
+  const [clearCart] = useClearCartMutation();
 
   useEffect(() => {
     setCartCount(0);
-    dispatch(apiSlice.util.invalidateTags(["Cart", { type: "Order", id: "LIST" }]));
-  }, [dispatch, setCartCount]);
+  
+    clearCart().catch(() => undefined);
+    dispatch(apiSlice.util.invalidateTags([{ type: "Order", id: "LIST" }]));
+  }, [dispatch, setCartCount, clearCart]);
 
   if (!orderId) {
     return (
@@ -62,7 +66,7 @@ export default function CheckoutSuccessView({ orderId }: CheckoutSuccessViewProp
   const scheduledEnd = order.fulfillment_method === "PICKUP" ? order.pickup_scheduled_end_at : order.delivery?.scheduled_end_at;
 
   return (
-    <>
+    <>  
       <PageBanner eyebrow="Payment successful" title="Thank you for your order" breadcrumbs={[{ name: "Checkout" }, { name: "Success" }]} />
       <section className="bg-gray-50 py-10 sm:py-14">
         <div className="mx-auto max-w-5xl px-6">

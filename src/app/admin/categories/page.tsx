@@ -10,6 +10,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -57,6 +64,7 @@ const AdminCategoriesPage = () => {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [name, setName] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
+  const [parentCategoryId, setParentCategoryId] = useState("");
   const [media, setMedia] = useState<MediaValue | null>(null);
   const [mediaError, setMediaError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -64,12 +72,19 @@ const AdminCategoriesPage = () => {
     useState<Category | null>(null);
 
   const categories = data?.data.items ?? [];
+  const parentCategoryOptions = categories.filter(
+    (category) => category.id !== editingCategory?.id,
+  );
+  const parentCategoryLabel =
+    parentCategoryOptions.find((category) => category.id === parentCategoryId)
+      ?.name ?? "No parent category";
   const isSaving = isCreating || isUpdating;
 
   const openCreateDialog = () => {
     setEditingCategory(null);
     setName("");
     setNameError(null);
+    setParentCategoryId("");
     setMedia(null);
     setMediaError(null);
     setDialogOpen(true);
@@ -79,6 +94,7 @@ const AdminCategoriesPage = () => {
     setEditingCategory(category);
     setName(category.name);
     setNameError(null);
+    setParentCategoryId(category.parent?.id ?? "");
     setMedia(category.media);
     setMediaError(null);
     setDialogOpen(true);
@@ -112,12 +128,14 @@ const AdminCategoriesPage = () => {
           category_id: editingCategory.id,
           name: trimmedName,
           media_id: media!.id,
+          parent_id: parentCategoryId,
         }).unwrap();
         toast.success("Category updated successfully.");
       } else {
         await createCategory({
           name: trimmedName,
           media_id: media!.id,
+          parent_id: parentCategoryId,
         }).unwrap();
         toast.success("Category created successfully.");
       }
@@ -154,7 +172,7 @@ const AdminCategoriesPage = () => {
     <div className="flex flex-col gap-4">
       <AdminPageHeader
         title="Categories"
-        description="Manage the top-level shop categories and their subcategories."
+        description="Manage shop categories and parent-child relationships."
         action={
           <Button
             type="button"
@@ -230,6 +248,11 @@ const AdminCategoriesPage = () => {
                     <p className="text-[11px] text-muted-foreground">
                       /{category.slug}
                     </p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {category.parent
+                        ? `Parent: ${category.parent.name}`
+                        : "Top-level category"}
+                    </p>
                   </div>
                   <div className="flex items-center gap-3">
                     <button
@@ -276,8 +299,8 @@ const AdminCategoriesPage = () => {
               </DialogTitle>
               <DialogDescription>
                 {editingCategory
-                  ? "Update the name of this category."
-                  : "Create a new top-level shop category."}
+                  ? "Update this category and its parent relationship."
+                  : "Create a new shop category."}
               </DialogDescription>
             </DialogHeader>
 
@@ -294,6 +317,37 @@ const AdminCategoriesPage = () => {
                   className="focus-visible:border-primary-normal focus-visible:ring-primary-normal/40"
                 />
                 {nameError && <FieldError>{nameError}</FieldError>}
+              </Field>
+
+              <Field>
+                <FieldLabel>Parent category</FieldLabel>
+                <Select
+                  value={parentCategoryId || "none"}
+                  onValueChange={(value) =>
+                    setParentCategoryId(!value || value === "none" ? "" : value)
+                  }
+                  disabled={isSaving}
+                >
+                  <SelectTrigger className="h-10 w-full rounded-lg bg-white text-sm">
+                    <SelectValue placeholder="Select parent category">
+                      {parentCategoryLabel}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="rounded-lg p-1">
+                    <SelectItem value="none" className="rounded-md px-3 py-2.5">
+                      No parent category
+                    </SelectItem>
+                    {parentCategoryOptions.map((category) => (
+                      <SelectItem
+                        key={category.id}
+                        value={category.id}
+                        className="rounded-md px-3 py-2.5"
+                      >
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </Field>
 
               <Field data-invalid={!!mediaError}>

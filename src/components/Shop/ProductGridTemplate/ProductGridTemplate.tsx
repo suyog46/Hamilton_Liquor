@@ -1,6 +1,7 @@
 "use client";
 
 import { Icon } from "@iconify/react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import PageBanner from "@/components/Common/PageBanner/PageBanner";
 import ProductCard from "@/components/Common/ProductCard/ProductCard";
 import { Input } from "@/components/ui/input";
@@ -37,14 +38,28 @@ const ProductGridTemplate = ({
   defaultSortBy,
   defaultSortOrder,
 }: ProductGridTemplateProps) => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { data: categoryData } = useGetPublicCategoriesQuery({ limit: 50 });
-  const categories = (categoryData?.data.items ?? []).filter((category) => category.is_active);
+  const categories = useMemo(
+    () => (categoryData?.data.items ?? []).filter((category) => category.is_active),
+    [categoryData],
+  );
   const { data: brandData } = useGetPublicBrandsQuery({ limit: 100, sort_by: "name", sort_order: "asc" });
-  const brands = (brandData?.data.items ?? []).filter((brand) => brand.is_active);
+  const brands = useMemo(
+    () => (brandData?.data.items ?? []).filter((brand) => brand.is_active),
+    [brandData],
+  );
   const { data: countryData } = useGetPublicCountriesQuery({ limit: 100, sort_by: "name", sort_order: "asc" });
-  const countries = (countryData?.data.items ?? []).filter((country) => country.is_active);
+  const countries = useMemo(
+    () => (countryData?.data.items ?? []).filter((country) => country.is_active),
+    [countryData],
+  );
 
-  const [categoryId, setCategoryId] = useState(initialCategory ?? "");
+  const [categoryIds, setCategoryIds] = useState<string[]>(
+    initialCategory ? [initialCategory] : [],
+  );
   const [brandId, setBrandId] = useState("");
   const [countryId, setCountryId] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -58,10 +73,29 @@ const ProductGridTemplate = ({
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    if (!initialCategory || categoryId !== initialCategory || categories.length === 0) return;
+    const currentCategory = categoryIds[0];
+
+    if (
+      !initialCategory ||
+      categoryIds.length !== 1 ||
+      currentCategory !== initialCategory ||
+      categories.length === 0
+    ) return;
     const category = categories.find((item) => item.id === initialCategory || item.slug === initialCategory);
-    if (category) setCategoryId(category.slug);
-  }, [initialCategory, categoryId, categories]);
+    if (category) {
+      const childCategoryIds = categories
+        .filter((item) => item.parent?.id === category.id)
+        .map((item) => item.id);
+      const nextCategoryIds = [category.id, ...childCategoryIds];
+      const categoryIdsChanged =
+        categoryIds.length !== nextCategoryIds.length ||
+        categoryIds.some((id, index) => id !== nextCategoryIds[index]);
+
+      if (categoryIdsChanged) {
+        setCategoryIds(nextCategoryIds);
+      }
+    }
+  }, [initialCategory, categoryIds, categories]);
 
   useEffect(() => {
     const timeout = setTimeout(() => setDebouncedSearch(searchInput.trim()), 400);
@@ -70,7 +104,15 @@ const ProductGridTemplate = ({
 
   useEffect(() => {
     setPage(1);
-  }, [categoryId, brandId, countryId, debouncedSearch, sortBy, sortOrder, minPrice, maxPrice, volumes, inStockOnly]);
+  }, [categoryIds, brandId, countryId, debouncedSearch, sortBy, sortOrder, minPrice, maxPrice, volumes, inStockOnly]);
+
+  const selectedCategorySlugs = useMemo(
+    () =>
+      categoryIds
+        .map((categoryId) => categories.find((category) => category.id === categoryId)?.slug)
+        .filter((slug): slug is string => Boolean(slug)),
+    [categoryIds, categories],
+  );
 
   const queryParams = useMemo(
     () => ({
@@ -79,7 +121,7 @@ const ProductGridTemplate = ({
       search: debouncedSearch || undefined,
       sort_by: sortBy,
       sort_order: sortOrder,
-      category: categoryId || undefined,
+      category: selectedCategorySlugs.length > 0 ? selectedCategorySlugs : undefined,
       brand: brandId || undefined,
       country: countryId || undefined,
       min_price: minPrice === "" ? undefined : Number(minPrice),
@@ -87,16 +129,38 @@ const ProductGridTemplate = ({
       volume_ml: volumes.length > 0 ? volumes : undefined,
       in_stock: inStockOnly || undefined,
     }),
-    [page, debouncedSearch, sortBy, sortOrder, categoryId, brandId, countryId, minPrice, maxPrice, volumes, inStockOnly]
+    [page, debouncedSearch, sortBy, sortOrder, selectedCategorySlugs, brandId, countryId, minPrice, maxPrice, volumes, inStockOnly]
   );
 
-  const { data, isLoading, isFetching } = useGetPublicProductsQuery(queryParams);
+  const { data, isLoading, isFetching } = useGetPublicProductsQuery(queryParams, {
+    refetchOnMountOrArgChange: true,
+  });
   const products = data?.data.items ?? [];
   const pagination = data?.data.pagination;
   const showSkeleton = isLoading || (isFetching && products.length === 0);
 
+  const handleCategoryChange = (nextCategoryIds: string[]) => {
+    setCategoryIds(nextCategoryIds);
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    const selectedCategory = categories.find(
+      (category) => category.id === nextCategoryIds[0],
+    );
+
+    if (nextCategoryIds.length === 1 && selectedCategory) {
+      nextParams.set("category", selectedCategory.slug);
+    } else {
+      nextParams.delete("category");
+    }
+
+    const nextQuery = nextParams.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+      scroll: false,
+    });
+  };
+
   const clearFilters = () => {
-    setCategoryId("");
+    handleCategoryChange([]);
     setBrandId("");
     setCountryId("");
     setMinPrice("");
@@ -149,14 +213,14 @@ const ProductGridTemplate = ({
               categories={categories}
               brands={brands}
               countries={countries}
-              categoryId={categoryId}
+              categoryIds={categoryIds}
               brandId={brandId}
               countryId={countryId}
               minPrice={minPrice}
               maxPrice={maxPrice}
               volumes={volumes}
               inStockOnly={inStockOnly}
-              onCategoryChange={setCategoryId}
+              onCategoryChange={handleCategoryChange}
               onBrandChange={setBrandId}
               onCountryChange={setCountryId}
               onMinPriceChange={setMinPrice}

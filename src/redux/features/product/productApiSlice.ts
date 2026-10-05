@@ -25,6 +25,11 @@ export interface ProductRef {
   name: string;
 }
 
+export interface ProductCategoryRef extends ProductRef {
+  slug?: string;
+  parent?: (ProductRef & { slug: string }) | null;
+}
+
 export interface CountryRef {
   id: string;
   name: string;
@@ -33,6 +38,8 @@ export interface CountryRef {
 
 export interface ProductVariant {
   id: string;
+  sku: string;
+  display_name: string;
   volume_ml: number;
   price: string;
   alcohol_percentage: string;
@@ -53,7 +60,7 @@ export interface Product {
   is_featured: boolean;
   brand: ProductRef;
   country: CountryRef | null;
-  category: ProductRef;
+  category: ProductCategoryRef;
   variants: ProductVariant[];
   created_at: string;
   updated_at: string;
@@ -99,7 +106,7 @@ export type GetProductsParams = BaseGetListParams<"name" | "price" | "created_at
 
 // Public storefront listing supports the same base params plus catalog filters.
 export interface PublicGetProductsParams extends GetProductsParams {
-  category?: string;
+  category?: string | string[];
   brand?: string;
   country?: string;
   min_price?: number;

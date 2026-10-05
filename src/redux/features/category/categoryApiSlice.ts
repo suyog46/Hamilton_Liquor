@@ -2,10 +2,17 @@ import { apiSlice } from "@/redux/apiSlice";
 import type { ApiListResponse, ApiResponse, BaseGetListParams } from "@/redux/types/api";
 import type { MediaRef } from "@/redux/features/product/productApiSlice";
 
+export interface CategoryParent {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export interface Category {
   id: string;
   name: string;
   slug: string;
+  parent: CategoryParent | null;
   media: MediaRef | null;
   is_active: boolean;
   created_at: string;
@@ -21,12 +28,14 @@ export type GetCategoriesParams = BaseGetListParams<"name" | "created_at" | "upd
 export interface CreateCategoryRequest {
   name: string;
   media_id: string;
+  parent_id: string;
 }
 
 export interface UpdateCategoryRequest {
   category_id: string;
   name: string;
   media_id?: string;
+  parent_id?: string;
 }
 
 export const categoryApiSlice = apiSlice.injectEndpoints({

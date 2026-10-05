@@ -28,6 +28,7 @@ const VariantCardGrid = ({
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {variants.map((variant) => {
+        const variantLabel = variant.display_name || `${variant.volume_ml} mL`;
         const image = (
           <div className="relative  w-full overflow-hidden rounded-lg bg-gray-100">
             {variant.media[0]?.media?.url ? (
@@ -57,7 +58,10 @@ const VariantCardGrid = ({
 
         const info = (
           <div className="min-w-0">
-            <p className="font-medium">{variant.volume_ml} mL</p>
+            <p className="truncate font-medium">{variantLabel}</p>
+            <p className="text-[11px] text-muted-foreground">
+              SKU: {variant.sku}
+            </p>
             <p className="text-[11px] text-muted-foreground">
               ${Number(variant.price).toFixed(2)} · {variant.available_quantity} available
             </p>
@@ -88,7 +92,7 @@ const VariantCardGrid = ({
               <AdjustInventoryDialog
                 productId={productId}
                 variantId={variant.id}
-                variantLabel={`${variant.volume_ml} mL`}
+                variantLabel={variantLabel}
                 currentQuantity={variant.quantity}
                 trigger="button"
                 className="h-7 px-2 text-[11px]"

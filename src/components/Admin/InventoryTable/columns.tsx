@@ -17,7 +17,9 @@ function VariantsCell({ product }: { product: Product }) {
     <div className="flex flex-col gap-2">
       {product.variants.map((variant) => (
         <div key={variant.id} className="flex items-center gap-2">
-          <span className="w-16 shrink-0 text-[11px] font-medium">{variant.volume_ml} mL</span>
+          <span className="w-28 shrink-0 text-[11px] font-medium">
+            {variant.display_name || `${variant.volume_ml} mL`}
+          </span>
           <Badge
             variant={variant.available_quantity > 0 ? "secondary" : "outline"}
             className="w-24 justify-center"
@@ -30,7 +32,7 @@ function VariantsCell({ product }: { product: Product }) {
           <AdjustInventoryDialog
             productId={product.id}
             variantId={variant.id}
-            variantLabel={`${variant.volume_ml} mL`}
+            variantLabel={variant.display_name || `${variant.volume_ml} mL`}
             currentQuantity={variant.quantity}
             trigger="icon"
           />

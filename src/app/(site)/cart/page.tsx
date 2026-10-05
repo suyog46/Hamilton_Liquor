@@ -3,11 +3,12 @@
 import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import PageBanner from "@/components/Common/PageBanner/PageBanner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import {
   cartApiSlice,
   useGetCartQuery,
@@ -43,6 +44,7 @@ const CartPage = () => {
   const [updateCartItem, { isLoading: isUpdatingCart }] =
     useUpdateCartItemMutation();
   const [removeCartItem] = useRemoveCartItemMutation();
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const setCartCount = useCartStore((s) => s.setCount);
   const guestItems = useCartStore((s) => s.guestItems);
   const updateGuestItem = useCartStore((s) => s.updateGuestItem);
@@ -117,21 +119,24 @@ const CartPage = () => {
   };
 
   const removeLine = async (line: DisplayLine) => {
-    if (!isLoggedIn) {
-      removeGuestItem(line.id);
-      return;
-    }
+    setRemovingId(line.id);
     try {
+      if (!isLoggedIn) {
+        removeGuestItem(line.id);
+        return;
+      }
       await removeCartItem(line.id).unwrap();
     } catch {
       toast.error("Failed to remove item.");
+    } finally {
+      setRemovingId(null);
     }
   };
 
   const handleCheckout = () => {
     if (!isLoggedIn) {
       toast.error("You are not logged in. Log in first.");
-      router.push("/login?redirect=/checkout");
+      router.push("/login?redirect=/cart");
       return;
     }
     router.push("/checkout");
@@ -224,7 +229,13 @@ const CartPage = () => {
                           <button
                             aria-label="Remove item"
                             onClick={() => removeLine(line)}
-                            className="text-gray-300 hover:text-red-500 transition-colors shrink-0"
+                            disabled={removingId === line.id}
+                            className={cn(
+                              "shrink-0 transition-colors disabled:cursor-not-allowed",
+                              removingId === line.id
+                                ? "text-gray-300"
+                                : "text-red-500 hover:text-red-600",
+                            )}
                           >
                             <Icon
                               icon="solar:trash-bin-minimalistic-linear"

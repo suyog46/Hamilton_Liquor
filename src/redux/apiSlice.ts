@@ -42,9 +42,7 @@ const baseQueryWithReauth: BaseQueryFn<
     if (!mutex.isLocked()) {
       const release = await mutex.acquire();
       try {
-        // refresh_token is httpOnly and scoped to our own domain, so it can
-        // only be read/rotated by our own route handler — not by fetching
-        // the external API directly from the browser.
+  
         const refreshRes = await fetch("/api/auth/refresh", {
           method: "POST",
           credentials: "include",
