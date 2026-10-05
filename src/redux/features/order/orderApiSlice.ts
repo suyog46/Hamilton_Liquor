@@ -73,10 +73,91 @@ export interface CheckoutRequest {
   fulfillment_method: FulfillmentMethod;
   address_id?: string;
   handoff_instructions?: string;
-  pickup_scheduled_start_at?: string;
-  pickup_scheduled_end_at?: string;
+  pickup_date?: string;
+  pickup_start_time?: string;
+  pickup_end_time?: string;
   delivery_date?: string;
   delivery_slot_id?: string;
+  expected_checkout: CheckoutExpectedCheckoutInput;
+}
+
+export interface CheckoutPreviewRequest {
+  items: CheckoutItemInput[];
+  fulfillment_method: FulfillmentMethod;
+  address_id?: string;
+  handoff_instructions?: string;
+  pickup_date?: string;
+  pickup_start_time?: string;
+  pickup_end_time?: string;
+  delivery_date?: string;
+  delivery_slot_id?: string;
+}
+
+export interface CheckoutPreviewLineItem {
+  product_variant_id: string;
+  quantity: number;
+  regular_unit_price: string;
+  sale_id: string | null;
+  sale_percentage: string | null;
+  sale_unit_price: string | null;
+  unit_price: string;
+  line_total: string;
+  product_name: string;
+  variant_name: string;
+  sku: string;
+  volume_ml: number;
+  alcohol_percentage: string;
+  available_quantity: number;
+  is_available: boolean;
+}
+
+export interface ExpectedCheckoutItem {
+  product_variant_id: string;
+  quantity: number;
+  regular_unit_price: string;
+  sale_id: string | null;
+  sale_percentage: string | null;
+  sale_unit_price: string | null;
+  unit_price: string;
+  line_total: string;
+}
+
+export interface ExpectedCheckout {
+  items: ExpectedCheckoutItem[];
+  subtotal: string;
+  delivery_fee: string;
+  total: string;
+  currency: string;
+}
+
+export interface CheckoutExpectedItemInput {
+  product_variant_id: string;
+  quantity: number;
+  regular_unit_price: number;
+  sale_id: string | null;
+  sale_percentage: number | null;
+  sale_unit_price: number | null;
+  unit_price: number;
+  line_total: number;
+}
+
+export interface CheckoutExpectedCheckoutInput {
+  items: CheckoutExpectedItemInput[];
+  subtotal: number;
+  delivery_fee: number;
+  total: number;
+  currency: string;
+}
+
+export interface CheckoutPreviewData {
+  items: CheckoutPreviewLineItem[];
+  expected_checkout: ExpectedCheckout;
+  fulfillment_method: FulfillmentMethod;
+  pickup_date: string | null;
+  pickup_start_time: string | null;
+  pickup_end_time: string | null;
+  delivery_date: string | null;
+  delivery_slot_id: string | null;
 }
 
 export interface Order {
@@ -123,11 +204,17 @@ export interface CheckoutData {
 }
 
 export type CheckoutResponse = ApiResponse<CheckoutData>;
+export type CheckoutPreviewResponse = ApiResponse<CheckoutPreviewData>;
 export type OrdersResponse = ApiListResponse<Order>;
 export type OrderResponse = ApiResponse<Order>;
 export type GetOrdersParams = Pick<BaseGetListParams, "page" | "limit">;
 export type AdminOrdersResponse = ApiListResponse<AdminOrder>;
 export type AdminOrderResponse = ApiResponse<AdminOrder>;
+
+export interface CheckoutMutationRequest {
+  body: CheckoutRequest;
+  idempotencyKey: string;
+}
 
 export const orderApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -162,13 +249,23 @@ export const orderApiSlice = apiSlice.injectEndpoints({
         { type: "Order", id: order_id },
       ],
     }),
-    checkout: builder.mutation<CheckoutResponse, CheckoutRequest>({
-      query: (body) => ({
+    checkout: builder.mutation<CheckoutResponse, CheckoutMutationRequest>({
+      query: ({ body, idempotencyKey }) => ({
         url: "orders/checkout",
         method: "POST",
+        headers: {
+          "Idempotency-Key": idempotencyKey,
+        },
         body,
       }),
       invalidatesTags: ["Cart", { type: "Order", id: "LIST" }],
+    }),
+    checkoutPreview: builder.mutation<CheckoutPreviewResponse, CheckoutPreviewRequest>({
+      query: (body) => ({
+        url: "orders/checkout/preview",
+        method: "POST",
+        body,
+      }),
     }),
   }),
 });
@@ -180,4 +277,5 @@ export const {
   useGetAdminOrderQuery,
   useUpdateOrderFulfillmentMutation,
   useCheckoutMutation,
+  useCheckoutPreviewMutation,
 } = orderApiSlice;

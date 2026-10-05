@@ -66,7 +66,7 @@ export default function OrdersPage() {
           </div>
 
           {isError ? (
-            <div className="rounded-2xl bg-white p-12 text-center ring-1 ring-gray-200">
+            <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center shadow-sm">
               <Icon
                 icon="solar:danger-triangle-linear"
                 className="mx-auto size-10 text-red-400"
@@ -76,13 +76,13 @@ export default function OrdersPage() {
               </p>
               <button
                 onClick={() => refetch()}
-                className="mt-4 text-sm font-semibold text-primary-active"
+                className="mt-4 text-sm font-semibold text-gray-700 hover:text-black"
               >
                 Try again
               </button>
             </div>
           ) : orders.length === 0 ? (
-            <div className="rounded-2xl bg-white p-12 text-center ring-1 ring-gray-200">
+            <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center shadow-sm">
               <Icon
                 icon="solar:bag-4-linear"
                 className="mx-auto size-11 text-gray-300"
@@ -95,7 +95,7 @@ export default function OrdersPage() {
               </p>
               <Link
                 href="/shop"
-                className="mt-6 inline-flex h-11 items-center rounded-lg bg-primary-normal px-6 text-sm font-semibold text-black hover:bg-primary-hover"
+                className="mt-6 inline-flex h-11 items-center rounded-lg bg-neutral-900 px-6 text-sm font-semibold text-white hover:bg-neutral-800"
               >
                 Start shopping
               </Link>
@@ -111,17 +111,17 @@ export default function OrdersPage() {
                   <Link
                     key={order.id}
                     href={`/order/${order.id}`}
-                    className="group block rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-200 transition hover:-translate-y-0.5 hover:shadow-md hover:ring-primary-normal sm:p-6"
+                    className="group block rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-gray-300 hover:bg-gray-50 hover:shadow-md sm:p-6"
                   >
                     <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <span
-                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${statusTone[order.status]}`}
+                            className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${statusTone[order.status]}`}
                           >
                             {orderStatusLabel[order.status]}
                           </span>
-                          <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+                          <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-700">
                             {order.fulfillment_method === "PICKUP"
                               ? "Pickup"
                               : "Delivery"}
@@ -134,7 +134,7 @@ export default function OrdersPage() {
                           Placed {formatOrderDate(order.created_at)}
                         </p>
                       </div>
-                      <div className="grid flex-1 gap-4 border-t pt-5 sm:max-w-2xl sm:grid-cols-3 sm:border-l sm:border-t-0 sm:pl-8 sm:pt-0">
+                      <div className="grid flex-1 gap-4 border-t border-gray-100 pt-5 sm:max-w-2xl sm:grid-cols-3 sm:border-l sm:border-t-0 sm:pl-8 sm:pt-0">
                         <div>
                           <p className="text-xs text-gray-400">Progress</p>
                           <p className="mt-1 text-sm font-semibold">
@@ -156,7 +156,7 @@ export default function OrdersPage() {
                           </div>
                           <Icon
                             icon="solar:alt-arrow-right-linear"
-                            className="size-5 text-gray-300 transition group-hover:translate-x-1 group-hover:text-primary-active sm:mt-2"
+                            className="size-5 text-gray-300 transition group-hover:translate-x-1 group-hover:text-gray-700 sm:mt-2"
                           />
                         </div>
                       </div>
@@ -168,7 +168,7 @@ export default function OrdersPage() {
           )}
 
           {pagination && pagination.total_pages > 1 && (
-            <div className="mt-8 rounded-xl bg-white p-4 ring-1 ring-gray-200">
+            <div className="mt-8 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
               <DataTablePagination
                 page={pagination.page}
                 limit={pagination.limit}

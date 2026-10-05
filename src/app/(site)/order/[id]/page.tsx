@@ -81,7 +81,7 @@ export default function OrderDetailPage() {
           <div className="mt-5 flex justify-center gap-4">
             <button
               onClick={() => refetch()}
-              className="text-sm font-semibold text-primary-active"
+              className="text-sm font-semibold text-gray-700 hover:text-black"
             >
               Try again
             </button>
@@ -136,11 +136,11 @@ export default function OrderDetailPage() {
                 <div>
                   <div className="flex flex-wrap gap-2">
                     <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${statusTone[order.status]}`}
+                      className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${statusTone[order.status]}`}
                     >
                       {orderStatusLabel[order.status]}
                     </span>
-                    <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+                    <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-700">
                       {order.fulfillment_method === "PICKUP"
                         ? "Store pickup"
                         : "Delivery"}
@@ -165,8 +165,8 @@ export default function OrderDetailPage() {
               </h2>
               <div className="mt-7">
                 <div className="relative flex gap-4 pb-8">
-                  <div className="absolute left-5 top-10 h-[calc(100%-1.25rem)] w-px bg-primary-normal" />
-                  <div className="relative z-10 flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-normal text-black">
+                  <div className="absolute left-5 top-10 h-[calc(100%-1.25rem)] w-px bg-emerald-200" />
+                  <div className="relative z-10 flex size-10 shrink-0 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700">
                     <Icon
                       icon="solar:clipboard-check-linear"
                       className="size-5"
@@ -195,11 +195,11 @@ export default function OrderDetailPage() {
                     >
                       {!isLast && (
                         <div
-                          className={`absolute left-5 top-10 h-[calc(100%-1.25rem)] w-px ${completed ? "bg-primary-normal" : "bg-gray-200"}`}
+                          className={`absolute left-5 top-10 h-[calc(100%-1.25rem)] w-px ${completed ? "bg-emerald-200" : "bg-gray-200"}`}
                         />
                       )}
                       <div
-                        className={`relative z-10 flex size-10 shrink-0 items-center justify-center rounded-full ring-1 ${completed || current ? "bg-primary-normal text-black ring-primary-normal" : "bg-white text-gray-300 ring-gray-200"}`}
+                        className={`relative z-10 flex size-10 shrink-0 items-center justify-center rounded-full border ${completed || current ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-gray-200 bg-white text-gray-300"}`}
                       >
                         <Icon icon={eventIcon[eventType]} className="size-5" />
                       </div>
@@ -214,7 +214,7 @@ export default function OrderDetailPage() {
                             {formatOrderDate(event.created_at)}
                           </p>
                         ) : current ? (
-                          <p className="mt-1 text-xs font-medium text-primary-active">
+                          <p className="mt-1 text-xs font-medium text-emerald-700">
                             In progress
                           </p>
                         ) : (
@@ -332,7 +332,7 @@ export default function OrderDetailPage() {
                       ? "solar:bag-check-outline"
                       : "solar:delivery-outline"
                   }
-                  className="size-6 text-primary-active"
+                  className="size-6 text-emerald-700"
                 />
                 <h2 className="font-title text-lg font-semibold">
                   {order.fulfillment_method === "PICKUP"
@@ -398,7 +398,7 @@ export default function OrderDetailPage() {
 
             <Link
               href="/order"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-primary-active"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-black"
             >
               <Icon icon="solar:arrow-left-linear" className="size-4" />
               Back to all orders

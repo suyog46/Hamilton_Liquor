@@ -31,12 +31,13 @@ import {
 import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
 import { cn, formatStoreTime } from "@/lib/utils";
 import { siteConfig } from "@/lib/utils/siteConfig";
-import { formatPrice, formatVolume } from "@/lib/utils/productDisplay";
+import { useCheckoutStore } from "@/lib/stores/checkoutStore";
 import { useGetAddressesQuery } from "@/redux/features/address/addressApiSlice";
 import { useGetCartQuery } from "@/redux/features/cart/cartApiSlice";
 import {
+  type ExpectedCheckout,
   type FulfillmentMethod,
-  useCheckoutMutation,
+  useCheckoutPreviewMutation,
 } from "@/redux/features/order/orderApiSlice";
 import {
   type DayOfWeek,
@@ -74,6 +75,12 @@ const isSlotPastForToday = (startTime: string, isToday: boolean) => {
   return slotMoment.getTime() <= Date.now();
 };
 
+const toTimeValue = (minutes: number) => {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}:00`;
+};
+
 // Pickup has no persisted "slot" resource — it's just the store's regular
 // operating hours, cut into hourly windows for the chosen date.
 const buildPickupSlots = (
@@ -95,19 +102,19 @@ const buildPickupSlots = (
   const closeMinutes = closeHour * 60 + closeMinute;
 
   const isToday = dateValue === getTodayValue();
-  const earliest = new Date(Date.now() + 60 * 60 * 1000);
+  const now = new Date();
+  const earliestMinutes = now.getHours() * 60 + now.getMinutes() + 60;
 
   const slots: TimeSlot[] = [];
   for (let minutes = openMinutes; minutes + 60 <= closeMinutes; minutes += 60) {
-    const start = new Date(date);
-    start.setHours(0, minutes, 0, 0);
-    if (isToday && start < earliest) continue;
-    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    if (isToday && minutes < earliestMinutes) continue;
+    const start = toTimeValue(minutes);
+    const end = toTimeValue(minutes + 60);
     slots.push({
-      value: start.toISOString(),
-      label: `${start.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} – ${end.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`,
-      start: start.toISOString(),
-      end: end.toISOString(),
+      value: start,
+      label: `${formatStoreTime(start)} – ${formatStoreTime(end)}`,
+      start,
+      end,
     });
   }
 
@@ -127,6 +134,26 @@ const checkoutErrorMessage = (error: unknown) => {
   );
 };
 
+const numberOrNull = (value: string | null) =>
+  value === null || value === "" ? null : Number(value);
+
+const buildExpectedCheckoutInput = (expected: ExpectedCheckout) => ({
+  items: expected.items.map((item) => ({
+    product_variant_id: item.product_variant_id,
+    quantity: item.quantity,
+    regular_unit_price: Number(item.regular_unit_price),
+    sale_id: item.sale_id,
+    sale_percentage: numberOrNull(item.sale_percentage),
+    sale_unit_price: numberOrNull(item.sale_unit_price),
+    unit_price: Number(item.unit_price),
+    line_total: Number(item.line_total),
+  })),
+  subtotal: Number(expected.subtotal),
+  delivery_fee: Number(expected.delivery_fee),
+  total: Number(expected.total),
+  currency: expected.currency,
+});
+
 export default function CheckoutPage() {
   const router = useRouter();
   const [method, setMethod] = useState<FulfillmentMethod>("PICKUP");
@@ -138,12 +165,14 @@ export default function CheckoutPage() {
   const [deliveryDate, setDeliveryDate] = useState(getTodayValue);
   const [deliverySlotId, setDeliverySlotId] = useState("");
   const [instructions, setInstructions] = useState("");
+  const setCheckoutPreview = useCheckoutStore((state) => state.setPreview);
 
   const {
     data: meData,
     isLoading: isLoadingUser,
     isError: isUserError,
   } = useGetMeQuery();
+
   const isLoggedIn = !!meData?.data;
   const { data: cartData, isLoading: isLoadingCart } = useGetCartQuery(
     undefined,
@@ -158,7 +187,8 @@ export default function CheckoutPage() {
       { date: isDeliveryToday ? "today" : "tomorrow" },
       { skip: !isLoggedIn || method !== "DELIVERY" || !deliveryDate },
     );
-  const [checkout, { isLoading: isCheckingOut }] = useCheckoutMutation();
+  const [checkoutPreview, { isLoading: isPreviewing }] =
+    useCheckoutPreviewMutation();
 
   const pickupSlots = useMemo(
     () => buildPickupSlots(pickupDate, hoursData?.data.hours ?? []),
@@ -173,11 +203,6 @@ export default function CheckoutPage() {
 
   const cart = cartData?.data;
   const addresses = addressData?.data.items ?? [];
-  const subtotal = (cart?.items ?? []).reduce(
-    (sum, item) => sum + Number(item.product_variant.price) * item.quantity,
-    0,
-  );
-
   useEffect(() => {
     if (!isLoadingUser && (isUserError || !meData?.data)) {
       router.replace("/login?redirect=/checkout");
@@ -209,7 +234,7 @@ export default function CheckoutPage() {
     setDeliverySlotId("");
   };
 
-  const submitCheckout = async () => {
+  const continueToPreview = async () => {
     if (!cart?.items.length) {
       toast.error("Your cart is empty.");
       return;
@@ -229,31 +254,43 @@ export default function CheckoutPage() {
     }
 
     try {
-      const schedule =
+      const items = cart.items.map((item) => ({
+        product_variant_id: item.product_variant.id,
+        quantity: item.quantity,
+      }));
+      const previewRequest =
         method === "PICKUP"
           ? {
-              pickup_scheduled_start_at: selectedPickupSlot!.start,
-              pickup_scheduled_end_at: selectedPickupSlot!.end,
+              items,
+              fulfillment_method: method,
+              pickup_date: pickupDate,
+              pickup_start_time: selectedPickupSlot!.start,
+              pickup_end_time: selectedPickupSlot!.end,
             }
           : {
+              items,
+              fulfillment_method: method,
+              address_id: addressId,
+              handoff_instructions: instructions.trim(),
               delivery_date: deliveryDate,
               delivery_slot_id: selectedDeliverySlot!.id,
             };
-      const response = await checkout({
-        items: cart.items.map((item) => ({
-          product_variant_id: item.product_variant.id,
-          quantity: item.quantity,
-        })),
-        fulfillment_method: method,
-        ...(method === "DELIVERY" && {
-          address_id: addressId,
-          handoff_instructions: instructions.trim(),
-        }),
-        ...schedule,
-      }).unwrap();
+      const previewResponse = await checkoutPreview(previewRequest).unwrap();
+      const paymentRequest = {
+        ...previewRequest,
+        expected_checkout: buildExpectedCheckoutInput(
+          previewResponse.data.expected_checkout,
+        ),
+      };
+      const idempotencyKey = crypto.randomUUID();
 
-      if (!response.data.checkout_url) throw new Error("Missing checkout URL");
-      window.location.assign(response.data.checkout_url);
+      setCheckoutPreview({
+        previewResponse,
+        previewRequest,
+        paymentRequest,
+        idempotencyKey,
+      });
+      router.push("/checkout/preview");
     } catch (error) {
       toast.error(checkoutErrorMessage(error));
     }
@@ -306,7 +343,7 @@ export default function CheckoutPage() {
         breadcrumbs={[{ name: "Cart", href: "/cart" }, { name: "Checkout" }]}
       />
       <section className="bg-gray-50 py-10 sm:py-14">
-        <div className="mx-auto grid max-w-6xl gap-8 px-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="mx-auto max-w-4xl px-6">
           <div>
             <div className="mb-5 flex items-center justify-between">
               <p className="text-sm font-semibold">
@@ -436,14 +473,14 @@ export default function CheckoutPage() {
                     </Button>
                   ) : (
                     <Button
-                      onClick={submitCheckout}
-                      disabled={!pickupSlotValue || isCheckingOut}
+                      onClick={continueToPreview}
+                      disabled={!pickupSlotValue || isPreviewing}
                       className="h-12 bg-primary-normal px-8 text-black hover:bg-primary-hover"
                     >
-                      {isCheckingOut && (
+                      {isPreviewing && (
                         <Icon icon="svg-spinners:180-ring" className="size-4" />
                       )}
-                      Continue to payment
+                      Continue
                     </Button>
                   )}
                 </div>
@@ -650,77 +687,19 @@ export default function CheckoutPage() {
                     Back
                   </Button>
                   <Button
-                    onClick={submitCheckout}
-                    disabled={!deliverySlotId || isCheckingOut}
+                    onClick={continueToPreview}
+                    disabled={!deliverySlotId || isPreviewing}
                     className="h-12 bg-primary-normal px-8 text-black hover:bg-primary-hover"
                   >
-                    {isCheckingOut && (
+                    {isPreviewing && (
                       <Icon icon="svg-spinners:180-ring" className="size-4" />
                     )}
-                    Continue to payment
+                    Continue
                   </Button>
                 </div>
               </div>
             )}
           </div>
-
-          <aside className="h-fit rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-200 lg:sticky lg:top-28 sm:p-6">
-            <h2 className="font-title text-xl font-semibold">Order summary</h2>
-            <div className="mt-5 divide-y divide-gray-100">
-              {cart.items.map((item) => (
-                <div key={item.id} className="flex gap-3 py-4 first:pt-0">
-                  <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-50">
-                    {item.product_variant.thumbnail?.url ? (
-                      <img
-                        src={item.product_variant.thumbnail.url}
-                        alt={item.product_variant.product.name}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <Icon
-                        icon="solar:bottle-linear"
-                        className="absolute inset-0 m-auto size-7 text-gray-300"
-                      />
-                    )}
-                    <span className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-black text-[10px] font-bold text-white">
-                      {item.quantity}
-                    </span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="line-clamp-2 text-sm font-semibold">
-                      {item.product_variant.product.name}
-                    </p>
-                    <p className="mt-1 text-xs text-gray-500">
-                      {formatVolume(item.product_variant.volume_ml)}
-                    </p>
-                    <p className="mt-2 text-sm font-bold">
-                      {formatPrice(
-                        Number(item.product_variant.price) * item.quantity,
-                      )}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="border-t border-gray-200 pt-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Subtotal</span>
-                <span className="font-semibold">{formatPrice(subtotal)}</span>
-              </div>
-              <p className="mt-3 text-xs leading-5 text-gray-500">
-                Delivery fees, if applicable, are calculated by the checkout
-                service before payment.
-              </p>
-            </div>
-            <div className="mt-5 flex gap-2 rounded-lg bg-gray-50 p-3 text-xs leading-5 text-gray-600">
-              <Icon
-                icon="solar:shield-check-linear"
-                className="mt-0.5 size-4 shrink-0 text-primary-active"
-              />
-              You must be 21+ and present a valid government-issued photo ID at
-              pickup or delivery.
-            </div>
-          </aside>
         </div>
       </section>
 
