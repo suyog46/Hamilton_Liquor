@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Icon } from "@iconify/react";
 import { Button } from "@/components/ui/button";
 import { AdjustInventoryDialog } from "@/components/Admin/AdjustInventoryDialog/AdjustInventoryDialog";
+import AddSaleDialog from "@/components/Admin/AddSaleDialog/AddSaleDialog";
 import type { ProductVariant } from "@/redux/features/product/productApiSlice";
 import Image from "next/image";
 
@@ -89,6 +90,7 @@ const VariantCardGrid = ({
             <Link href={`/admin/variants/${variant.id}`}>{image}</Link>
             {info}
             <div className="flex items-center gap-2 border-t border-input pt-2.5">
+              <AddSaleDialog variantId={variant.id} variantLabel={variantLabel} />
               <AdjustInventoryDialog
                 productId={productId}
                 variantId={variant.id}

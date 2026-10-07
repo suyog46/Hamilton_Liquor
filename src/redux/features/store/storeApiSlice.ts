@@ -1,5 +1,5 @@
 import { apiSlice } from "@/redux/apiSlice";
-import type { ApiListResponse, ApiResponse, ListData } from "@/redux/types/api";
+import type { ApiListResponse, ApiResponse, BaseGetListParams, ListData } from "@/redux/types/api";
 
 export type SocialPlatform = "FACEBOOK" | "INSTAGRAM" | "TIKTOK" | "X";
 
@@ -128,6 +128,28 @@ export interface CreateSocialLinkRequest {
 export interface UpdateSocialLinkRequest {
   social_link_id: string;
   url: string;
+}
+
+export interface StoreClosure {
+  id: string;
+  date: string; // e.g. "2026-10-07"
+  name: string;
+}
+
+export interface GetStoreClosuresParams extends BaseGetListParams {
+  year?: number | null;
+  month?: number | null;
+}
+
+export interface CreateStoreClosureRequest {
+  date: string;
+  name: string;
+}
+
+export interface UpdateStoreClosureRequest {
+  closure_id: string;
+  date: string;
+  name: string;
 }
 
 export const storeApiSlice = apiSlice.injectEndpoints({
@@ -308,6 +330,54 @@ export const storeApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: [{ type: "Store", id: "SOCIAL-LINKS" }],
     }),
+    getStoreClosures: builder.query<
+      ApiListResponse<StoreClosure>,
+      GetStoreClosuresParams | void
+    >({
+      query: (params) => ({
+        url: "admin/store/closures",
+        params: params ?? undefined,
+      }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.data.items.map(({ id }) => ({
+                type: "Store" as const,
+                id: `CLOSURE-${id}`,
+              })),
+              { type: "Store" as const, id: "CLOSURES" },
+            ]
+          : [{ type: "Store" as const, id: "CLOSURES" }],
+    }),
+    createStoreClosure: builder.mutation<
+      ApiResponse<StoreClosure>,
+      CreateStoreClosureRequest
+    >({
+      query: (body) => ({
+        url: "admin/store/closures",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [{ type: "Store", id: "CLOSURES" }],
+    }),
+    updateStoreClosure: builder.mutation<
+      ApiResponse<StoreClosure>,
+      UpdateStoreClosureRequest
+    >({
+      query: ({ closure_id, ...body }) => ({
+        url: `admin/store/closures/${closure_id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: [{ type: "Store", id: "CLOSURES" }],
+    }),
+    deleteStoreClosure: builder.mutation<void, string>({
+      query: (closureId) => ({
+        url: `admin/store/closures/${closureId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [{ type: "Store", id: "CLOSURES" }],
+    }),
   }),
 });
 
@@ -331,4 +401,8 @@ export const {
   useCreateSocialLinkMutation,
   useUpdateSocialLinkMutation,
   useDeleteSocialLinkMutation,
+  useGetStoreClosuresQuery,
+  useCreateStoreClosureMutation,
+  useUpdateStoreClosureMutation,
+  useDeleteStoreClosureMutation,
 } = storeApiSlice;

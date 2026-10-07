@@ -92,7 +92,7 @@ export default function AdminOrdersPage() {
                         #{order.id.slice(-8).toUpperCase()}
                       </Link>
                       <span
-                        className={`w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${statusTone[order.status]}`}
+                        className={`w-fit rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusTone[order.status]}`}
                       >
                         {orderStatusLabel[order.status]}
                       </span>

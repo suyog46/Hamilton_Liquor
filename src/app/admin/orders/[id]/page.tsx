@@ -174,11 +174,11 @@ export default function AdminOrderDetailPage() {
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex flex-wrap gap-2">
                 <span
-                  className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${statusTone[order.status]}`}
+                  className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${statusTone[order.status]}`}
                 >
                   {orderStatusLabel[order.status]}
                 </span>
-                <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-medium">
+                <span className="rounded-full border border-primary-normal/30 bg-primary-normal/10 px-2.5 py-1 text-[11px] font-medium text-primary-active">
                   {order.fulfillment_method === "PICKUP"
                     ? "Pickup"
                     : "Delivery"}

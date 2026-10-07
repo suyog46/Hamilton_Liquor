@@ -25,10 +25,10 @@ export const fulfillmentLabel: Record<FulfillmentStatus, string> = {
 };
 
 export const statusTone: Record<OrderStatus, string> = {
-  PENDING: "border-gray-200 bg-gray-50 text-gray-700",
-  CONFIRMED: "border-stone-300 bg-stone-100/70 text-stone-800",
+  PENDING: "border-primary-normal/40 bg-primary-normal/10 text-primary-active",
+  CONFIRMED: "border-primary-normal/65 bg-primary-normal/20 text-black",
   FULFILLED: "border-emerald-200 bg-emerald-50/80 text-emerald-700",
-  CANCELLED: "border-gray-200 bg-gray-50 text-gray-600",
+  CANCELLED: "border-red-200 bg-red-50/70 text-red-700",
   REFUSED: "border-red-200 bg-red-50/70 text-red-700",
 };
 

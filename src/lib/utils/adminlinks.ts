@@ -27,12 +27,7 @@ export const adminNavSales: AdminNavItem[] = [
     href: "/admin/inventory",
     icon: "solar:box-minimalistic-linear",
   },
-  {
-    name: "Customers",
-    href: "/admin/customers",
-    icon: "solar:users-group-rounded-linear",
-  },
-  { name: "Coupons", href: "/admin/coupons", icon: "solar:tag-price-linear" },
+  { name: "Sales", href: "/admin/sales", icon: "solar:sale-linear" },
   {
     name: "Messages",
     href: "/admin/contact-messages",
@@ -83,6 +78,11 @@ export const adminNavStore: AdminNavItem[] = [
     name: "Delivery Zones",
     href: "/admin/delivery-zones",
     icon: "solar:map-point-linear",
+  },
+  {
+    name: "Store Closures",
+    href: "/admin/store-closures",
+    icon: "solar:calendar-mark-linear",
   },
 ];
 

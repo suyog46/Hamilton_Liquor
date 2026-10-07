@@ -36,16 +36,15 @@ const enabledAdminLinks = new Set([
   "/admin/brands",
   "/admin/inventory",
   "/admin/orders",
+  "/admin/sales",
   "/admin/contact-messages",
-  // "/admin/customers",
-  // "/admin/coupons",
-  // "/admin/discounts",
   "/admin/store-hours",
   "/admin/delivery-slots",
   "/admin/store-information",
   "/admin/store-location",
   "/admin/social-links",
   "/admin/delivery-zones",
+  "/admin/store-closures",
 ]);
 
 const enabledSecondaryLinks = new Set(["/admin/settings"]);
