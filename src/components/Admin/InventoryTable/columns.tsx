@@ -37,7 +37,7 @@ function VariantsCell({ product }: { product: Product }) {
             trigger="icon"
           />
           <Link
-            href={`/admin/products/${product.id}/variants/${variant.id}/history`}
+            href={`/admin/variants/${variant.id}/history`}
             aria-label="See variant history"
             className="cursor-pointer text-muted-foreground transition-colors hover:text-primary-normal"
           >

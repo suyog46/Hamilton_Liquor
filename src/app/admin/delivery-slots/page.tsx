@@ -45,7 +45,7 @@ const days: Array<{ value: DayOfWeek; label: string }> = [
 const DEFAULT_LIMIT = 10;
 
 const toInputTime = (value: string) => value.slice(0, 5);
-const toApiTime = (value: string) => `${value || "00:00"}:00.000Z`;
+const toApiTime = (value: string) => `${value || "00:00"}:00`;
 const blankForm = () => ({
   start_time: "09:00",
   end_time: "11:00",
@@ -176,6 +176,11 @@ export default function AdminDeliverySlotsPage() {
           </Button>
         }
       />
+
+      <div className="flex items-center gap-2 rounded-lg bg-amber-50/90 px-3.5 py-2.5 text-xs text-amber-900 border border-amber-200/80">
+        <Icon icon="solar:info-circle-linear" className="size-4 shrink-0 text-amber-600" />
+        <span><strong>Note:</strong> All delivery slot times are local to our store in Baltimore.</span>
+      </div>
 
       <div className="flex flex-wrap gap-1.5 border-b border-gray-200 pb-3">
         {days.map((day) => (

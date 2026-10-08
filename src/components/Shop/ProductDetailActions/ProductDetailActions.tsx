@@ -89,7 +89,7 @@ const ProductDetailActions = ({ variant, product }: { variant: PublicProductVari
     openCartSheet();
 
     try {
-      const res = await addToCart({ product_variant_id: variant.id, quantity: qty }).unwrap();
+      const res = await addToCart({ items: [{ product_variant_id: variant.id, quantity: qty }] }).unwrap();
       setCartCount(getCartItemCount(res.data));
       dispatch(cartApiSlice.util.upsertQueryData("getCart", undefined, res));
       dispatch(apiSlice.util.invalidateTags([{ type: "Product", id: product.id }, { type: "Product", id: "PUBLIC_LIST" }]));

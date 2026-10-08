@@ -144,6 +144,15 @@ const CartPage = () => {
 
   const showSkeleton = isLoggedIn ? isLoading : !hasHydrated;
 
+  const cartSubtotal = items.reduce((sum, line) => {
+    const v = line.product_variant;
+    const effectivePrice =
+      (v.has_sale || (v.sale_price && Number(v.sale_price) > 0)) && v.sale_price
+        ? Number(v.sale_price)
+        : Number(v.price);
+    return sum + effectivePrice * line.quantity;
+  }, 0);
+
   return (
     <>
       <PageBanner
@@ -183,6 +192,15 @@ const CartPage = () => {
                 {items.map((line) => {
                   const variant = line.product_variant;
                   const media = variant.thumbnail;
+                  const hasSale =
+                    (variant.has_sale ||
+                      (variant.sale_price && Number(variant.sale_price) > 0)) &&
+                    Boolean(variant.sale_price);
+                  const effectiveUnitPrice =
+                    hasSale && variant.sale_price
+                      ? Number(variant.sale_price)
+                      : Number(variant.price);
+
                   return (
                     <div
                       key={line.id}
@@ -209,12 +227,21 @@ const CartPage = () => {
                       <div className="flex flex-1 flex-col justify-between min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <Link
-                              href={`/shop/${variant.product.slug}`}
-                              className="font-title text-sm sm:text-base font-semibold text-black truncate hover:text-primary-normal transition-colors"
-                            >
-                              {variant.product.name}
-                            </Link>
+                            <div className="flex items-center gap-2 flex-wrap min-w-0">
+                              <Link
+                                href={`/shop/${variant.product.slug}`}
+                                className="font-title text-sm sm:text-base font-semibold text-black truncate hover:text-primary-normal transition-colors"
+                              >
+                                {variant.product.name}
+                              </Link>
+                              {hasSale && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-primary-normal text-black shrink-0">
+                                  {variant.sale_percentage
+                                    ? `${Math.round(Number(variant.sale_percentage))}% OFF`
+                                    : "SALE"}
+                                </span>
+                              )}
+                            </div>
                             <p className="text-xs text-gray-500 mt-0.5">
                               {formatVolume(variant.volume_ml)}
                               {variant.alcohol_percentage && (
@@ -278,9 +305,22 @@ const CartPage = () => {
                               />
                             </button>
                           </div>
-                          <span className="text-sm sm:text-base font-bold text-black">
-                            {formatPrice(Number(variant.price) * line.quantity)}
-                          </span>
+                          <div className="flex flex-col items-end">
+                            {hasSale ? (
+                              <>
+                                <span className="text-sm sm:text-base font-bold text-primary-active">
+                                  {formatPrice(effectiveUnitPrice * line.quantity)}
+                                </span>
+                                <span className="text-xs text-gray-400 line-through">
+                                  {formatPrice(Number(variant.price) * line.quantity)}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-sm sm:text-base font-bold text-black">
+                                {formatPrice(Number(variant.price) * line.quantity)}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -296,17 +336,25 @@ const CartPage = () => {
                 </Link>
               </div>
 
-              <div className="flex flex-col items-center gap-3 border-t border-gray-100 pt-6">
-                <Button
-                  type="button"
-                  onClick={handleCheckout}
-                  className="h-12 w-full rounded-lg bg-primary-normal text-sm font-semibold text-black hover:bg-primary-hover sm:w-auto sm:min-w-64"
-                >
-                  Proceed to Checkout
-                </Button>
-                <p className="text-xs text-gray-500">
-                  Review delivery and payment details on the next step.
-                </p>
+              <div className="flex flex-col gap-4 border-t border-gray-100 pt-6">
+                <div className="flex items-center justify-between text-base font-semibold text-black">
+                  <span>Subtotal</span>
+                  <span className="font-bold text-lg text-primary-active">
+                    {formatPrice(cartSubtotal)}
+                  </span>
+                </div>
+                <div className="flex flex-col items-center gap-3">
+                  <Button
+                    type="button"
+                    onClick={handleCheckout}
+                    className="h-12 w-full rounded-lg bg-primary-normal text-sm font-semibold text-black hover:bg-primary-hover sm:w-auto sm:min-w-64"
+                  >
+                    Proceed to Checkout
+                  </Button>
+                  <p className="text-xs text-gray-500">
+                    Review delivery and payment details on the next step.
+                  </p>
+                </div>
               </div>
             </div>
           )}

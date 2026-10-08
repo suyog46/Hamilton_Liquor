@@ -42,7 +42,10 @@ export interface ProductVariant {
   display_name: string;
   volume_ml: number;
   price: string;
+  sale_price?: string;
+  sale_percentage?: string;
   alcohol_percentage: string;
+  is_liquor?: boolean;
   quantity: number;
   reserved_quantity: number;
   available_quantity: number;
@@ -55,6 +58,7 @@ export interface Product {
   name: string;
   slug: string;
   description: string | null;
+  has_sale?: boolean;
   is_active: boolean;
   is_staff_pick: boolean;
   is_featured: boolean;
@@ -92,11 +96,16 @@ export interface PublicProductListItem {
   starting_price: string;
   variants: PublicProductListVariant[];
   is_in_stock: boolean;
+  has_sale?: boolean;
 }
 
 export interface PublicProductListVariant {
   id: string;
+  sku?: string;
+  display_name: string;
   volume_ml: number;
+  alcohol_percentage?: string;
+  is_liquor?: boolean;
   available_quantity: number;
 }
 

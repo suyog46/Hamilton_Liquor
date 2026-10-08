@@ -76,10 +76,31 @@ const ProductDetailView = ({ product, categoryHref }: ProductDetailViewProps) =>
               </h1>
             </div>
 
-            <div className="flex items-baseline gap-3">
-              <span className="text-3xl font-bold text-black">
-                {selectedVariant ? formatPrice(selectedVariant.price) : "—"}
-              </span>
+            {/* Pricing Section */}
+            <div className="flex items-center flex-wrap gap-3">
+              {selectedVariant &&
+              selectedVariant.sale_price &&
+              Number(selectedVariant.sale_price) > 0 &&
+              Number(selectedVariant.sale_price) < Number(selectedVariant.price) ? (
+                <>
+                  <span className="text-xl font-medium text-gray-400 line-through">
+                    {formatPrice(selectedVariant.price)}
+                  </span>
+                  <span className="text-3xl font-bold text-primary-active">
+                    {formatPrice(selectedVariant.sale_price)}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-primary-normal px-2.5 py-1 text-xs font-bold text-black shadow-sm">
+                    <Icon icon="solar:fire-bold" className="h-3.5 w-3.5 text-black" />
+                    {selectedVariant.sale_percentage
+                      ? `${Math.round(Math.abs(Number(selectedVariant.sale_percentage)))}% OFF`
+                      : "ON SALE"}
+                  </span>
+                </>
+              ) : (
+                <span className="text-3xl font-bold text-black">
+                  {selectedVariant ? formatPrice(selectedVariant.price) : "—"}
+                </span>
+              )}
               <Badge variant={inStock ? "secondary" : "destructive"}>
                 {inStock ? "In Stock" : "Out of Stock"}
               </Badge>
@@ -95,24 +116,37 @@ const ProductDetailView = ({ product, categoryHref }: ProductDetailViewProps) =>
                   onValueChange={(value) => value && setSelectedVariantId(value)}
                 >
                   <SelectTrigger className="h-11 w-full rounded-lg border-gray-200 px-3 text-sm font-medium sm:w-64">
-                    <SelectValue placeholder="Choose a size">
+                    <SelectValue placeholder="Choose an option">
                       {selectedVariant
-                        ? `${formatVolume(selectedVariant.volume_ml)} — ${formatPrice(selectedVariant.price)}`
-                        : "Choose a size"}
+                        ? selectedVariant.sale_price &&
+                          Number(selectedVariant.sale_price) > 0 &&
+                          Number(selectedVariant.sale_price) < Number(selectedVariant.price)
+                          ? `${selectedVariant.is_liquor ? formatVolume(selectedVariant.volume_ml) : selectedVariant.display_name} — ${formatPrice(selectedVariant.sale_price)} (was ${formatPrice(selectedVariant.price)})`
+                          : `${selectedVariant.is_liquor ? formatVolume(selectedVariant.volume_ml) : selectedVariant.display_name} — ${formatPrice(selectedVariant.price)}`
+                        : "Choose an option"}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="rounded-lg">
-                    {product.variants.map((variant) => (
-                      <SelectItem
-                        key={variant.id}
-                        value={variant.id}
-                        disabled={!isVariantInStock(variant)}
-                        className="rounded-md"
-                      >
-                        {formatVolume(variant.volume_ml)} — {formatPrice(variant.price)}
-                        {!isVariantInStock(variant) ? " (Out of stock)" : ""}
-                      </SelectItem>
-                    ))}
+                    {product.variants.map((variant) => {
+                      const vOnSale =
+                        !!variant.sale_price &&
+                        Number(variant.sale_price) > 0 &&
+                        Number(variant.sale_price) < Number(variant.price);
+                      return (
+                        <SelectItem
+                          key={variant.id}
+                          value={variant.id}
+                          disabled={!isVariantInStock(variant)}
+                          className="rounded-md"
+                        >
+                          {variant.is_liquor ? formatVolume(variant.volume_ml) : variant.display_name} —{" "}
+                          {vOnSale
+                            ? `${formatPrice(variant.sale_price!)} (was ${formatPrice(variant.price)})`
+                            : formatPrice(variant.price)}
+                          {!isVariantInStock(variant) ? " (Out of stock)" : ""}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
@@ -128,16 +162,25 @@ const ProductDetailView = ({ product, categoryHref }: ProductDetailViewProps) =>
                 <p className="text-sm font-medium text-black">{product.brand.name}</p>
               </div>
               {selectedVariant && (
-                <>
+                selectedVariant.is_liquor ? (
+                  <>
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wide text-gray-400">Size</p>
+                      <p className="text-sm font-medium text-black">{formatVolume(selectedVariant.volume_ml)}</p>
+                    </div>
+                    {selectedVariant.alcohol_percentage && (
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wide text-gray-400">ABV</p>
+                        <p className="text-sm font-medium text-black">{formatAbv(selectedVariant.alcohol_percentage)}</p>
+                      </div>
+                    )}
+                  </>
+                ) : (
                   <div>
-                    <p className="text-[11px] uppercase tracking-wide text-gray-400">Size</p>
-                    <p className="text-sm font-medium text-black">{formatVolume(selectedVariant.volume_ml)}</p>
+                    <p className="text-[11px] uppercase tracking-wide text-gray-400">Option</p>
+                    <p className="text-sm font-medium text-black">{selectedVariant.display_name}</p>
                   </div>
-                  <div>
-                    <p className="text-[11px] uppercase tracking-wide text-gray-400">ABV</p>
-                    <p className="text-sm font-medium text-black">{formatAbv(selectedVariant.alcohol_percentage)}</p>
-                  </div>
-                </>
+                )
               )}
               {product.country && (
                 <div>

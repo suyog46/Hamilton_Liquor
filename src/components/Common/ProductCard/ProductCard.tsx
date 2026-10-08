@@ -36,8 +36,15 @@ const ProductCard = ({ product }: { product: PublicProductListItem }) => {
 
   const inStock = product.is_in_stock;
   const showFromPrice = product.variants.length > 1;
-  const volumesLabel = product.variants.map((variant) => formatVolume(variant.volume_ml)).join(", ");
   const isBusy = isAdding;
+  const variantLabel = product.variants
+    .map((variant) =>
+      variant.is_liquor
+        ? formatVolume(variant.volume_ml)
+        : variant.display_name || null
+    )
+    .filter(Boolean)
+    .join(", ");
   const singleVariant = product.variants.length === 1 ? product.variants[0] : null;
   const quantityInCart = singleVariant
     ? isLoggedIn
@@ -100,7 +107,7 @@ const ProductCard = ({ product }: { product: PublicProductListItem }) => {
     openCartSheet();
 
     try {
-      const res = await addToCart({ product_variant_id: variant.id, quantity: 1 }).unwrap();
+      const res = await addToCart({ items: [{ product_variant_id: variant.id, quantity: 1 }] }).unwrap();
       setCartCount(getCartItemCount(res.data));
       dispatch(cartApiSlice.util.upsertQueryData("getCart", undefined, res));
       dispatch(apiSlice.util.invalidateTags([{ type: "Product", id: product.id }, { type: "Product", id: "PUBLIC_LIST" }]));
@@ -146,6 +153,15 @@ const ProductCard = ({ product }: { product: PublicProductListItem }) => {
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-transparent" />
 
+          {/* Diagonal Sale Ribbon */}
+          {product.has_sale && (
+            <div className="absolute top-0 right-0 z-20 h-24 w-24 overflow-hidden pointer-events-none">
+              <div className="absolute top-3 -right-8 w-32 rotate-45 bg-gradient-to-r from-[#E3B97D] to-[#C28E47] py-1 text-center text-[10px] font-black uppercase tracking-wider text-black shadow-md">
+                ON SALE
+              </div>
+            </div>
+          )}
+
           <span className="absolute top-4 left-4 text-[11px] font-semibold uppercase tracking-wide text-primary-normal bg-black/80 backdrop-blur-sm px-2.5 py-1 rounded-full">
             {product.category.name}
           </span>
@@ -157,17 +173,19 @@ const ProductCard = ({ product }: { product: PublicProductListItem }) => {
         </div>
 
         {/* Info */}
-        <div className="px-5 pt-5 flex flex-col gap-1.5">
-          <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wide truncate">
-            {product.brand.name}
-          </span>
-          <h3 className="font-title text-lg font-semibold text-black leading-snug truncate">{product.name}</h3>
+        <div className="px-5 pt-5 flex flex-col gap-1.5 flex-1 justify-between min-h-[110px]">
+          <div>
+            <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wide truncate block">
+              {product.brand.name}
+            </span>
+            <h3 className="font-title text-base sm:text-lg font-semibold text-black leading-snug line-clamp-2 min-h-[2.5rem]">
+              {product.name}
+            </h3>
+          </div>
 
-          {volumesLabel && (
-            <div className="flex items-center gap-3 text-xs text-gray-500">
-              <span>{volumesLabel}</span>
-            </div>
-          )}
+          <div className="text-xs text-gray-500 line-clamp-2 min-h-[1.25rem]">
+            {variantLabel || "\u00A0"}
+          </div>
         </div>
       </Link>
 

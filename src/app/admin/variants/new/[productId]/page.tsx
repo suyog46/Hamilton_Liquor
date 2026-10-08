@@ -28,16 +28,14 @@ const NewVariantPage = () => {
 
   const { data } = useGetProductDetailQuery(productId);
   const [createVariant, { isLoading }] = useCreateProductVariantMutation();
-  const product = data?.data;
-  const showLiquorFields = isLiquorParentCategory(product);
-
   const handleSubmit = async (values: VariantWizardValues) => {
     try {
       await createVariant({
         product_id: productId,
         sku: values.sku.trim(),
         display_name: values.display_name.trim(),
-        ...(showLiquorFields
+        is_liquor: values.is_liquor,
+        ...(values.is_liquor
           ? {
               volume_ml: Number(values.volume_ml),
               alcohol_percentage: Number(values.alcohol_percentage),
@@ -73,7 +71,6 @@ const NewVariantPage = () => {
         mode="create"
         onSubmit={handleSubmit}
         isSubmitting={isLoading}
-        showLiquorFields={showLiquorFields}
       />
     </div>
   );

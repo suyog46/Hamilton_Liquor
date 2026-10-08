@@ -48,12 +48,8 @@ const VariantPage = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const variant = data?.data;
-  const { data: productData } = useGetProductDetailQuery(
-    variant?.product_id ?? "",
-    { skip: !variant?.product_id },
-  );
-  const showLiquorFields = isLiquorParentCategory(productData?.data);
-  const variantLabel = variant?.display_name || `${variant?.volume_ml ?? ""} mL`;
+  const variantLabel =
+    variant?.display_name || (variant?.volume_ml ? `${variant.volume_ml} mL` : "Variant");
 
   const handleSubmit = async (values: VariantWizardValues) => {
     if (!variant) return;
@@ -63,14 +59,14 @@ const VariantPage = () => {
         product_id: variant.product_id,
         sku: values.sku.trim(),
         display_name: values.display_name.trim(),
-        ...(showLiquorFields
+        is_liquor: values.is_liquor,
+        ...(values.is_liquor
           ? {
               volume_ml: Number(values.volume_ml),
               alcohol_percentage: Number(values.alcohol_percentage),
             }
           : {}),
         price: Number(values.price),
-        quantity: Number(values.quantity),
         is_active: values.is_active,
         media: values.media.map((media, index) => ({
           media_id: media.id,
@@ -129,6 +125,8 @@ const VariantPage = () => {
     );
   }
 
+  const isLiquorVariant = variant.is_liquor ?? (variant.volume_ml > 0 || Number(variant.alcohol_percentage) > 0);
+
   return (
     <div className="flex flex-col gap-4">
       <AdminPageHeader
@@ -136,7 +134,9 @@ const VariantPage = () => {
         description={[
           variant.sku,
           `$${Number(variant.price).toFixed(2)}`,
-          showLiquorFields ? `${Number(variant.alcohol_percentage)}% ABV` : null,
+          isLiquorVariant && variant.alcohol_percentage
+            ? `${Number(variant.alcohol_percentage)}% ABV`
+            : null,
         ].filter(Boolean).join(" · ")}
         action={
           <div className="flex items-center gap-2">
@@ -190,22 +190,26 @@ const VariantPage = () => {
       </Card>
 
       <VariantWizard
+        key={variant.id}
         mode="update"
         initialValues={{
-          sku: variant.sku,
-          display_name: variant.display_name,
-          volume_ml: String(variant.volume_ml),
-          price: variant.price,
-          alcohol_percentage: variant.alcohol_percentage,
-          quantity: String(variant.quantity),
-          is_active: variant.is_active,
-          media: [...variant.media]
+          sku: variant.sku ?? "",
+          display_name: variant.display_name ?? "",
+          is_liquor: isLiquorVariant,
+          volume_ml: variant.volume_ml != null ? String(variant.volume_ml) : "",
+          price: variant.price != null ? String(Number(variant.price)) : "",
+          alcohol_percentage:
+            variant.alcohol_percentage != null
+              ? String(Number(variant.alcohol_percentage))
+              : "0",
+          quantity: variant.quantity != null ? String(variant.quantity) : "0",
+          is_active: variant.is_active ?? true,
+          media: [...(variant.media ?? [])]
             .sort((a, b) => a.display_order - b.display_order)
             .map((item) => item.media),
         }}
         onSubmit={handleSubmit}
         isSubmitting={isSaving}
-        showLiquorFields={showLiquorFields}
       />
 
       <Card>

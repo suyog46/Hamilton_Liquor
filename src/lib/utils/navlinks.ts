@@ -1,6 +1,7 @@
 export const navbarLinks = [
   { name: "Home", href: "/" },
   { name: "Shop All", href: "/shop" },
+  { name: "Specials", href: "/specials" },
   { name: "About", href: "/about" },
   { name: "Contact", href: "/contact" },
 ];
@@ -9,6 +10,7 @@ export const navbarLinks = [
 // /shop?category=<slug> — the slug must match a category created in the admin panel.
 export const footerShopLinks = [
   { name: "Shop All", href: "/shop" },
+  { name: "Weekly Specials", href: "/specials" },
   { name: "Wine", href: "/wine" },
   { name: "Spirits", href: "/spirits" },
   { name: "Beer", href: "/beer" },

@@ -15,6 +15,9 @@ export interface CartProductVariant {
   product: CartProductReference;
   volume_ml: number;
   price: string;
+  sale_price?: string;
+  sale_percentage?: string;
+  has_sale?: boolean;
   alcohol_percentage: string;
   quantity: number;
   is_active: boolean;
@@ -38,9 +41,13 @@ export interface Cart {
 
 export type CartResponse = ApiResponse<Cart>;
 
-export interface AddToCartRequest {
+export interface AddToCartItemInput {
   product_variant_id: string;
   quantity: number;
+}
+
+export interface AddToCartRequest {
+  items: AddToCartItemInput[];
 }
 
 export interface UpdateCartItemRequest {

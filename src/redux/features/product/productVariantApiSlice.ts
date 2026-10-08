@@ -16,6 +16,7 @@ export interface ProductVariantDetail {
   volume_ml: number;
   price: string;
   alcohol_percentage: string;
+  is_liquor?: boolean;
   quantity: number;
   reserved_quantity: number;
   available_quantity: number;
@@ -39,6 +40,7 @@ export interface CreateProductVariantRequest {
   volume_ml?: number;
   price: number;
   alcohol_percentage?: number;
+  is_liquor?: boolean;
   quantity: number;
   media: VariantMediaInput[];
 }
@@ -51,7 +53,7 @@ export interface UpdateProductVariantRequest {
   volume_ml?: number;
   price?: number;
   alcohol_percentage?: number;
-  quantity?: number;
+  is_liquor?: boolean;
   is_active?: boolean;
   media?: VariantMediaInput[];
 }

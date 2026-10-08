@@ -58,7 +58,14 @@ const CartSheet = () => {
         variant: item.variant,
       }));
 
-  const subtotal = lines.reduce((sum, line) => sum + Number(line.variant.price) * line.quantity, 0);
+  const subtotal = lines.reduce((sum, line) => {
+    const v = line.variant;
+    const effectivePrice =
+      (v.has_sale || (v.sale_price && Number(v.sale_price) > 0)) && v.sale_price
+        ? Number(v.sale_price)
+        : Number(v.price);
+    return sum + effectivePrice * line.quantity;
+  }, 0);
   const loading = isLoggedIn ? isFetching && lines.length === 0 : !hydrated;
 
   // The cart API's own `quantity` field on a variant is the gross/total
@@ -138,45 +145,78 @@ const CartSheet = () => {
             <div className="divide-y divide-gray-100">
               {lines.map((line) => {
                 const media = line.variant.thumbnail;
+                const hasSale =
+                  (line.variant.has_sale ||
+                    (line.variant.sale_price && Number(line.variant.sale_price) > 0)) &&
+                  Boolean(line.variant.sale_price);
+                const effectiveUnitPrice =
+                  hasSale && line.variant.sale_price
+                    ? Number(line.variant.sale_price)
+                    : Number(line.variant.price);
+
                 return (
                   <div key={line.id} className="flex gap-4 py-4">
-                  <div className="h-20 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-50">
-                    {media?.url ? (
-                      <img src={media.url} alt={line.variant.product.name} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-gray-300">
-                        <Icon icon="solar:bottle-linear" className="h-7 w-7" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-black">{line.variant.product.name}</p>
-                    <p className="mt-1 text-xs text-gray-500">{formatVolume(line.variant.volume_ml)}</p>
-                    <div className="mt-2 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2 rounded-lg border border-gray-200 px-1.5 py-1">
-                        <button
-                          type="button"
-                          aria-label={`Decrease ${line.variant.product.name} quantity`}
-                          onClick={() => updateQuantity(line, line.quantity - 1)}
-                          disabled={line.id.startsWith("optimistic:") || line.quantity <= 1}
-                          className="flex h-6 w-6 items-center justify-center text-gray-500 hover:text-black disabled:cursor-not-allowed disabled:opacity-30"
-                        >
-                          <Icon icon="solar:minus-circle-linear" className="h-4 w-4" />
-                        </button>
-                        <span className="min-w-5 text-center text-sm font-semibold">{line.quantity}</span>
-                        <button
-                          type="button"
-                          aria-label={`Increase ${line.variant.product.name} quantity`}
-                          onClick={() => updateQuantity(line, line.quantity + 1)}
-                          disabled={line.id.startsWith("optimistic:") || line.quantity >= getMaxQuantity(line)}
-                          className="flex h-6 w-6 items-center justify-center text-gray-500 hover:text-black disabled:cursor-not-allowed disabled:opacity-30"
-                        >
-                          <Icon icon="solar:add-circle-linear" className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <p className="text-sm font-bold text-black">{formatPrice(Number(line.variant.price) * line.quantity)}</p>
+                    <div className="h-20 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-50">
+                      {media?.url ? (
+                        <img src={media.url} alt={line.variant.product.name} className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-gray-300">
+                          <Icon icon="solar:bottle-linear" className="h-7 w-7" />
+                        </div>
+                      )}
                     </div>
-                  </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <p className="truncate text-sm font-semibold text-black">{line.variant.product.name}</p>
+                        {hasSale && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary-normal text-black shrink-0">
+                            {line.variant.sale_percentage
+                              ? `${Math.round(Number(line.variant.sale_percentage))}% OFF`
+                              : "SALE"}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">{formatVolume(line.variant.volume_ml)}</p>
+                      <div className="mt-2 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 rounded-lg border border-gray-200 px-1.5 py-1">
+                          <button
+                            type="button"
+                            aria-label={`Decrease ${line.variant.product.name} quantity`}
+                            onClick={() => updateQuantity(line, line.quantity - 1)}
+                            disabled={line.id.startsWith("optimistic:") || line.quantity <= 1}
+                            className="flex h-6 w-6 items-center justify-center text-gray-500 hover:text-black disabled:cursor-not-allowed disabled:opacity-30"
+                          >
+                            <Icon icon="solar:minus-circle-linear" className="h-4 w-4" />
+                          </button>
+                          <span className="min-w-5 text-center text-sm font-semibold">{line.quantity}</span>
+                          <button
+                            type="button"
+                            aria-label={`Increase ${line.variant.product.name} quantity`}
+                            onClick={() => updateQuantity(line, line.quantity + 1)}
+                            disabled={line.id.startsWith("optimistic:") || line.quantity >= getMaxQuantity(line)}
+                            className="flex h-6 w-6 items-center justify-center text-gray-500 hover:text-black disabled:cursor-not-allowed disabled:opacity-30"
+                          >
+                            <Icon icon="solar:add-circle-linear" className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          {hasSale ? (
+                            <>
+                              <span className="text-sm font-bold text-primary-active">
+                                {formatPrice(effectiveUnitPrice * line.quantity)}
+                              </span>
+                              <span className="text-xs text-gray-400 line-through">
+                                {formatPrice(Number(line.variant.price) * line.quantity)}
+                              </span>
+                            </>
+                          ) : (
+                            <p className="text-sm font-bold text-black">
+                              {formatPrice(Number(line.variant.price) * line.quantity)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 );
               })}

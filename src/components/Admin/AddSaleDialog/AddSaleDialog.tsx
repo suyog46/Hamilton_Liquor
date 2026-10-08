@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
+import DateTimePicker from "@/components/Admin/DateTimePicker/DateTimePicker";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { fromZonedTime, formatInTimeZone } from "date-fns-tz";
 import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
 import { useCreateSaleMutation } from "@/redux/features/sale/saleApiSlice";
 
@@ -22,6 +24,12 @@ interface AddSaleDialogProps {
   variantId: string;
   variantLabel: string;
 }
+
+const STORE_TIMEZONE = "America/New_York";
+
+const getTodayMinDateTime = () => {
+  return formatInTimeZone(new Date(), STORE_TIMEZONE, "yyyy-MM-dd'T'00:00");
+};
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (isFetchBaseQueryError(error)) {
@@ -31,7 +39,10 @@ const getErrorMessage = (error: unknown, fallback: string) => {
   return fallback;
 };
 
-const toIsoString = (value: string) => new Date(value).toISOString();
+const toIsoString = (value: string) => {
+  if (!value) return "";
+  return fromZonedTime(value, STORE_TIMEZONE).toISOString();
+};
 
 const AddSaleDialog = ({ variantId, variantLabel }: AddSaleDialogProps) => {
   const [open, setOpen] = useState(false);
@@ -40,6 +51,8 @@ const AddSaleDialog = ({ variantId, variantLabel }: AddSaleDialogProps) => {
   const [endedAt, setEndedAt] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [createSale, { isLoading }] = useCreateSaleMutation();
+
+  const minDateTime = getTodayMinDateTime();
 
   const reset = () => {
     setPercentage("");
@@ -59,8 +72,16 @@ const AddSaleDialog = ({ variantId, variantLabel }: AddSaleDialogProps) => {
     const salePercentage = Number(percentage);
     const nextErrors: Record<string, string> = {};
     if (!percentage || !(salePercentage > 0)) nextErrors.percentage = "Enter a percentage greater than 0.";
-    if (!startedAt) nextErrors.startedAt = "Start date is required.";
-    if (!endedAt) nextErrors.endedAt = "End date is required.";
+    if (!startedAt) {
+      nextErrors.startedAt = "Start date is required.";
+    } else if (startedAt < minDateTime) {
+      nextErrors.startedAt = "Start date cannot be before today.";
+    }
+    if (!endedAt) {
+      nextErrors.endedAt = "End date is required.";
+    } else if (startedAt && endedAt <= startedAt) {
+      nextErrors.endedAt = "End date must be after start date.";
+    }
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
@@ -118,21 +139,23 @@ const AddSaleDialog = ({ variantId, variantLabel }: AddSaleDialogProps) => {
             </Field>
             <Field data-invalid={!!errors.startedAt}>
               <FieldLabel>Start date</FieldLabel>
-              <Input
-                type="datetime-local"
+              <DateTimePicker
                 value={startedAt}
-                onChange={(event) => setStartedAt(event.target.value)}
+                onChange={setStartedAt}
+                min={minDateTime}
                 disabled={isLoading}
+                placeholder="Pick start date & time"
               />
               {errors.startedAt && <FieldError>{errors.startedAt}</FieldError>}
             </Field>
             <Field data-invalid={!!errors.endedAt}>
               <FieldLabel>End date</FieldLabel>
-              <Input
-                type="datetime-local"
+              <DateTimePicker
                 value={endedAt}
-                onChange={(event) => setEndedAt(event.target.value)}
+                onChange={setEndedAt}
+                min={startedAt || minDateTime}
                 disabled={isLoading}
+                placeholder="Pick end date & time"
               />
               {errors.endedAt && <FieldError>{errors.endedAt}</FieldError>}
             </Field>

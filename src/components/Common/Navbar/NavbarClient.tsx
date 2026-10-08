@@ -98,8 +98,12 @@ const NavbarClient = () => {
         let last;
         for (const item of guestItems) {
           last = await addToCart({
-            product_variant_id: item.variant.id,
-            quantity: item.quantity,
+            items: [
+              {
+                product_variant_id: item.variant.id,
+                quantity: item.quantity,
+              },
+            ],
           }).unwrap();
         }
         if (last) setCartCount(getCartItemCount(last.data));

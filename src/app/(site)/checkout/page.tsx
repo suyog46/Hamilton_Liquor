@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { formatInTimeZone } from "date-fns-tz";
 import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
 import { cn, formatStoreTime } from "@/lib/utils";
 import { siteConfig } from "@/lib/utils/siteConfig";
@@ -64,15 +65,19 @@ const DAY_OF_WEEK_BY_INDEX: DayOfWeek[] = [
   "SATURDAY",
 ];
 
+const STORE_TIMEZONE = "America/New_York";
+
 // A delivery slot's start_time is a time-of-day only ("HH:MM:SS") — when
-// showing today's slots, anything at or before the current time is disabled
+// showing today's slots, anything at or before the current Baltimore time is disabled
 // rather than hidden, so the list of times stays stable.
 const isSlotPastForToday = (startTime: string, isToday: boolean) => {
   if (!isToday) return false;
-  const [hour, minute] = startTime.slice(0, 5).split(":").map(Number);
-  const slotMoment = new Date();
-  slotMoment.setHours(hour, minute, 0, 0);
-  return slotMoment.getTime() <= Date.now();
+  const currentBaltimoreTime = formatInTimeZone(
+    new Date(),
+    STORE_TIMEZONE,
+    "HH:mm",
+  );
+  return startTime.slice(0, 5) <= currentBaltimoreTime;
 };
 
 const toTimeValue = (minutes: number) => {
@@ -102,8 +107,13 @@ const buildPickupSlots = (
   const closeMinutes = closeHour * 60 + closeMinute;
 
   const isToday = dateValue === getTodayValue();
-  const now = new Date();
-  const earliestMinutes = now.getHours() * 60 + now.getMinutes() + 60;
+  const currentBaltimoreTime = formatInTimeZone(
+    new Date(),
+    STORE_TIMEZONE,
+    "HH:mm",
+  );
+  const [nowHour, nowMinute] = currentBaltimoreTime.split(":").map(Number);
+  const earliestMinutes = nowHour * 60 + nowMinute + 60;
 
   const slots: TimeSlot[] = [];
   for (let minutes = openMinutes; minutes + 60 <= closeMinutes; minutes += 60) {
@@ -430,9 +440,13 @@ export default function CheckoutPage() {
                       />
                     </div>
                     <div className="mt-5">
-                      <label className="mb-2 block text-sm font-semibold">
+                      <label className="mb-1 block text-sm font-semibold">
                         Pickup time
                       </label>
+                      <div className="mb-3 flex items-center gap-2 rounded-lg bg-amber-50/90 px-3.5 py-2.5 text-xs text-amber-900 border border-amber-200/80">
+                        <Icon icon="solar:info-circle-linear" className="size-4 shrink-0 text-amber-600" />
+                        <span><strong>Note:</strong> All pickup times are local to our store in Baltimore.</span>
+                      </div>
                       {pickupSlots.length === 0 ? (
                         <p className="rounded-lg border border-dashed border-gray-200 p-4 text-sm text-gray-500">
                           We&apos;re closed or fully booked on this date —
@@ -606,9 +620,13 @@ export default function CheckoutPage() {
                   <DateOptionPicker value={deliveryDate} onChange={changeDeliveryDate} />
                 </div>
                 <div className="mt-5">
-                  <label className="mb-2 block text-sm font-semibold">
+                  <label className="mb-1 block text-sm font-semibold">
                     Delivery time
                   </label>
+                  <div className="mb-3 flex items-center gap-2 rounded-lg bg-amber-50/90 px-3.5 py-2.5 text-xs text-amber-900 border border-amber-200/80">
+                    <Icon icon="solar:info-circle-linear" className="size-4 shrink-0 text-amber-600" />
+                    <span><strong>Note:</strong> All delivery times are local to our store in Baltimore.</span>
+                  </div>
                   {isLoadingDeliverySlots ? (
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                       {Array.from({ length: 6 }).map((_, index) => (

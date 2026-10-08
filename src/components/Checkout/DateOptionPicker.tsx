@@ -1,17 +1,17 @@
-"use client";
-
+import { formatInTimeZone } from "date-fns-tz";
+import { addDays } from "date-fns";
 import { cn } from "@/lib/utils";
 
-export const toDateInputValue = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
+const STORE_TIMEZONE = "America/New_York";
 
-export const getTodayValue = () => toDateInputValue(new Date());
+export const toDateInputValue = (date: Date) =>
+  formatInTimeZone(date, STORE_TIMEZONE, "yyyy-MM-dd");
+
+export const getTodayValue = () =>
+  formatInTimeZone(new Date(), STORE_TIMEZONE, "yyyy-MM-dd");
+
 export const getTomorrowValue = () =>
-  toDateInputValue(new Date(Date.now() + 24 * 60 * 60 * 1000));
+  formatInTimeZone(addDays(new Date(), 1), STORE_TIMEZONE, "yyyy-MM-dd");
 
 interface DateOptionPickerProps {
   value: string;
