@@ -45,11 +45,14 @@ const ProductCard = ({ product }: { product: PublicProductListItem }) => {
     )
     .filter(Boolean)
     .join(", ");
+
+
+  console.log("variant", variantLabel)
   const singleVariant = product.variants.length === 1 ? product.variants[0] : null;
   const quantityInCart = singleVariant
     ? isLoggedIn
       ? cartData?.data.items.find((item) => item.product_variant.id === singleVariant.id)?.quantity ?? 0
-      : guestItems.find((item:any) => item.variant.id === singleVariant.id)?.quantity ?? 0
+      : guestItems.find((item: any) => item.variant.id === singleVariant.id)?.quantity ?? 0
     : 0;
   const isAtCartLimit = !!singleVariant && quantityInCart >= singleVariant.available_quantity;
 

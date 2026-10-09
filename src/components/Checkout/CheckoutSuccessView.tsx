@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Icon } from "@iconify/react";
 import PageBanner from "@/components/Common/PageBanner/PageBanner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatOrderDate, formatOrderMoney, fulfillmentLabel } from "@/components/Order/orderDisplay";
+import { formatOrderDate, formatOrderMoney, fulfillmentLabel, getOrderScheduledEnd, getOrderScheduledStart } from "@/components/Order/orderDisplay";
 import { apiSlice } from "@/redux/apiSlice";
 import { useClearCartMutation } from "@/redux/features/cart/cartApiSlice";
 import { useGetOrderQuery } from "@/redux/features/order/orderApiSlice";
@@ -62,8 +62,8 @@ export default function CheckoutSuccessView({ orderId }: CheckoutSuccessViewProp
   }
 
   const order = data.data;
-  const scheduledStart = order.fulfillment_method === "PICKUP" ? order.pickup_scheduled_start_at : order.delivery?.scheduled_start_at;
-  const scheduledEnd = order.fulfillment_method === "PICKUP" ? order.pickup_scheduled_end_at : order.delivery?.scheduled_end_at;
+  const scheduledStart = getOrderScheduledStart(order);
+  const scheduledEnd = getOrderScheduledEnd(order);
 
   return (
     <>  

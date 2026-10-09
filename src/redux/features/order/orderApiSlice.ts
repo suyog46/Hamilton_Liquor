@@ -35,9 +35,14 @@ export interface OrderDelivery {
   city: string;
   state: string;
   zip_code: string;
+  latitude?: string | null;
+  longitude?: string | null;
   handoff_instructions: string | null;
-  scheduled_start_at: string;
-  scheduled_end_at: string;
+  delivery_date?: string | null;
+  scheduled_start_time?: string | null;
+  scheduled_end_time?: string | null;
+  scheduled_start_at?: string | null;
+  scheduled_end_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -191,6 +196,80 @@ export interface AdminOrder extends Order {
 
 export type DeliveryRefusalReason = "ID_INVALID" | "CUSTOMER_INTOXICATED" | "CUSTOMER_REFUSED" | "OTHER";
 
+export type CancelOrderReason =
+  | "CUSTOMER_CANCELLED"
+  | "STORE_CANCELLED"
+  | "ITEM_UNAVAILABLE"
+  | "CUSTOMER_RETURN"
+  | "DAMAGED_ITEM"
+  | "INCORRECT_ITEM"
+  | "MISSING_ITEM"
+  | "REFUSED_DELIVERY"
+  | "OTHER";
+
+export type RefundReason = CancelOrderReason;
+
+export type ItemCondition = "NOT_APPLICABLE" | "UNOPENED" | "OPENED" | "DAMAGED";
+export type ItemDisposition = "NOT_RETURNED" | "RESELLABLE" | "DAMAGED";
+
+export interface CancelOrderRequest {
+  reason: CancelOrderReason;
+  note?: string;
+}
+
+export interface ConfirmCancellationMutationRequest {
+  order_id: string;
+  body: CancelOrderRequest;
+  idempotencyKey?: string;
+}
+
+export interface RefundCaseItemInput {
+  order_item_id: string;
+  quantity: number;
+  condition: ItemCondition;
+  disposition: ItemDisposition;
+}
+
+export interface CreateRefundCaseRequest {
+  reason: RefundReason;
+  items: RefundCaseItemInput[];
+  note?: string;
+}
+
+export interface CreateRefundCaseMutationRequest {
+  order_id: string;
+  body: CreateRefundCaseRequest;
+  idempotencyKey?: string;
+}
+
+export interface CancellationPreviewItem {
+  order_item_id: string;
+  product_variant_id: string;
+  product_name: string;
+  variant_name: string;
+  sku: string;
+  unit_price: string;
+  quantity: number;
+  line_refund: string;
+  condition: ItemCondition;
+  disposition: ItemDisposition;
+}
+
+export interface CancellationPreviewData {
+  order_id: string;
+  case_type: string;
+  eligible: boolean;
+  items: CancellationPreviewItem[];
+  merchandise_refund: string;
+  delivery_refund: string;
+  cancellation_fee: string;
+  final_refund: string;
+  currency: string;
+}
+
+export type CancellationPreviewResponse = ApiResponse<CancellationPreviewData>;
+export type RefundCasePreviewResponse = ApiResponse<CancellationPreviewData>;
+
 export interface UpdateFulfillmentRequest {
   order_id: string;
   fulfillment_status: FulfillmentStatus;
@@ -249,6 +328,54 @@ export const orderApiSlice = apiSlice.injectEndpoints({
         { type: "Order", id: order_id },
       ],
     }),
+    previewCancellation: builder.mutation<CancellationPreviewResponse, { order_id: string; body: CancelOrderRequest }>({
+      query: ({ order_id, body }) => ({
+        url: `admin/orders/${order_id}/cancellation/preview`,
+        method: "POST",
+        body,
+      }),
+    }),
+    confirmCancellation: builder.mutation<ApiResponse<void>, ConfirmCancellationMutationRequest>({
+      query: ({ order_id, body, idempotencyKey }) => ({
+        url: `admin/orders/${order_id}/cancellation`,
+        method: "POST",
+        headers: idempotencyKey
+          ? {
+              "Idempotency-Key": idempotencyKey,
+            }
+          : undefined,
+        body,
+      }),
+      invalidatesTags: (_result, _error, { order_id }) => [
+        { type: "Order", id: `ADMIN-${order_id}` },
+        { type: "Order", id: "ADMIN-LIST" },
+        { type: "Order", id: order_id },
+      ],
+    }),
+    previewRefundCase: builder.mutation<RefundCasePreviewResponse, { order_id: string; body: CreateRefundCaseRequest }>({
+      query: ({ order_id, body }) => ({
+        url: `admin/orders/${order_id}/refund-cases/preview`,
+        method: "POST",
+        body,
+      }),
+    }),
+    createRefundCase: builder.mutation<ApiResponse<void>, CreateRefundCaseMutationRequest>({
+      query: ({ order_id, body, idempotencyKey }) => ({
+        url: `admin/orders/${order_id}/refund-cases`,
+        method: "POST",
+        headers: idempotencyKey
+          ? {
+              "Idempotency-Key": idempotencyKey,
+            }
+          : undefined,
+        body,
+      }),
+      invalidatesTags: (_result, _error, { order_id }) => [
+        { type: "Order", id: `ADMIN-${order_id}` },
+        { type: "Order", id: "ADMIN-LIST" },
+        { type: "Order", id: order_id },
+      ],
+    }),
     checkout: builder.mutation<CheckoutResponse, CheckoutMutationRequest>({
       query: ({ body, idempotencyKey }) => ({
         url: "orders/checkout",
@@ -276,6 +403,10 @@ export const {
   useGetAdminOrdersQuery,
   useGetAdminOrderQuery,
   useUpdateOrderFulfillmentMutation,
+  usePreviewCancellationMutation,
+  useConfirmCancellationMutation,
+  usePreviewRefundCaseMutation,
+  useCreateRefundCaseMutation,
   useCheckoutMutation,
   useCheckoutPreviewMutation,
 } = orderApiSlice;

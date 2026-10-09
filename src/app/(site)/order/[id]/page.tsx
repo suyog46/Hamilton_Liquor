@@ -11,6 +11,8 @@ import {
   formatOrderMoney,
   fulfillmentLabel,
   fulfillmentSequence,
+  getOrderScheduledEnd,
+  getOrderScheduledStart,
   orderStatusLabel,
   statusTone,
 } from "@/components/Order/orderDisplay";
@@ -109,14 +111,8 @@ export default function OrderDetailPage() {
   const refusedEvent = chronologicalEvents.find(
     (event) => event.event_type === "REFUSED",
   );
-  const scheduledStart =
-    order.fulfillment_method === "PICKUP"
-      ? order.pickup_scheduled_start_at
-      : order.delivery?.scheduled_start_at;
-  const scheduledEnd =
-    order.fulfillment_method === "PICKUP"
-      ? order.pickup_scheduled_end_at
-      : order.delivery?.scheduled_end_at;
+  const scheduledStart = getOrderScheduledStart(order);
+  const scheduledEnd = getOrderScheduledEnd(order);
 
   return (
     <>

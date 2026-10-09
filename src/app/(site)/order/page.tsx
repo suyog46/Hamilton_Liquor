@@ -11,6 +11,7 @@ import {
   formatOrderDate,
   formatOrderMoney,
   fulfillmentLabel,
+  getOrderScheduledStart,
   orderStatusLabel,
   statusTone,
 } from "@/components/Order/orderDisplay";
@@ -103,10 +104,7 @@ export default function OrdersPage() {
           ) : (
             <div className="space-y-4">
               {orders.map((order) => {
-                const schedule =
-                  order.fulfillment_method === "PICKUP"
-                    ? order.pickup_scheduled_start_at
-                    : order.delivery?.scheduled_start_at;
+                const schedule = getOrderScheduledStart(order);
                 return (
                   <Link
                     key={order.id}

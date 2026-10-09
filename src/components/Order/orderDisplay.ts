@@ -58,3 +58,47 @@ export const fulfillmentSequence = (method: FulfillmentMethod): FulfillmentEvent
   method === "PICKUP"
     ? ["PREPARING", "READY_FOR_PICKUP", "PICKED_UP"]
     : ["PREPARING", "READY_FOR_DELIVERY", "OUT_FOR_DELIVERY", "DELIVERED"];
+
+export const getOrderScheduledStart = (order: {
+  fulfillment_method: FulfillmentMethod;
+  pickup_scheduled_start_at?: string | null;
+  delivery?: {
+    scheduled_start_at?: string | null;
+    delivery_date?: string | null;
+    scheduled_start_time?: string | null;
+  } | null;
+}): string | null => {
+  if (order.fulfillment_method === "PICKUP") {
+    return order.pickup_scheduled_start_at ?? null;
+  }
+  if (!order.delivery) return null;
+  if (order.delivery.scheduled_start_at) return order.delivery.scheduled_start_at;
+  if (order.delivery.delivery_date && order.delivery.scheduled_start_time) {
+    const time = order.delivery.scheduled_start_time;
+    const timeStr = time.includes("T") ? time.split("T")[1] : time;
+    return `${order.delivery.delivery_date}T${timeStr}`;
+  }
+  return order.delivery.delivery_date || order.delivery.scheduled_start_time || null;
+};
+
+export const getOrderScheduledEnd = (order: {
+  fulfillment_method: FulfillmentMethod;
+  pickup_scheduled_end_at?: string | null;
+  delivery?: {
+    scheduled_end_at?: string | null;
+    delivery_date?: string | null;
+    scheduled_end_time?: string | null;
+  } | null;
+}): string | null => {
+  if (order.fulfillment_method === "PICKUP") {
+    return order.pickup_scheduled_end_at ?? null;
+  }
+  if (!order.delivery) return null;
+  if (order.delivery.scheduled_end_at) return order.delivery.scheduled_end_at;
+  if (order.delivery.delivery_date && order.delivery.scheduled_end_time) {
+    const time = order.delivery.scheduled_end_time;
+    const timeStr = time.includes("T") ? time.split("T")[1] : time;
+    return `${order.delivery.delivery_date}T${timeStr}`;
+  }
+  return order.delivery.scheduled_end_at || order.delivery.scheduled_end_time || null;
+};

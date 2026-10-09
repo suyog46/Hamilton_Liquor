@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
@@ -9,10 +9,12 @@ import PageBanner from "@/components/Common/PageBanner/PageBanner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCheckoutStore } from "@/lib/stores/checkoutStore";
+import { useCartStore, type CartStore } from "@/lib/stores/cartStore";
 import { formatVolume } from "@/lib/utils/productDisplay";
 import { formatStoreTime } from "@/lib/utils";
 import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
 import { useCheckoutMutation } from "@/redux/features/order/orderApiSlice";
+import { useClearCartMutation } from "@/redux/features/cart/cartApiSlice";
 
 const moneyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -53,6 +55,10 @@ const CheckoutPreviewPage = () => {
   const idempotencyKey = useCheckoutStore((state) => state.idempotencyKey);
   const clearPreview = useCheckoutStore((state) => state.clearPreview);
   const [checkout, { isLoading }] = useCheckoutMutation();
+  const [clearCart] = useClearCartMutation();
+  const setCartCount = useCartStore((state: CartStore) => state.setCount);
+  const clearGuestItems = useCartStore((state: CartStore) => state.clearGuestItems);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
     if (!previewResponse || !paymentRequest || !idempotencyKey) {
@@ -68,15 +74,29 @@ const CheckoutPreviewPage = () => {
   const pickupEnd = formatPreviewTime(preview.pickup_end_time);
 
   const continueToPayment = async () => {
+    if (isRedirecting) return;
     try {
       const response = await checkout({
         body: paymentRequest,
         idempotencyKey,
       }).unwrap();
       if (!response.data.checkout_url) throw new Error("Missing checkout URL");
+
+      setIsRedirecting(true);
+      toast.info("Payment session created! Redirecting to payment, please wait a few moments...");
+
+      try {
+        await clearCart().unwrap();
+      } catch (err) {
+        console.error("Failed to clear cart:", err);
+      }
+      clearGuestItems();
+      setCartCount(0);
+
       clearPreview();
       window.location.assign(response.data.checkout_url);
     } catch (error) {
+      setIsRedirecting(false);
       toast.error(checkoutErrorMessage(error));
     }
   };
@@ -198,6 +218,7 @@ const CheckoutPreviewPage = () => {
               <Button
                 variant="outline"
                 className="h-12"
+                disabled={isLoading || isRedirecting}
                 render={<Link href="/checkout" />}
               >
                 Back
@@ -205,13 +226,15 @@ const CheckoutPreviewPage = () => {
               <Button
                 type="button"
                 onClick={continueToPayment}
-                disabled={isLoading}
-                className="h-12 bg-primary-normal px-8 text-black hover:bg-primary-hover"
+                disabled={isLoading || isRedirecting}
+                className="h-12 bg-primary-normal px-8 text-black hover:bg-primary-hover disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {isLoading && (
-                  <Icon icon="svg-spinners:180-ring" className="size-4" />
+                {(isLoading || isRedirecting) && (
+                  <Icon icon="svg-spinners:180-ring" className="size-4 mr-2" />
                 )}
-                Continue to payment
+                {isRedirecting
+                  ? "Redirecting to payment..."
+                  : "Continue to payment"}
               </Button>
             </div>
           </div>

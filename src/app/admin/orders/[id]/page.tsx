@@ -21,9 +21,19 @@ import {
   formatOrderMoney,
   fulfillmentLabel,
   fulfillmentSequence,
+  getOrderScheduledEnd,
+  getOrderScheduledStart,
   orderStatusLabel,
   statusTone,
 } from "@/components/Order/orderDisplay";
+import {
+  CancelOrderDialog,
+  isOrderCancellable,
+} from "@/components/Admin/CancelOrderDialog/CancelOrderDialog";
+import {
+  CreateRefundDialog,
+  isOrderRefundable,
+} from "@/components/Admin/CreateRefundDialog/CreateRefundDialog";
 import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
 import {
   type DeliveryRefusalReason,
@@ -62,6 +72,8 @@ export default function AdminOrderDetailPage() {
     DeliveryRefusalReason | ""
   >("");
   const [note, setNote] = useState("");
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [isRefundDialogOpen, setIsRefundDialogOpen] = useState(false);
   const [updateFulfillment, { isLoading: isUpdating }] =
     useUpdateOrderFulfillmentMutation();
 
@@ -74,13 +86,13 @@ export default function AdminOrderDetailPage() {
     return order.fulfillment_method === "PICKUP"
       ? ["PENDING", "PREPARING", "READY_FOR_PICKUP", "PICKED_UP", "REFUSED"]
       : [
-          "PENDING",
-          "PREPARING",
-          "READY_FOR_DELIVERY",
-          "OUT_FOR_DELIVERY",
-          "DELIVERED",
-          "REFUSED",
-        ];
+        "PENDING",
+        "PREPARING",
+        "READY_FOR_DELIVERY",
+        "OUT_FOR_DELIVERY",
+        "DELIVERED",
+        "REFUSED",
+      ];
   }, [order]);
 
   const saveStatus = async () => {
@@ -143,14 +155,10 @@ export default function AdminOrderDetailPage() {
   const currentIndex = sequence.indexOf(
     order.fulfillment_status as FulfillmentEventType,
   );
-  const scheduledStart =
-    order.fulfillment_method === "PICKUP"
-      ? order.pickup_scheduled_start_at
-      : order.delivery?.scheduled_start_at;
-  const scheduledEnd =
-    order.fulfillment_method === "PICKUP"
-      ? order.pickup_scheduled_end_at
-      : order.delivery?.scheduled_end_at;
+  const scheduledStart = getOrderScheduledStart(order);
+  const scheduledEnd = getOrderScheduledEnd(order);
+  const cancellable = isOrderCancellable(order.status, order.fulfillment_status);
+  const refundable = isOrderRefundable(order.status, order.fulfillment_status);
 
   return (
     <div className="flex flex-col gap-4">
@@ -158,14 +166,49 @@ export default function AdminOrderDetailPage() {
         title={`Order #${order.id.slice(-8).toUpperCase()}`}
         description={`Placed ${formatOrderDate(order.created_at)} by ${order.customer.name}`}
         action={
-          <Link
-            href="/admin/orders"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
-          >
-            <Icon icon="solar:arrow-left-linear" className="size-4" />
-            All orders
-          </Link>
+          <div className="flex items-center gap-3">
+
+            <Link
+              href="/admin/orders"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
+            >
+              <Icon icon="solar:arrow-left-linear" className="size-4" />
+              All orders
+            </Link>
+            {cancellable && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setIsCancelDialogOpen(true)}
+                className="gap-1.5 text-xs rounded-full cursor-pointer"
+              >
+                Cancel Order
+              </Button>
+            )}
+            {refundable && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setIsRefundDialogOpen(true)}
+                className="gap-1.5 text-xs rounded-full cursor-pointer"
+              >
+                Create Refund
+              </Button>
+            )}
+          </div>
         }
+      />
+
+      <CancelOrderDialog
+        order={order}
+        open={isCancelDialogOpen}
+        onOpenChange={setIsCancelDialogOpen}
+      />
+
+      <CreateRefundDialog
+        order={order}
+        open={isRefundDialogOpen}
+        onOpenChange={setIsRefundDialogOpen}
       />
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">

@@ -35,9 +35,9 @@ const quickLinks = [
     icon: "solar:bag-check-linear",
   },
   {
-    name: "Create Coupon",
-    href: "/admin/coupons",
-    icon: "solar:tag-price-linear",
+    name: "Create Categories",
+    href: "/admin/categories",
+    icon: "solar:bag-3-linear",
   },
   {
     name: "Edit Store Hours",
@@ -116,24 +116,24 @@ const AdminDashboardPage = () => {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {isDashboardLoading
             ? Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-24 w-full" />
-              ))
+              <Skeleton key={i} className="h-24 w-full" />
+            ))
             : statCards.map((stat) => (
-                <Card key={stat.label}>
-                  <CardHeader className="flex-row items-center justify-between space-y-0">
-                    <CardTitle className="text-xs font-normal text-muted-foreground">
-                      {stat.label}
-                    </CardTitle>
-                    <Icon
-                      icon={stat.icon}
-                      className="h-4 w-4 text-primary-normal"
-                    />
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-xl font-semibold">{stat.value}</p>
-                  </CardContent>
-                </Card>
-              ))}
+              <Card key={stat.label}>
+                <CardHeader className="flex-row items-center justify-between space-y-0">
+                  <CardTitle className="text-xs font-normal text-muted-foreground">
+                    {stat.label}
+                  </CardTitle>
+                  <Icon
+                    icon={stat.icon}
+                    className="h-4 w-4 text-primary-normal"
+                  />
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xl font-semibold">{stat.value}</p>
+                </CardContent>
+              </Card>
+            ))}
         </div>
       )}
 

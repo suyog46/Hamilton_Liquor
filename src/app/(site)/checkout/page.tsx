@@ -33,8 +33,12 @@ import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
 import { cn, formatStoreTime } from "@/lib/utils";
 import { siteConfig } from "@/lib/utils/siteConfig";
 import { useCheckoutStore } from "@/lib/stores/checkoutStore";
+import { useCartStore, type CartStore } from "@/lib/stores/cartStore";
 import { useGetAddressesQuery } from "@/redux/features/address/addressApiSlice";
-import { useGetCartQuery } from "@/redux/features/cart/cartApiSlice";
+import {
+  useGetCartQuery,
+  useClearCartMutation,
+} from "@/redux/features/cart/cartApiSlice";
 import {
   type ExpectedCheckout,
   type FulfillmentMethod,
@@ -199,6 +203,11 @@ export default function CheckoutPage() {
     );
   const [checkoutPreview, { isLoading: isPreviewing }] =
     useCheckoutPreviewMutation();
+  const [clearCart] = useClearCartMutation();
+  const setCartCount = useCartStore((state: CartStore) => state.setCount);
+  const clearGuestItems = useCartStore(
+    (state: CartStore) => state.clearGuestItems,
+  );
 
   const pickupSlots = useMemo(
     () => buildPickupSlots(pickupDate, hoursData?.data.hours ?? []),
@@ -271,20 +280,20 @@ export default function CheckoutPage() {
       const previewRequest =
         method === "PICKUP"
           ? {
-              items,
-              fulfillment_method: method,
-              pickup_date: pickupDate,
-              pickup_start_time: selectedPickupSlot!.start,
-              pickup_end_time: selectedPickupSlot!.end,
-            }
+            items,
+            fulfillment_method: method,
+            pickup_date: pickupDate,
+            pickup_start_time: selectedPickupSlot!.start,
+            pickup_end_time: selectedPickupSlot!.end,
+          }
           : {
-              items,
-              fulfillment_method: method,
-              address_id: addressId,
-              handoff_instructions: instructions.trim(),
-              delivery_date: deliveryDate,
-              delivery_slot_id: selectedDeliverySlot!.id,
-            };
+            items,
+            fulfillment_method: method,
+            address_id: addressId,
+            handoff_instructions: instructions.trim(),
+            delivery_date: deliveryDate,
+            delivery_slot_id: selectedDeliverySlot!.id,
+          };
       const previewResponse = await checkoutPreview(previewRequest).unwrap();
       const paymentRequest = {
         ...previewRequest,
@@ -300,6 +309,14 @@ export default function CheckoutPage() {
         paymentRequest,
         idempotencyKey,
       });
+
+      try {
+        await clearCart().unwrap();
+      } catch {
+      }
+      clearGuestItems();
+      setCartCount(0);
+
       router.push("/checkout/preview");
     } catch (error) {
       toast.error(checkoutErrorMessage(error));
@@ -730,7 +747,7 @@ export default function CheckoutPage() {
               to pick as soon as you close this.
             </DialogDescription>
           </DialogHeader>
-          
+
           <AddressSection />
         </DialogContent>
       </Dialog>

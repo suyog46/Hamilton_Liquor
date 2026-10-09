@@ -27,6 +27,7 @@ import {
 import { useAppDispatch } from "@/redux/hooks";
 import { apiSlice } from "@/redux/apiSlice";
 import { useVariantAvailability } from "@/hooks/use-variant-availability";
+import SaleSection from "@/components/HomeSection/SaleSection/SaleSection";
 
 interface DisplayLine {
   id: string;
@@ -360,6 +361,9 @@ const CartPage = () => {
           )}
         </div>
       </section>
+
+      {/* Featured Sale Items to attract buyers */}
+      <SaleSection hideIfEmpty />
     </>
   );
 };
