@@ -67,6 +67,7 @@ export function InventoryTable({ search }: InventoryTableProps) {
 
   const products = data?.data.items ?? [];
   const pagination = data?.data.pagination;
+  const isTableLoading = isLoading || (isFetching && products.length === 0);
 
   if (isError) {
     return (
@@ -123,7 +124,7 @@ export function InventoryTable({ search }: InventoryTableProps) {
         </div>
       </div>
 
-      {!isLoading && products.length === 0 ? (
+      {!isTableLoading && products.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
             <Icon icon="solar:box-linear" className="h-6 w-6 text-muted-foreground" />
@@ -136,8 +137,8 @@ export function InventoryTable({ search }: InventoryTableProps) {
         <DataTable
           columns={inventoryColumns}
           data={products}
-          isLoading={isLoading}
-          skeletonRows={limit}
+          isLoading={isTableLoading}
+          skeletonRows={5}
         />
       )}
 

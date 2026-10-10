@@ -30,6 +30,7 @@ export default function AdminOrdersPage() {
     useGetAdminOrdersQuery({ page, limit });
   const orders = data?.data.items ?? [];
   const pagination = data?.data.pagination;
+  const isOrdersLoading = isLoading || (isFetching && orders.length === 0);
 
   return (
     <div className="flex flex-col gap-4">
@@ -53,8 +54,12 @@ export default function AdminOrdersPage() {
             Try again
           </button>
         </div>
-      ) : isLoading ? (
-        <Skeleton className="h-[480px] w-full" />
+      ) : isOrdersLoading ? (
+        <div className="flex flex-col gap-2.5 py-1">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-12 w-full rounded-lg" />
+          ))}
+        </div>
       ) : orders.length === 0 ? (
         <div className="flex flex-col items-center gap-2 border bg-card py-16 text-center">
           <Icon

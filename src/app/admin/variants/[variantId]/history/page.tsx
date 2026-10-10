@@ -41,6 +41,7 @@ const VariantHistoryPage = () => {
   const variantLabel = variant?.display_name || `${variant?.volume_ml ?? ""} mL`;
   const adjustments = data?.data.items ?? [];
   const pagination = data?.data.pagination;
+  const isTableLoading = isLoading || (isFetching && adjustments.length === 0);
 
   const handleLimitChange = (nextLimit: number) => {
     setLimit(nextLimit);
@@ -115,7 +116,7 @@ const VariantHistoryPage = () => {
             </p>
           </CardContent>
         </Card>
-      ) : !isLoading && adjustments.length === 0 ? (
+      ) : !isTableLoading && adjustments.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
             <Icon
@@ -131,8 +132,8 @@ const VariantHistoryPage = () => {
         <DataTable
           columns={inventoryHistoryColumns}
           data={adjustments}
-          isLoading={isLoading}
-          skeletonRows={limit}
+          isLoading={isTableLoading}
+          skeletonRows={5}
         />
       )}
 

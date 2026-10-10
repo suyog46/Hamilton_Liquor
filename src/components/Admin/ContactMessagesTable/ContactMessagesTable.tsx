@@ -78,6 +78,7 @@ export function ContactMessagesTable({ search }: ContactMessagesTableProps) {
   const messages = data?.data.items ?? [];
   const pagination = data?.data.pagination;
   const unreadCount = data?.data.unread_count ?? 0;
+  const isTableLoading = isLoading || (isFetching && messages.length === 0);
 
   const columns = useMemo(
     () =>
@@ -171,7 +172,7 @@ export function ContactMessagesTable({ search }: ContactMessagesTableProps) {
         </div>
       </div>
 
-      {!isLoading && messages.length === 0 ? (
+      {!isTableLoading && messages.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
             <Icon
@@ -189,8 +190,8 @@ export function ContactMessagesTable({ search }: ContactMessagesTableProps) {
         <DataTable
           columns={columns}
           data={messages}
-          isLoading={isLoading}
-          skeletonRows={limit}
+          isLoading={isTableLoading}
+          skeletonRows={5}
         />
       )}
 

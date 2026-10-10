@@ -315,6 +315,7 @@ export default function AdminSalesPage() {
 
   const sales = data?.data.items ?? [];
   const pagination = data?.data.pagination;
+  const isTableLoading = isLoading || (isFetching && sales.length === 0);
 
   const columns = useMemo<ColumnDef<SaleListItem>[]>(
     () => [
@@ -471,7 +472,7 @@ export default function AdminSalesPage() {
             </button>
           </CardContent>
         </Card>
-      ) : !isLoading && sales.length === 0 ? (
+      ) : !isTableLoading && sales.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
             <Icon icon="solar:sale-linear" className="h-6 w-6 text-muted-foreground" />
@@ -479,7 +480,7 @@ export default function AdminSalesPage() {
           </CardContent>
         </Card>
       ) : (
-        <DataTable columns={columns} data={sales} isLoading={isLoading} skeletonRows={limit} />
+        <DataTable columns={columns} data={sales} isLoading={isTableLoading} skeletonRows={5} />
       )}
 
       {pagination && (

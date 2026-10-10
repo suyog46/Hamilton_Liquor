@@ -50,6 +50,16 @@ export function DataTable<TData, TValue>({
     },
   });
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-2.5 py-1">
+        {Array.from({ length: skeletonRows || 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-12 w-full rounded-lg" />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="overflow-hidden rounded-none  ">
       <Table>

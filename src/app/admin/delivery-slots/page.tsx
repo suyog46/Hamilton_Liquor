@@ -214,8 +214,12 @@ export default function AdminDeliverySlotsPage() {
       ) : (
         <Card>
           <CardContent className="flex flex-col gap-3">
-            {isLoading ? (
-              <Skeleton className="h-52 w-full" />
+            {isLoading || (isFetching && slots.length === 0) ? (
+              <div className="flex flex-col gap-2.5 py-1">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full rounded-lg" />
+                ))}
+              </div>
             ) : slots.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No delivery slots on this day yet.

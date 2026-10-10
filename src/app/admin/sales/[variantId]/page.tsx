@@ -288,6 +288,7 @@ export default function VariantSalesHistoryPage({
 
   const sales = data?.data.items ?? [];
   const pagination = data?.data.pagination;
+  const isTableLoading = isLoading || (isFetching && sales.length === 0);
 
   const columns = useMemo<ColumnDef<Sale>[]>(
     () => [
@@ -413,7 +414,7 @@ export default function VariantSalesHistoryPage({
             </button>
           </CardContent>
         </Card>
-      ) : !isLoading && sales.length === 0 ? (
+      ) : !isTableLoading && sales.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-normal/10">
@@ -428,7 +429,7 @@ export default function VariantSalesHistoryPage({
           </CardContent>
         </Card>
       ) : (
-        <DataTable columns={columns} data={sales} isLoading={isLoading} skeletonRows={limit} />
+        <DataTable columns={columns} data={sales} isLoading={isTableLoading} skeletonRows={5} />
       )}
 
       {pagination && (

@@ -175,8 +175,10 @@ const AdminDashboardPage = () => {
               </Button>
             </div>
           ) : isOrdersLoading ? (
-            <div className="px-4">
-              <Skeleton className="h-64 w-full" />
+            <div className="flex flex-col gap-2.5 px-4 py-1">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full rounded-lg" />
+              ))}
             </div>
           ) : recentOrders.length === 0 ? (
             <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">

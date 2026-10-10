@@ -67,6 +67,7 @@ export function ProductsTable({ search }: ProductsTableProps) {
 
   const products = data?.data.items ?? [];
   const pagination = data?.data.pagination;
+  const isTableLoading = isLoading || (isFetching && products.length === 0);
 
   if (isError) {
     return (
@@ -83,7 +84,7 @@ export function ProductsTable({ search }: ProductsTableProps) {
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-[11px] text-muted-foreground">
-          {pagination ? `${pagination.total_items} products` : " "}
+          {pagination ? `${pagination.total_items} products` : " "}
         </p>
 
         <div className="flex items-center gap-2">
@@ -123,7 +124,7 @@ export function ProductsTable({ search }: ProductsTableProps) {
         </div>
       </div>
 
-      {!isLoading && products.length === 0 ? (
+      {!isTableLoading && products.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
             <Icon icon="solar:box-linear" className="h-6 w-6 text-muted-foreground" />
@@ -136,8 +137,8 @@ export function ProductsTable({ search }: ProductsTableProps) {
         <DataTable
           columns={productColumns}
           data={products}
-          isLoading={isLoading}
-          skeletonRows={limit}
+          isLoading={isTableLoading}
+          skeletonRows={5}
         />
       )}
 
