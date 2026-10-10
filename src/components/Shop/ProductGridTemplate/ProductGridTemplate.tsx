@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import ShopFilters from "@/components/Shop/ShopFilters/ShopFilters";
 import { useEffect, useMemo, useState } from "react";
+import { useDebounce } from "use-debounce";
 
 interface ProductGridTemplateProps {
   eyebrow: string;
@@ -32,7 +33,7 @@ interface ProductGridTemplateProps {
   defaultSortOrder?: "asc" | "desc";
 }
 
-const PAGE_SIZE = 12;
+const DEFAULT_PAGE_SIZE = 12;
 
 type SortBy = "name" | "price" | "created_at";
 type SortOrder = "asc" | "desc";
@@ -79,7 +80,28 @@ const ProductGridTemplate = ({
   const [volumes, setVolumes] = useState<number[]>([]);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
+  const [limitInput, setLimitInput] = useState(String(DEFAULT_PAGE_SIZE));
+  const [debouncedLimitInput] = useDebounce(limitInput, 400);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+
+  useEffect(() => {
+    const parsed = Number(debouncedLimitInput);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      const nextLimit = Math.max(1, Math.floor(parsed));
+      if (nextLimit !== limit) {
+        setLimit(nextLimit);
+        setPage(1);
+      }
+    }
+  }, [debouncedLimitInput, limit]);
+
+  const handleLimitBlur = () => {
+    const parsed = Number(limitInput);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      setLimitInput(String(limit));
+    }
+  };
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -137,7 +159,7 @@ const ProductGridTemplate = ({
   const queryParams = useMemo(
     () => ({
       page,
-      limit: PAGE_SIZE,
+      limit,
       search: debouncedSearch || undefined,
       sort_by: sortBy,
       sort_order: sortOrder,
@@ -149,7 +171,7 @@ const ProductGridTemplate = ({
       volume_ml: volumes.length > 0 ? volumes : undefined,
       in_stock: inStockOnly || undefined,
     }),
-    [page, debouncedSearch, sortBy, sortOrder, selectedCategorySlugs, brandId, countryId, minPrice, maxPrice, volumes, inStockOnly]
+    [page, limit, debouncedSearch, sortBy, sortOrder, selectedCategorySlugs, brandId, countryId, minPrice, maxPrice, volumes, inStockOnly]
   );
 
   const { data, isLoading, isFetching } = useGetPublicProductsQuery(queryParams, {
@@ -311,20 +333,55 @@ const ProductGridTemplate = ({
 
               {showSkeleton ? (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 sm:gap-6">
-                  {Array.from({ length: PAGE_SIZE }).map((_, i) => <Skeleton key={i} className="h-96 w-full rounded-3xl" />)}
+                  {Array.from({ length: limit }).map((_, i) => <Skeleton key={i} className="h-96 w-full rounded-3xl" />)}
                 </div>
               ) : products.length > 0 ? (
                 <>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 sm:gap-6">
                     {products.map((product) => <ProductCard key={product.id} product={product} />)}
                   </div>
-                  {pagination && pagination.total_pages > 1 && (
-                    <div className="mt-10 flex items-center justify-center gap-4">
-                      <button type="button" disabled={!pagination.has_previous} onClick={() => setPage((p) => Math.max(1, p - 1))} className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-4 py-2 text-xs font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-40">
+                  {pagination && (
+                    <div className="mt-10 flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+                      <button
+                        type="button"
+                        disabled={!pagination.has_previous}
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-xs font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 hover:bg-gray-50 transition cursor-pointer"
+                      >
                         <Icon icon="solar:alt-arrow-left-linear" className="w-3.5 h-3.5" /> Prev
                       </button>
-                      <span className="text-xs text-gray-500">Page {pagination.page} of {pagination.total_pages}</span>
-                      <button type="button" disabled={!pagination.has_next} onClick={() => setPage((p) => p + 1)} className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-4 py-2 text-xs font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-40">
+
+                      <div className="flex items-center gap-3 text-xs text-gray-600">
+                        <span>
+                          Page <strong className="font-semibold text-gray-900">{pagination.page}</strong> of{" "}
+                          <strong className="font-semibold text-gray-900">{pagination.total_pages}</strong>
+                        </span>
+
+                        <div className="flex items-center gap-1.5 border-l border-gray-200 pl-3">
+                          <span className="text-gray-400">Show</span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={limitInput}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/[^0-9]/g, "");
+                              setLimitInput(val);
+                            }}
+                            onBlur={handleLimitBlur}
+                            className="h-8 w-14 rounded-md border border-gray-200 bg-white px-2 text-center text-xs font-semibold text-gray-800 outline-none transition hover:border-gray-300 focus:border-primary-normal focus:ring-1 focus:ring-primary-normal"
+                            aria-label="Products per page"
+                          />
+                          <span className="text-gray-400">per page</span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={!pagination.has_next}
+                        onClick={() => setPage((p) => p + 1)}
+                        className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-xs font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 hover:bg-gray-50 transition cursor-pointer"
+                      >
                         Next <Icon icon="solar:alt-arrow-right-linear" className="w-3.5 h-3.5" />
                       </button>
                     </div>
