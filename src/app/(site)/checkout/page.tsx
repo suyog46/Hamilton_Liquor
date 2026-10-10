@@ -166,7 +166,7 @@ const buildExpectedCheckoutInput = (expected: ExpectedCheckout) => ({
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const [method, setMethod] = useState<FulfillmentMethod>("PICKUP");
+  const [method, setMethod] = useState<FulfillmentMethod>("DELIVERY");
   const [step, setStep] = useState(1);
   const [addressId, setAddressId] = useState("");
   const [addressModalOpen, setAddressModalOpen] = useState(false);

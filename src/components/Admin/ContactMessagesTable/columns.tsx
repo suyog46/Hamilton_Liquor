@@ -89,7 +89,7 @@ export const getContactMessageColumns = ({
     id: "status",
     header: "Status",
     cell: ({ row }) => (
-      <Badge variant={row.original.is_read ? "outline" : "success"}>
+      <Badge variant={row.original.is_read ? "success" : "outline"}>
         {row.original.is_read ? "Read" : "Unread"}
       </Badge>
     ),

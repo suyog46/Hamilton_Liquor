@@ -15,6 +15,7 @@ import type { Category } from "@/redux/features/category/categoryApiSlice";
 import type { Brand } from "@/redux/features/brand/brandApiSlice";
 import type { Country } from "@/redux/features/country/countryApiSlice";
 import { formatVolume } from "@/lib/utils/productDisplay";
+import { cn } from "@/lib/utils";
 
 export const SHOP_VOLUMES = [50, 187.5, 200, 222, 330, 355, 375, 473, 500, 591, 700, 750, 1000, 1500, 1750, 3000];
 
@@ -37,6 +38,8 @@ interface ShopFiltersProps {
   onVolumeChange: (volume: number, checked: boolean) => void;
   onInStockChange: (checked: boolean) => void;
   onClear: () => void;
+  isMobileDialog?: boolean;
+  className?: string;
 }
 
 interface FilterDropdownProps {
@@ -104,6 +107,8 @@ const ShopFilters = ({
   onVolumeChange,
   onInStockChange,
   onClear,
+  isMobileDialog = false,
+  className,
 }: ShopFiltersProps) => {
   const [openParentIds, setOpenParentIds] = useState<string[]>([]);
 
@@ -152,13 +157,26 @@ const ShopFilters = ({
   };
 
   return (
-    <aside className="h-fit rounded-2xl border border-gray-100 bg-gray-50 p-5 lg:sticky lg:top-28">
-      <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-title text-lg font-semibold text-black">Filters</h2>
-        <button type="button" onClick={onClear} className="text-xs font-semibold text-primary-normal hover:opacity-80">
-          Clear
-        </button>
-      </div>
+    <aside
+      className={cn(
+        isMobileDialog
+          ? "flex flex-col gap-5 p-0"
+          : "h-fit rounded-2xl border border-gray-100 bg-gray-50 p-5 md:sticky md:top-44",
+        className,
+      )}
+    >
+      {!isMobileDialog && (
+        <div className="mb-5 flex items-center justify-between">
+          <h2 className="font-title text-lg font-semibold text-black">Filters</h2>
+          <button
+            type="button"
+            onClick={onClear}
+            className="text-xs font-semibold text-primary-normal hover:opacity-80 transition cursor-pointer"
+          >
+            Clear
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-2">

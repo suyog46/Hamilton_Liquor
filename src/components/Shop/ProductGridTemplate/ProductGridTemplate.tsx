@@ -11,6 +11,14 @@ import { useGetPublicCategoriesQuery } from "@/redux/features/category/categoryA
 import { useGetPublicProductsQuery } from "@/redux/features/product/productApiSlice";
 import { useGetPublicBrandsQuery } from "@/redux/features/brand/brandApiSlice";
 import { useGetPublicCountriesQuery } from "@/redux/features/country/countryApiSlice";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import ShopFilters from "@/components/Shop/ShopFilters/ShopFilters";
 import { useEffect, useMemo, useState } from "react";
 
@@ -71,6 +79,18 @@ const ProductGridTemplate = ({
   const [volumes, setVolumes] = useState<number[]>([]);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [page, setPage] = useState(1);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (categoryIds.length > 0) count += 1;
+    if (brandId) count += 1;
+    if (countryId) count += 1;
+    if (minPrice !== "" || maxPrice !== "") count += 1;
+    if (volumes.length > 0) count += volumes.length;
+    if (inStockOnly) count += 1;
+    return count;
+  }, [categoryIds, brandId, countryId, minPrice, maxPrice, volumes, inStockOnly]);
 
   useEffect(() => {
     const currentCategory = categoryIds[0];
@@ -175,60 +195,113 @@ const ProductGridTemplate = ({
 
       <section className="bg-white py-10 sm:py-14">
         <div className="max-w-[1280px] mx-auto px-6">
-          {/* Search bar */}
-          <div className="relative mb-6">
-            <Icon
-              icon="solar:magnifer-linear"
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-            />
-            <Input
-              type="text"
-              placeholder={searchPlaceholder}
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="h-12 w-full rounded-xl pl-11 pr-4 text-sm border-gray-200 bg-gray-50"
-            />
+          {/* Sticky single div: Search + Filter (mobile) + Sort by + Order */}
+          <div className="sticky top-16 md:top-28 z-20 mb-6 bg-white/95 backdrop-blur-md py-3 border-b border-gray-100 shadow-xs transition-all">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              {/* Search bar */}
+              <div className="relative flex-1 min-w-0">
+                <Icon
+                  icon="solar:magnifer-linear"
+                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-gray-400"
+                />
+                <Input
+                  type="text"
+                  placeholder={searchPlaceholder}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="h-11 w-full rounded-xl pl-10 pr-9 text-sm border-gray-200 bg-gray-50 focus:bg-white transition-colors"
+                />
+                {searchInput && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchInput("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 cursor-pointer"
+                    aria-label="Clear search"
+                  >
+                    <Icon icon="solar:close-circle-bold" className="size-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Controls: Filter trigger (mobile only < md) + Sort by + Order */}
+              <div className="flex flex-col gap-2 w-full md:w-auto md:flex-row md:items-center shrink-0">
+                {/* Mobile Filter Button: shown beside sort by on small devices up to md */}
+                <button
+                  type="button"
+                  onClick={() => setIsMobileFilterOpen(true)}
+                  className="md:hidden flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-gray-800 shadow-2xs hover:border-gray-300 hover:bg-gray-50 active:scale-[0.99] transition cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <Icon icon="solar:tuning-4-linear" className="size-4 text-primary-normal" />
+                    <span>Filters</span>
+                  </div>
+                  {activeFilterCount > 0 ? (
+                    <span className="flex size-5 items-center justify-center rounded-full bg-primary-normal text-[10px] font-bold text-black">
+                      {activeFilterCount}
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-gray-400 font-normal">Tap to filter</span>
+                  )}
+                </button>
+
+                {/* Sort by */}
+                <label className="flex w-full md:w-auto items-center justify-between md:justify-start gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 md:py-2 text-xs font-medium text-gray-700 shadow-2xs hover:border-gray-300 transition">
+                  <span className="text-gray-400">Sort by</span>
+                  <select
+                    value={sortBy}
+                    onChange={(event) => setSortBy(event.target.value as SortBy)}
+                    className="bg-transparent outline-none cursor-pointer font-semibold text-gray-800 text-right md:text-left"
+                  >
+                    <option value="name">Name</option>
+                    <option value="price">Price</option>
+                    <option value="created_at">Created at</option>
+                  </select>
+                </label>
+
+                {/* Order */}
+                <label className="flex w-full md:w-auto items-center justify-between md:justify-start gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 md:py-2 text-xs font-medium text-gray-700 shadow-2xs hover:border-gray-300 transition">
+                  <span className="text-gray-400">Order</span>
+                  <select
+                    value={sortOrder}
+                    onChange={(event) => setSortOrder(event.target.value as SortOrder)}
+                    className="bg-transparent outline-none cursor-pointer font-semibold text-gray-800 text-right md:text-left"
+                  >
+                    <option value="asc">Ascending</option>
+                    <option value="desc">Descending</option>
+                  </select>
+                </label>
+              </div>
+            </div>
           </div>
 
-          <div className="mb-6 flex flex-wrap items-center justify-end gap-2">
-            <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-700">
-              <span className="text-gray-400">Sort by</span>
-              <select value={sortBy} onChange={(event) => setSortBy(event.target.value as SortBy)} className="bg-transparent outline-none">
-                <option value="name">Name</option>
-                <option value="price">Price</option>
-                <option value="created_at">Created at</option>
-              </select>
-            </label>
-            <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-700">
-              <span className="text-gray-400">Order</span>
-              <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value as SortOrder)} className="bg-transparent outline-none">
-                <option value="asc">Ascending</option>
-                <option value="desc">Descending</option>
-              </select>
-            </label>
-          </div>
-
-          <div className="grid gap-7 lg:grid-cols-[240px_minmax(0,1fr)]">
-            <ShopFilters
-              categories={categories}
-              brands={brands}
-              countries={countries}
-              categoryIds={categoryIds}
-              brandId={brandId}
-              countryId={countryId}
-              minPrice={minPrice}
-              maxPrice={maxPrice}
-              volumes={volumes}
-              inStockOnly={inStockOnly}
-              onCategoryChange={handleCategoryChange}
-              onBrandChange={setBrandId}
-              onCountryChange={setCountryId}
-              onMinPriceChange={setMinPrice}
-              onMaxPriceChange={setMaxPrice}
-              onVolumeChange={(volume, checked) => setVolumes((current) => checked ? [...current, volume] : current.filter((item) => item !== volume))}
-              onInStockChange={setInStockOnly}
-              onClear={clearFilters}
-            />
+          <div className="grid gap-7 md:grid-cols-[240px_minmax(0,1fr)]">
+            {/* Desktop Sidebar: hidden on small devices up to md */}
+            <div className="hidden md:block">
+              <ShopFilters
+                categories={categories}
+                brands={brands}
+                countries={countries}
+                categoryIds={categoryIds}
+                brandId={brandId}
+                countryId={countryId}
+                minPrice={minPrice}
+                maxPrice={maxPrice}
+                volumes={volumes}
+                inStockOnly={inStockOnly}
+                onCategoryChange={handleCategoryChange}
+                onBrandChange={setBrandId}
+                onCountryChange={setCountryId}
+                onMinPriceChange={setMinPrice}
+                onMaxPriceChange={setMaxPrice}
+                onVolumeChange={(volume, checked) =>
+                  setVolumes((current) =>
+                    checked ? [...current, volume] : current.filter((item) => item !== volume),
+                  )
+                }
+                onInStockChange={setInStockOnly}
+                onClear={clearFilters}
+              />
+            </div>
 
             <div className="min-w-0">
               <div className="mb-6 flex items-center justify-between">
@@ -267,6 +340,83 @@ const ProductGridTemplate = ({
           </div>
         </div>
       </section>
+
+      {/* Mobile Filter Dialog for small devices up to md */}
+      <Dialog open={isMobileFilterOpen} onOpenChange={setIsMobileFilterOpen}>
+        <DialogContent
+          showCloseButton={true}
+          className="sm:max-w-md max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl bg-white gap-0 border border-gray-200 shadow-2xl"
+        >
+          {/* Header with Title and Clear button */}
+          <DialogHeader className="border-b border-gray-100 px-5 py-4 shrink-0 pr-12 flex-row items-center justify-between space-y-0">
+            <div className="flex items-center gap-2">
+              <Icon icon="solar:tuning-4-linear" className="size-5 text-primary-normal" />
+              <DialogTitle className="font-title text-base font-bold text-gray-900">
+                Filters
+              </DialogTitle>
+              {activeFilterCount > 0 && (
+                <span className="flex size-5 items-center justify-center rounded-full bg-primary-normal text-xs font-bold text-black">
+                  {activeFilterCount}
+                </span>
+              )}
+            </div>
+            <DialogDescription className="sr-only">
+              Filter products by category, brand, country, price, volume, and stock.
+            </DialogDescription>
+            {activeFilterCount > 0 && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="text-xs font-semibold text-primary-normal hover:opacity-80 transition cursor-pointer"
+              >
+                Clear all
+              </button>
+            )}
+          </DialogHeader>
+
+          {/* Scrollable Filters Content */}
+          <div className="flex-1 overflow-y-auto px-5 py-4">
+            <ShopFilters
+              isMobileDialog
+              categories={categories}
+              brands={brands}
+              countries={countries}
+              categoryIds={categoryIds}
+              brandId={brandId}
+              countryId={countryId}
+              minPrice={minPrice}
+              maxPrice={maxPrice}
+              volumes={volumes}
+              inStockOnly={inStockOnly}
+              onCategoryChange={handleCategoryChange}
+              onBrandChange={setBrandId}
+              onCountryChange={setCountryId}
+              onMinPriceChange={setMinPrice}
+              onMaxPriceChange={setMaxPrice}
+              onVolumeChange={(volume, checked) =>
+                setVolumes((current) =>
+                  checked
+                    ? [...current, volume]
+                    : current.filter((item) => item !== volume),
+                )
+              }
+              onInStockChange={setInStockOnly}
+              onClear={clearFilters}
+            />
+          </div>
+
+          {/* Fixed / Sticky Footer with Done Button */}
+          <div className="sticky bottom-0 z-10 border-t border-gray-100 bg-white/95 backdrop-blur-sm p-4 shrink-0 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+            <Button
+              type="button"
+              onClick={() => setIsMobileFilterOpen(false)}
+              className="w-full h-11 bg-primary-normal font-semibold text-black hover:bg-primary-hover shadow-xs rounded-xl"
+            >
+              Done {pagination ? `(${pagination.total_items} products)` : ""}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -57,22 +56,14 @@ export function ContactMessageDialog({
     contactMessageId ?? "",
     { skip: !contactMessageId },
   );
-  const [markRead] = useMarkContactMessageReadMutation();
-  const [markUnread, { isLoading: isTogglingUnread }] =
+  const [markRead, { isLoading: isMarkingRead }] =
+    useMarkContactMessageReadMutation();
+  const [markUnread, { isLoading: isMarkingUnread }] =
     useMarkContactMessageUnreadMutation();
 
+  const isUpdating = isMarkingRead || isMarkingUnread;
   const message = data?.data;
 
-  useEffect(() => {
-    if (message && !message.is_read) {
-      markRead(message.id)
-        .unwrap()
-        .catch((err) => {
-          toast.error(getErrorMessage(err, "Failed to mark message as read."));
-        });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [message?.id, message?.is_read]);
 
   const handleToggleRead = async () => {
     if (!message) return;
@@ -103,7 +94,7 @@ export function ContactMessageDialog({
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 {message.subject}
-                <Badge variant={message.is_read ? "outline" : "success"}>
+                <Badge variant={message.is_read ? "success" : "outline"}>
                   {message.is_read ? "Read" : "Unread"}
                 </Badge>
               </DialogTitle>
@@ -153,19 +144,25 @@ export function ContactMessageDialog({
               <Button
                 type="button"
                 variant="outline"
-                disabled={isTogglingUnread}
+                disabled={isUpdating}
                 onClick={handleToggleRead}
                 className="gap-1.5"
               >
                 <Icon
                   icon={
-                    message.is_read
-                      ? "solar:letter-unread-linear"
-                      : "solar:letter-opened-linear"
+                    isUpdating
+                      ? "svg-spinners:180-ring"
+                      : message.is_read
+                        ? "solar:letter-unread-linear"
+                        : "solar:letter-opened-linear"
                   }
                   className="h-4 w-4"
                 />
-                {message.is_read ? "Mark as unread" : "Mark as read"}
+                {isUpdating
+                  ? "Updating…"
+                  : message.is_read
+                    ? "Mark as unread"
+                    : "Mark as read"}
               </Button>
             </DialogFooter>
           </>
