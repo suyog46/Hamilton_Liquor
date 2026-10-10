@@ -7,10 +7,9 @@ import { formatPrice, formatVolume } from "@/lib/utils/productDisplay";
 import {
   cartApiSlice,
   useAddToCartMutation,
-  useGetCartQuery,
   type CartProductVariant,
 } from "@/redux/features/cart/cartApiSlice";
-import { useGetMeQuery } from "@/redux/features/user/userApiSlice";
+import { useGetMaximumQuantity } from "@/hooks/use-get-maximum-quantity";
 import { useCartStore, type CartStore } from "@/lib/stores/cartStore";
 import { getCartItemCount } from "@/lib/utils/cartDisplay";
 import { Icon } from "@iconify/react";
@@ -28,11 +27,13 @@ const ProductCard = ({ product }: { product: PublicProductListItem }) => {
   const setCartCount = useCartStore((state: CartStore) => state.setCount);
   const cartCount = useCartStore((state: CartStore) => state.count);
   const addGuestItem = useCartStore((state: CartStore) => state.addGuestItem);
-  const guestItems = useCartStore((state: CartStore) => state.guestItems);
   const openCartSheet = useCartStore((state: CartStore) => state.openCartSheet);
-  const { data: meData } = useGetMeQuery();
-  const isLoggedIn = !!meData?.data;
-  const { data: cartData } = useGetCartQuery(undefined, { skip: !isLoggedIn });
+
+  const singleVariant = product.variants.length === 1 ? product.variants[0] : null;
+  const { isLoggedIn, isAtCartLimit } = useGetMaximumQuantity({
+    variantId: singleVariant?.id,
+    availableQuantity: singleVariant?.available_quantity,
+  });
 
   const inStock = product.is_in_stock;
   const showFromPrice = product.variants.length > 1;
@@ -45,16 +46,6 @@ const ProductCard = ({ product }: { product: PublicProductListItem }) => {
     )
     .filter(Boolean)
     .join(", ");
-
-
-  console.log("variant", variantLabel)
-  const singleVariant = product.variants.length === 1 ? product.variants[0] : null;
-  const quantityInCart = singleVariant
-    ? isLoggedIn
-      ? cartData?.data.items.find((item) => item.product_variant.id === singleVariant.id)?.quantity ?? 0
-      : guestItems.find((item: any) => item.variant.id === singleVariant.id)?.quantity ?? 0
-    : 0;
-  const isAtCartLimit = !!singleVariant && quantityInCart >= singleVariant.available_quantity;
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -72,11 +63,18 @@ const ProductCard = ({ product }: { product: PublicProductListItem }) => {
 
     const cartVariant: CartProductVariant = {
       id: variant.id,
+      sku: variant.sku,
+      display_name: variant.display_name,
       product: { id: product.id, name: product.name, slug: product.slug },
       volume_ml: variant.volume_ml,
-      price: product.starting_price,
-      alcohol_percentage: "",
-      quantity: variant.available_quantity,
+      price: variant.price ?? product.starting_price,
+      sale_price: variant.sale_price,
+      sale_percentage: variant.sale_percentage,
+      sale_started_at: variant.sale_started_at,
+      sale_ended_at: variant.sale_ended_at,
+      has_sale: product.has_sale,
+      alcohol_percentage: variant.alcohol_percentage ?? "",
+      available_quantity: variant.available_quantity,
       is_active: true,
       thumbnail: product.thumbnail ?? { id: `product:${product.id}`, url: "" },
     };
@@ -112,8 +110,14 @@ const ProductCard = ({ product }: { product: PublicProductListItem }) => {
     try {
       const res = await addToCart({ items: [{ product_variant_id: variant.id, quantity: 1 }] }).unwrap();
       setCartCount(getCartItemCount(res.data));
-      dispatch(cartApiSlice.util.upsertQueryData("getCart", undefined, res));
-      dispatch(apiSlice.util.invalidateTags([{ type: "Product", id: product.id }, { type: "Product", id: "PUBLIC_LIST" }]));
+      dispatch(
+        apiSlice.util.invalidateTags([
+          { type: "Product", id: product.id },
+          { type: "Product", id: product.slug },
+          { type: "Product", id: "PUBLIC_LIST" },
+          { type: "Sale", id: "PUBLIC_LIST" },
+        ]),
+      );
       toast.success("Added to cart.");
     } catch {
       optimisticPatch.undo();

@@ -26,7 +26,6 @@ import {
 } from "@/lib/utils/productDisplay";
 import { useAppDispatch } from "@/redux/hooks";
 import { apiSlice } from "@/redux/apiSlice";
-import { useVariantAvailability } from "@/hooks/use-variant-availability";
 import SaleSection from "@/components/HomeSection/SaleSection/SaleSection";
 
 interface DisplayLine {
@@ -61,20 +60,13 @@ const CartPage = () => {
   const items: DisplayLine[] = isLoggedIn
     ? (cart?.items ?? [])
     : guestItems.map((item) => ({
-        id: item.variant.id,
-        quantity: item.quantity,
-        product_variant: item.variant,
-      }));
+      id: item.variant.id,
+      quantity: item.quantity,
+      product_variant: item.variant,
+    }));
 
-  // The cart API's own `quantity` field on a variant is the gross/total
-  // stock, not what's actually purchasable — fetch the real per-variant
-  // available_quantity independently so quantity steppers cap correctly.
-  const availabilityByVariantId = useVariantAvailability(
-    items.map((line) => line.product_variant.product.slug),
-  );
   const getMaxQuantity = (line: DisplayLine) =>
-    availabilityByVariantId[line.product_variant.id] ??
-    line.product_variant.quantity;
+    line.product_variant.available_quantity ?? 99;
 
   const updateQty = async (line: DisplayLine, quantity: number) => {
     const nextQuantity = Math.max(1, Math.min(quantity, getMaxQuantity(line)));
@@ -209,7 +201,6 @@ const CartPage = () => {
                     >
                       <div className="relative w-20 h-24 sm:w-24 sm:h-28 shrink-0 rounded-xl overflow-hidden bg-gray-50">
                         {media?.url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={media.url}
                             alt={variant.product.name}

@@ -33,17 +33,20 @@ export interface ProductCategoryRef extends ProductRef {
 export interface CountryRef {
   id: string;
   name: string;
+  slug?: string;
   flag: MediaRef;
 }
 
 export interface ProductVariant {
   id: string;
   sku: string;
-  display_name: string;
+  display_name: string | null;
   volume_ml: number;
   price: string;
-  sale_price?: string;
-  sale_percentage?: string;
+  sale_price?: string | null;
+  sale_percentage?: string | null;
+  sale_started_at?: string | null;
+  sale_ended_at?: string | null;
   alcohol_percentage: string;
   is_liquor?: boolean;
   quantity: number;
@@ -91,21 +94,28 @@ export interface PublicProductListItem {
   slug: string;
   category: ProductRef & { slug: string };
   brand: ProductRef & { slug: string };
-  country: (CountryRef & { slug: string }) | null;
+  country: (CountryRef & { slug?: string }) | null;
   thumbnail: MediaRef | null;
   starting_price: string;
+  has_sale?: boolean;
   variants: PublicProductListVariant[];
   is_in_stock: boolean;
-  has_sale?: boolean;
+  is_staff_pick?: boolean;
+  is_featured?: boolean;
 }
 
 export interface PublicProductListVariant {
   id: string;
   sku?: string;
-  display_name: string;
+  display_name: string | null;
+  is_liquor?: boolean;
   volume_ml: number;
   alcohol_percentage?: string;
-  is_liquor?: boolean;
+  price: string;
+  sale_price?: string | null;
+  sale_percentage?: string | null;
+  sale_started_at?: string | null;
+  sale_ended_at?: string | null;
   available_quantity: number;
 }
 
@@ -179,14 +189,22 @@ export const productApiSlice = apiSlice.injectEndpoints({
         result
           ? [
               ...result.data.items.map(({ id }) => ({ type: "Product" as const, id })),
+              ...result.data.items.map(({ slug }) => ({ type: "Product" as const, id: slug })),
               { type: "Product" as const, id: "PUBLIC_LIST" },
             ]
           : [{ type: "Product" as const, id: "PUBLIC_LIST" }],
     }),
 
     getPublicProductDetail: builder.query<PublicProductResponse, string>({
-      query: (productId) => `products/${productId}`,
-      providesTags: (_result, _error, productId) => [{ type: "Product", id: productId }],
+      query: (productIdOrSlug) => `products/${productIdOrSlug}`,
+      providesTags: (result, _error, arg) =>
+        result
+          ? [
+              { type: "Product", id: result.data.id },
+              { type: "Product", id: result.data.slug },
+              { type: "Product", id: arg },
+            ]
+          : [{ type: "Product", id: arg }],
     }),
 
     createProduct: builder.mutation<ProductResponse, CreateProductRequest>({

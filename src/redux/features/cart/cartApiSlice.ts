@@ -12,14 +12,18 @@ export interface CartProductReference {
 
 export interface CartProductVariant {
   id: string;
+  sku?: string;
+  display_name?: string | null;
   product: CartProductReference;
   volume_ml: number;
   price: string;
-  sale_price?: string;
-  sale_percentage?: string;
+  sale_price?: string | null;
+  sale_percentage?: string | null;
+  sale_started_at?: string | null;
+  sale_ended_at?: string | null;
   has_sale?: boolean;
   alcohol_percentage: string;
-  quantity: number;
+  available_quantity: number;
   is_active: boolean;
   thumbnail: CartVariantMedia;
 }
@@ -68,7 +72,11 @@ export const cartApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Cart"],
+      invalidatesTags: [
+        "Cart",
+        { type: "Product", id: "PUBLIC_LIST" },
+        { type: "Sale", id: "PUBLIC_LIST" },
+      ],
     }),
 
     updateCartItem: builder.mutation<CartResponse, UpdateCartItemRequest>({
@@ -77,9 +85,10 @@ export const cartApiSlice = apiSlice.injectEndpoints({
         method: "PATCH",
         body: { quantity },
       }),
-      // Callers reconcile getCart from the returned CartResponse. Avoid an
-      // automatic refetch here because it can overwrite a newer debounced
-      // optimistic quantity with an older server response.
+      invalidatesTags: [
+        { type: "Product", id: "PUBLIC_LIST" },
+        { type: "Sale", id: "PUBLIC_LIST" },
+      ],
     }),
 
     removeCartItem: builder.mutation<CartResponse, string>({
@@ -87,7 +96,11 @@ export const cartApiSlice = apiSlice.injectEndpoints({
         url: `cart/items/${itemId}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Cart"],
+      invalidatesTags: [
+        "Cart",
+        { type: "Product", id: "PUBLIC_LIST" },
+        { type: "Sale", id: "PUBLIC_LIST" },
+      ],
     }),
 
     clearCart: builder.mutation<CartResponse, void>({
@@ -95,7 +108,11 @@ export const cartApiSlice = apiSlice.injectEndpoints({
         url: "cart",
         method: "DELETE",
       }),
-      invalidatesTags: ["Cart"],
+      invalidatesTags: [
+        "Cart",
+        { type: "Product", id: "PUBLIC_LIST" },
+        { type: "Sale", id: "PUBLIC_LIST" },
+      ],
     }),
   }),
 });

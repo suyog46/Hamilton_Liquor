@@ -6,8 +6,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { getPrimaryVariantMedia, type PublicProductVariant } from "@/redux/features/product/productApiSlice";
 import { isVariantInStock } from "@/lib/utils/productDisplay";
-import { cartApiSlice, useAddToCartMutation, useGetCartQuery } from "@/redux/features/cart/cartApiSlice";
-import { useGetMeQuery } from "@/redux/features/user/userApiSlice";
+import { cartApiSlice, useAddToCartMutation, type CartProductVariant } from "@/redux/features/cart/cartApiSlice";
+import { useGetMaximumQuantity } from "@/hooks/use-get-maximum-quantity";
 import { useCartStore } from "@/lib/stores/cartStore";
 import { getCartItemCount } from "@/lib/utils/cartDisplay";
 import { useAppDispatch } from "@/redux/hooks";
@@ -27,21 +27,15 @@ const ProductDetailActions = ({ variant, product }: { variant: PublicProductVari
   const setCartCount = useCartStore((s) => s.setCount);
   const cartCount = useCartStore((s) => s.count);
   const addGuestItem = useCartStore((s) => s.addGuestItem);
-  const guestItems = useCartStore((s) => s.guestItems);
   const openCartSheet = useCartStore((s) => s.openCartSheet);
-  const { data: meData } = useGetMeQuery();
-  const isLoggedIn = !!meData?.data;
-  const { data: cartData } = useGetCartQuery(undefined, { skip: !isLoggedIn });
+
+  const { isLoggedIn, isAtCartLimit, remainingQuantity } = useGetMaximumQuantity({
+    variantId: variant?.id,
+    availableQuantity: variant?.available_quantity,
+  });
 
   const inStock = isVariantInStock(variant);
-  const quantityInCart = variant
-    ? isLoggedIn
-      ? cartData?.data.items.find((item) => item.product_variant.id === variant.id)?.quantity ?? 0
-      : guestItems.find((item) => item.variant.id === variant.id)?.quantity ?? 0
-    : 0;
-  const remainingQuantity = variant ? Math.max(0, variant.available_quantity - quantityInCart) : 0;
   const maxQty = Math.max(1, Math.min(24, remainingQuantity));
-  const isAtCartLimit = !!variant && remainingQuantity === 0;
 
   const handleAddToCart = async () => {
     if (!variant || !inStock || isAtCartLimit) return;
@@ -53,7 +47,7 @@ const ProductDetailActions = ({ variant, product }: { variant: PublicProductVari
     // Guests build their cart locally — the real cart API requires auth on
     // every endpoint, so there's nothing to call until they sign in.
     if (!isLoggedIn) {
-      addGuestItem({ ...variant, product, thumbnail: cartMedia, quantity: variant.available_quantity }, qty);
+      addGuestItem({ ...variant, product, thumbnail: cartMedia }, qty);
       setInCart(true);
       toast.success(`Added ${qty} to cart.`);
       openCartSheet();
@@ -61,11 +55,10 @@ const ProductDetailActions = ({ variant, product }: { variant: PublicProductVari
     }
 
     const previousCount = cartCount;
-    const cartVariant = {
+    const cartVariant: CartProductVariant = {
       ...variant,
       product,
       thumbnail: cartMedia,
-      quantity: variant.available_quantity,
     };
     const now = new Date().toISOString();
     const optimisticPatch = dispatch(
@@ -91,8 +84,14 @@ const ProductDetailActions = ({ variant, product }: { variant: PublicProductVari
     try {
       const res = await addToCart({ items: [{ product_variant_id: variant.id, quantity: qty }] }).unwrap();
       setCartCount(getCartItemCount(res.data));
-      dispatch(cartApiSlice.util.upsertQueryData("getCart", undefined, res));
-      dispatch(apiSlice.util.invalidateTags([{ type: "Product", id: product.id }, { type: "Product", id: "PUBLIC_LIST" }]));
+      dispatch(
+        apiSlice.util.invalidateTags([
+          { type: "Product", id: product.id },
+          { type: "Product", id: product.slug },
+          { type: "Product", id: "PUBLIC_LIST" },
+          { type: "Sale", id: "PUBLIC_LIST" },
+        ]),
+      );
       toast.success(`Added ${qty} to cart.`);
     } catch {
       optimisticPatch.undo();

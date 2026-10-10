@@ -13,12 +13,21 @@ import {
   fulfillmentSequence,
   getOrderScheduledEnd,
   getOrderScheduledStart,
+  getRefundStatusLabel,
+  getRefundStatusTone,
   orderStatusLabel,
   statusTone,
 } from "@/components/Order/orderDisplay";
 import type { FulfillmentEventType } from "@/redux/features/order/orderApiSlice";
 import { useGetOrderQuery } from "@/redux/features/order/orderApiSlice";
 import { useGetMeQuery } from "@/redux/features/user/userApiSlice";
+import { toast } from "sonner";
+import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
+import {
+  useGetPaymentCheckoutStatusQuery,
+  useResumePaymentMutation,
+  useRetryPaymentMutation,
+} from "@/redux/features/payment/paymentApiSlice";
 
 const eventIcon: Record<FulfillmentEventType, string> = {
   PREPARING: "solar:chef-hat-linear",
@@ -43,6 +52,67 @@ export default function OrderDetailPage() {
   const { data, isLoading, isError, refetch } = useGetOrderQuery(orderId, {
     skip: !isLoggedIn || !orderId,
   });
+
+  const payment = data?.data?.payment;
+  const paymentStatus = payment?.status?.toUpperCase();
+  const isPaymentPending = paymentStatus === "PENDING";
+  const isRetryEligible = !!payment?.is_retry_eligible;
+  const paymentId = payment?.id;
+
+  const shouldCheckCheckoutStatus = isPaymentPending && !isRetryEligible && !!paymentId;
+  const { data: checkoutStatusData } = useGetPaymentCheckoutStatusQuery(
+    paymentId ?? "",
+    {
+      skip: !shouldCheckCheckoutStatus,
+    },
+  );
+
+  const canResumePayment = checkoutStatusData?.data?.can_resume_payment === true;
+
+  const [resumePayment, { isLoading: isResuming }] = useResumePaymentMutation();
+  const [retryPayment, { isLoading: isRetrying }] = useRetryPaymentMutation();
+
+  const handleResumePayment = async () => {
+    if (!paymentId) return;
+    try {
+      const res = await resumePayment(paymentId).unwrap();
+      if (res?.data?.checkout_url) {
+        window.location.href = res.data.checkout_url;
+      } else {
+        toast.error("Checkout link was not found. Please refresh.");
+      }
+    } catch (err) {
+      const msg =
+        isFetchBaseQueryError(err) &&
+        typeof err.data === "object" &&
+        err.data &&
+        "message" in err.data
+          ? String((err.data as any).message)
+          : "Failed to resume payment. Please try again.";
+      toast.error(msg);
+    }
+  };
+
+  const handleRetryPayment = async () => {
+    if (!paymentId) return;
+    try {
+      const res = await retryPayment(paymentId).unwrap();
+      if (res?.data?.checkout_url) {
+        window.location.href = res.data.checkout_url;
+      } else {
+        toast.error("Checkout link was not found. Please refresh.");
+      }
+    } catch (err) {
+      const msg =
+        isFetchBaseQueryError(err) &&
+        typeof err.data === "object" &&
+        err.data &&
+        "message" in err.data
+          ? String((err.data as any).message)
+          : "Failed to retry payment. Please try again.";
+      toast.error(msg);
+    }
+  };
 
   useEffect(() => {
     if (!isLoadingUser && (isUserError || !meData?.data)) {
@@ -127,6 +197,78 @@ export default function OrderDetailPage() {
       <section className="bg-gray-50 py-10 sm:py-14">
         <div className="mx-auto grid max-w-6xl gap-8 px-6 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className="space-y-6">
+            {isRetryEligible && (
+              <div className="flex flex-col gap-4 rounded-2xl border border-amber-300 bg-amber-50 p-5 shadow-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                    <Icon icon="solar:danger-triangle-linear" className="size-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-amber-900">
+                      Payment retry available
+                    </h3>
+                    <p className="mt-0.5 text-xs text-amber-700">
+                      The previous payment attempt was not completed. You can retry payment now to secure your order.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRetryPayment}
+                  disabled={isRetrying}
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-primary-normal px-5 py-2.5 text-xs font-bold text-black shadow-sm transition-all hover:bg-primary-hover active:scale-[0.98] disabled:opacity-50"
+                >
+                  {isRetrying ? (
+                    <>
+                      <Icon icon="svg-spinners:180-ring" className="size-4" />
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <Icon icon="solar:restart-linear" className="size-4" />
+                      Retry payment
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {!isRetryEligible && isPaymentPending && canResumePayment && (
+              <div className="flex flex-col gap-4 rounded-2xl border border-amber-300 bg-amber-50/80 p-5 shadow-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                    <Icon icon="solar:card-2-linear" className="size-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-amber-900">
+                      Resume payment
+                    </h3>
+                    <p className="mt-0.5 text-xs text-amber-700">
+                      Your checkout session can be resumed. Click below to continue and complete your payment.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleResumePayment}
+                  disabled={isResuming}
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-primary-normal px-5 py-2.5 text-xs font-bold text-black shadow-sm transition-all hover:bg-primary-hover active:scale-[0.98] disabled:opacity-50"
+                >
+                  {isResuming ? (
+                    <>
+                      <Icon icon="svg-spinners:180-ring" className="size-4" />
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <Icon icon="solar:card-2-linear" className="size-4" />
+                      Resume payment
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
             <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-200 sm:p-7">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
@@ -255,6 +397,122 @@ export default function OrderDetailPage() {
               </div>
             </div>
 
+            {order.refund_history && order.refund_history.length > 0 && (
+              <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-200 sm:p-7">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 ring-1 ring-amber-200/70">
+                      <Icon icon="solar:restart-circle-linear" className="size-5" />
+                    </div>
+                    <div>
+                      <h2 className="font-title text-xl font-semibold">
+                        Refund history
+                      </h2>
+                      <p className="text-xs text-gray-500">
+                        {order.refund_history.length}{" "}
+                        {order.refund_history.length === 1
+                          ? "refund request"
+                          : "refund requests"}{" "}
+                        recorded
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 space-y-4">
+                  {order.refund_history.map((refund, idx) => (
+                    <div
+                      key={refund.id || `${refund.requested_at}-${idx}`}
+                      className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 sm:p-5"
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="space-y-1.5">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span
+                              className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${getRefundStatusTone(
+                                refund.status,
+                              )}`}
+                            >
+                              {getRefundStatusLabel(
+                                refund.status,
+                                refund.status_label,
+                              )}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              Requested {formatOrderDate(refund.requested_at)}
+                            </span>
+                          </div>
+                          {refund.completed_at && (
+                            <p className="text-xs text-gray-500">
+                              Completed {formatOrderDate(refund.completed_at)}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="sm:text-right">
+                          <p className="text-xs text-gray-400">Refund amount</p>
+                          <p className="text-base font-bold text-gray-900">
+                            {formatOrderMoney(
+                              refund.amount,
+                              refund.currency || order.currency,
+                            )}
+                          </p>
+                        </div>
+                      </div>
+
+                      {refund.breakdown && (
+                        <div className="mt-4 border-t border-gray-200/80 pt-3">
+                          <p className="mb-2 text-xs font-semibold text-gray-600">
+                            Refund Breakdown
+                          </p>
+                          <div className="grid grid-cols-2 gap-2 rounded-lg bg-white p-3 text-xs sm:grid-cols-4">
+                            <div>
+                              <span className="text-gray-400">Merchandise</span>
+                              <p className="font-semibold text-gray-800">
+                                {formatOrderMoney(
+                                  refund.breakdown.merchandise_refund,
+                                  refund.currency || order.currency,
+                                )}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Delivery fee</span>
+                              <p className="font-semibold text-gray-800">
+                                {formatOrderMoney(
+                                  refund.breakdown.delivery_refund,
+                                  refund.currency || order.currency,
+                                )}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">
+                                Cancellation fee
+                              </span>
+                              <p className="font-semibold text-gray-800">
+                                {formatOrderMoney(
+                                  refund.breakdown.cancellation_fee,
+                                  refund.currency || order.currency,
+                                )}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Final refund</span>
+                              <p className="font-semibold text-emerald-700">
+                                {formatOrderMoney(
+                                  refund.breakdown.final_refund,
+                                  refund.currency || order.currency,
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-200 sm:p-7">
               <h2 className="font-title text-xl font-semibold">Items</h2>
               <div className="mt-4 divide-y divide-gray-100">
@@ -308,13 +566,76 @@ export default function OrderDetailPage() {
                 <div className="mt-5 rounded-lg bg-gray-50 p-3 text-xs text-gray-600">
                   <div className="flex justify-between">
                     <span>Payment</span>
-                    <span className="font-semibold">
+                    <span className="font-semibold flex items-center gap-1.5">
+                      {isPaymentPending && (
+                        <Icon icon="svg-spinners:180-ring" className="size-3 text-amber-600" />
+                      )}
                       {order.payment.status}
                     </span>
                   </div>
                   <div className="mt-2 flex justify-between">
                     <span>Provider</span>
                     <span>{order.payment.provider}</span>
+                  </div>
+                  {isRetryEligible ? (
+                    <div className="mt-3 border-t border-gray-200/80 pt-3">
+                      <button
+                        type="button"
+                        onClick={handleRetryPayment}
+                        disabled={isRetrying}
+                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-normal py-2 text-xs font-semibold text-black shadow-sm transition-all hover:bg-primary-hover active:scale-[0.98] disabled:opacity-50"
+                      >
+                        {isRetrying ? (
+                          <>
+                            <Icon icon="svg-spinners:180-ring" className="size-3.5" />
+                            Connecting...
+                          </>
+                        ) : (
+                          <>
+                            <Icon icon="solar:restart-linear" className="size-3.5" />
+                            Retry payment
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  ) : isPaymentPending && canResumePayment ? (
+                    <div className="mt-3 border-t border-gray-200/80 pt-3">
+                      <button
+                        type="button"
+                        onClick={handleResumePayment}
+                        disabled={isResuming}
+                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-normal py-2 text-xs font-semibold text-black shadow-sm transition-all hover:bg-primary-hover active:scale-[0.98] disabled:opacity-50"
+                      >
+                        {isResuming ? (
+                          <>
+                            <Icon icon="svg-spinners:180-ring" className="size-3.5" />
+                            Connecting...
+                          </>
+                        ) : (
+                          <>
+                            <Icon icon="solar:card-2-linear" className="size-3.5" />
+                            Resume payment
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+              {order.refund_history && order.refund_history.length > 0 && (
+                <div className="mt-4 rounded-lg border border-amber-200/80 bg-amber-50/60 p-3 text-xs text-amber-900">
+                  <div className="flex items-center justify-between font-semibold">
+                    <span className="flex items-center gap-1.5">
+                      <Icon
+                        icon="solar:restart-circle-linear"
+                        className="size-4 text-amber-600"
+                      />
+                      Refund history
+                    </span>
+                    <span>
+                      {order.refund_history.length}{" "}
+                      {order.refund_history.length === 1 ? "record" : "records"}
+                    </span>
                   </div>
                 </div>
               )}

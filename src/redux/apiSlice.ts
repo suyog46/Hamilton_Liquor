@@ -9,10 +9,6 @@ import { Mutex } from "async-mutex";
 
 const mutex = new Mutex();
 
-// Every request goes through our own Next.js server first (BFF pattern) —
-// the browser never talks to the external API directly. The proxy route
-// reads the httpOnly access_token cookie server-side and attaches it as a
-// Bearer header, so there's no cross-site cookie/CORS concern here at all.
 const baseQuery = fetchBaseQuery({
   baseUrl: "/api/proxy/",
   credentials: "include",
@@ -42,7 +38,7 @@ const baseQueryWithReauth: BaseQueryFn<
     if (!mutex.isLocked()) {
       const release = await mutex.acquire();
       try {
-  
+
         const refreshRes = await fetch("/api/auth/refresh", {
           method: "POST",
           credentials: "include",
@@ -80,6 +76,7 @@ export const apiSlice = createApi({
     "Store",
     "ContactMessage",
     "Sale",
+    "Payment",
   ],
   endpoints: () => ({}),
 });

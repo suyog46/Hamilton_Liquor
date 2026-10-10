@@ -6,7 +6,6 @@ export interface AdminNavItem {
 
 export const adminNavOverview: AdminNavItem[] = [
   { name: "Dashboard", href: "/admin", icon: "solar:widget-5-linear" },
-  { name: "Reports", href: "/admin/reports", icon: "solar:chart-2-linear" },
 ];
 
 export const adminNavCatalog: AdminNavItem[] = [
@@ -35,18 +34,7 @@ export const adminNavSales: AdminNavItem[] = [
   },
 ];
 
-export const adminNavMarketing: AdminNavItem[] = [
-  {
-    name: "Homepage Banners",
-    href: "/admin/banners",
-    icon: "solar:gallery-wide-linear",
-  },
-  {
-    name: "SMS & Email Signups",
-    href: "/admin/marketing",
-    icon: "solar:letter-linear",
-  },
-];
+
 
 export const adminNavStore: AdminNavItem[] = [
   {
@@ -73,11 +61,6 @@ export const adminNavStore: AdminNavItem[] = [
     name: "Social Links",
     href: "/admin/social-links",
     icon: "solar:share-linear",
-  },
-  {
-    name: "Delivery Zones",
-    href: "/admin/delivery-zones",
-    icon: "solar:map-point-linear",
   },
   {
     name: "Store Closures",

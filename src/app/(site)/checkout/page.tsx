@@ -33,12 +33,8 @@ import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
 import { cn, formatStoreTime } from "@/lib/utils";
 import { siteConfig } from "@/lib/utils/siteConfig";
 import { useCheckoutStore } from "@/lib/stores/checkoutStore";
-import { useCartStore, type CartStore } from "@/lib/stores/cartStore";
 import { useGetAddressesQuery } from "@/redux/features/address/addressApiSlice";
-import {
-  useGetCartQuery,
-  useClearCartMutation,
-} from "@/redux/features/cart/cartApiSlice";
+import { useGetCartQuery } from "@/redux/features/cart/cartApiSlice";
 import {
   type ExpectedCheckout,
   type FulfillmentMethod,
@@ -203,11 +199,6 @@ export default function CheckoutPage() {
     );
   const [checkoutPreview, { isLoading: isPreviewing }] =
     useCheckoutPreviewMutation();
-  const [clearCart] = useClearCartMutation();
-  const setCartCount = useCartStore((state: CartStore) => state.setCount);
-  const clearGuestItems = useCartStore(
-    (state: CartStore) => state.clearGuestItems,
-  );
 
   const pickupSlots = useMemo(
     () => buildPickupSlots(pickupDate, hoursData?.data.hours ?? []),
@@ -309,13 +300,6 @@ export default function CheckoutPage() {
         paymentRequest,
         idempotencyKey,
       });
-
-      try {
-        await clearCart().unwrap();
-      } catch {
-      }
-      clearGuestItems();
-      setCartCount(0);
 
       router.push("/checkout/preview");
     } catch (error) {

@@ -29,7 +29,6 @@ import { formatPrice, formatVolume } from "@/lib/utils/productDisplay";
 import { getCartItemCount } from "@/lib/utils/cartDisplay";
 import { useAppDispatch } from "@/redux/hooks";
 import { apiSlice } from "@/redux/apiSlice";
-import { useVariantAvailability } from "@/hooks/use-variant-availability";
 
 const CartSheet = () => {
   const dispatch = useAppDispatch();
@@ -68,14 +67,8 @@ const CartSheet = () => {
   }, 0);
   const loading = isLoggedIn ? isFetching && lines.length === 0 : !hydrated;
 
-  // The cart API's own `quantity` field on a variant is the gross/total
-  // stock, not what's actually purchasable — fetch the real per-variant
-  // available_quantity independently so quantity steppers cap correctly.
-  const availabilityByVariantId = useVariantAvailability(
-    lines.map((line) => line.variant.product.slug),
-  );
   const getMaxQuantity = (line: CartSheetLine) =>
-    availabilityByVariantId[line.variant.id] ?? line.variant.quantity;
+    line.variant.available_quantity ?? 99;
 
   // Only the network synchronization is debounced. The click handler below
   // updates the RTK cache and badge synchronously before calling this.

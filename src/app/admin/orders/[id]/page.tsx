@@ -23,6 +23,11 @@ import {
   fulfillmentSequence,
   getOrderScheduledEnd,
   getOrderScheduledStart,
+  getRefundCaseStatusLabel,
+  getRefundCaseTypeLabel,
+  getRefundReasonLabel,
+  getRefundStatusLabel,
+  getRefundStatusTone,
   orderStatusLabel,
   statusTone,
 } from "@/components/Order/orderDisplay";
@@ -38,6 +43,7 @@ import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
 import {
   type DeliveryRefusalReason,
   type FulfillmentEventType,
+  type FulfillmentMethod,
   type FulfillmentStatus,
   useGetAdminOrderQuery,
   useUpdateOrderFulfillmentMutation,
@@ -46,7 +52,6 @@ import {
 const refusalReasons: Array<{ value: DeliveryRefusalReason; label: string }> = [
   { value: "ID_INVALID", label: "Invalid ID" },
   { value: "CUSTOMER_INTOXICATED", label: "Customer intoxicated" },
-  { value: "CUSTOMER_REFUSED", label: "Customer refused order" },
   { value: "OTHER", label: "Other" },
 ];
 
@@ -63,6 +68,44 @@ const errorMessage = (error: unknown) => {
   );
 };
 
+const getNextFulfillmentStatuses = (
+  currentStatus?: FulfillmentStatus,
+  method?: FulfillmentMethod,
+): FulfillmentStatus[] => {
+  if (!currentStatus) return [];
+
+  if (method === "PICKUP") {
+    switch (currentStatus) {
+      case "PENDING":
+        return ["PREPARING"];
+      case "PREPARING":
+        return ["READY_FOR_PICKUP"];
+      case "READY_FOR_PICKUP":
+        return ["PICKED_UP", "REFUSED"];
+      case "PICKED_UP":
+      case "REFUSED":
+      default:
+        return [];
+    }
+  }
+
+  // Delivery
+  switch (currentStatus) {
+    case "PENDING":
+      return ["PREPARING"];
+    case "PREPARING":
+      return ["READY_FOR_DELIVERY"];
+    case "READY_FOR_DELIVERY":
+      return ["OUT_FOR_DELIVERY"];
+    case "OUT_FOR_DELIVERY":
+      return ["DELIVERED", "REFUSED"];
+    case "DELIVERED":
+    case "REFUSED":
+    default:
+      return [];
+  }
+};
+
 export default function AdminOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, isError, refetch } = useGetAdminOrderQuery(id);
@@ -77,25 +120,58 @@ export default function AdminOrderDetailPage() {
   const [updateFulfillment, { isLoading: isUpdating }] =
     useUpdateOrderFulfillmentMutation();
 
-  useEffect(() => {
-    if (order) setStatus(order.fulfillment_status);
+  const nextStatuses = useMemo<FulfillmentStatus[]>(() => {
+    if (!order) return [];
+    return getNextFulfillmentStatuses(
+      order.fulfillment_status,
+      order.fulfillment_method,
+    );
   }, [order]);
 
-  const allowedStatuses = useMemo<FulfillmentStatus[]>(() => {
-    if (!order) return ["PENDING"];
-    return order.fulfillment_method === "PICKUP"
-      ? ["PENDING", "PREPARING", "READY_FOR_PICKUP", "PICKED_UP", "REFUSED"]
-      : [
-        "PENDING",
-        "PREPARING",
-        "READY_FOR_DELIVERY",
-        "OUT_FOR_DELIVERY",
-        "DELIVERED",
-        "REFUSED",
-      ];
+  const isTerminalStatus = Boolean(order && nextStatuses.length === 0);
+
+  useEffect(() => {
+    if (order) {
+      const next = getNextFulfillmentStatuses(
+        order.fulfillment_status,
+        order.fulfillment_method,
+      );
+      if (next.length > 0) {
+        setStatus(next[0]);
+      } else {
+        setStatus(order.fulfillment_status);
+      }
+    }
   }, [order]);
+
+  const dropdownItems = useMemo(() => {
+    if (!order) return [];
+    if (isTerminalStatus) {
+      return [
+        {
+          value: order.fulfillment_status,
+          label: `${fulfillmentLabel[order.fulfillment_status]} (Completed)`,
+          disabled: true,
+        },
+      ];
+    }
+    return nextStatuses.map((value) => ({
+      value,
+      label: fulfillmentLabel[value],
+      disabled: false,
+    }));
+  }, [order, isTerminalStatus, nextStatuses]);
+
+  const hasRefunds = Boolean(
+    (order?.refund_cases && order.refund_cases.length > 0) ||
+    (order?.unassociated_payment_refunds && order.unassociated_payment_refunds.length > 0),
+  );
 
   const saveStatus = async () => {
+    if (isTerminalStatus || !nextStatuses.includes(status)) {
+      toast.error("No further status transitions available.");
+      return;
+    }
     if (status === "REFUSED" && !refusalReason) {
       toast.error("Choose a refusal reason.");
       return;
@@ -136,7 +212,7 @@ export default function AdminOrderDetailPage() {
           </button>
           <Link
             href="/admin/orders"
-            className="text-xs font-semibold text-muted-foreground"
+            className="text-xs font-semibold text-gray-500"
           >
             Back to orders
           </Link>
@@ -157,8 +233,18 @@ export default function AdminOrderDetailPage() {
   );
   const scheduledStart = getOrderScheduledStart(order);
   const scheduledEnd = getOrderScheduledEnd(order);
-  const cancellable = isOrderCancellable(order.status, order.fulfillment_status);
-  const refundable = isOrderRefundable(order.status, order.fulfillment_status);
+  const hasRefundCases = Boolean(
+    order.refund_cases && order.refund_cases.length > 0,
+  );
+  const hasUnassociatedRefunds = Boolean(
+    order.unassociated_payment_refunds &&
+    order.unassociated_payment_refunds.length > 0,
+  );
+
+  const cancellable =
+    !hasRefunds && isOrderCancellable(order.status, order.fulfillment_status);
+  const refundable =
+    !hasRefunds && isOrderRefundable(order.status, order.fulfillment_status);
 
   return (
     <div className="flex flex-col gap-4">
@@ -167,10 +253,9 @@ export default function AdminOrderDetailPage() {
         description={`Placed ${formatOrderDate(order.created_at)} by ${order.customer.name}`}
         action={
           <div className="flex items-center gap-3">
-
             <Link
               href="/admin/orders"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-foreground"
             >
               <Icon icon="solar:arrow-left-linear" className="size-4" />
               All orders
@@ -213,7 +298,10 @@ export default function AdminOrderDetailPage() {
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex flex-col gap-4">
-          <section className="border bg-card p-5 ring-1 ring-foreground/5">
+
+          <section
+            className={`border p-5 ring-1 bg-card ring-foreground/5`}
+          >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex flex-wrap gap-2">
                 <span
@@ -226,11 +314,14 @@ export default function AdminOrderDetailPage() {
                     ? "Pickup"
                     : "Delivery"}
                 </span>
+                {hasRefunds && (
+                  <span className="rounded-full border border-gray-300 bg-gray-200/80 px-2.5 py-1 text-[11px] font-medium text-gray-700">
+                    Refund / Cancel Record Present
+                  </span>
+                )}
               </div>
               <div className="text-right">
-                <p className="text-[11px] text-muted-foreground">
-                  Current progress
-                </p>
+                <p className="text-[11px] text-gray-500">Current progress</p>
                 <p className="text-sm font-semibold">
                   {fulfillmentLabel[order.fulfillment_status]}
                 </p>
@@ -238,7 +329,7 @@ export default function AdminOrderDetailPage() {
             </div>
             <div className="mt-5 grid gap-4 border-t pt-5 sm:grid-cols-3">
               <div>
-                <p className="text-[11px] text-muted-foreground">Customer</p>
+                <p className="text-[11px] text-gray-500">Customer</p>
                 <p className="mt-1 text-sm font-semibold">
                   {order.customer.name}
                 </p>
@@ -250,25 +341,23 @@ export default function AdminOrderDetailPage() {
                 </a>
               </div>
               <div>
-                <p className="text-[11px] text-muted-foreground">
-                  Scheduled window
-                </p>
+                <p className="text-[11px] text-gray-500">Scheduled window</p>
                 <p className="mt-1 text-sm font-semibold">
                   {formatOrderDate(scheduledStart)}
                 </p>
                 {scheduledEnd && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-gray-500">
                     until {formatOrderDate(scheduledEnd)}
                   </p>
                 )}
               </div>
               <div>
-                <p className="text-[11px] text-muted-foreground">Payment</p>
+                <p className="text-[11px] text-gray-500">Payment</p>
                 <p className="mt-1 text-sm font-semibold">
                   {order.payment?.status ?? "Unavailable"}
                 </p>
                 {order.payment && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-gray-500">
                     {order.payment.provider}
                   </p>
                 )}
@@ -276,7 +365,363 @@ export default function AdminOrderDetailPage() {
             </div>
           </section>
 
-          <section className="border bg-card p-5 ring-1 ring-foreground/5">
+
+          {hasRefundCases && (
+            <section className="border bg-card p-5 ring-1 ring-foreground/5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Icon
+                    icon="solar:card-recive-linear"
+                    className="size-4 text-primary-active"
+                  />
+                  <h2 className="text-sm font-semibold">Refund cases</h2>
+                </div>
+                <span className="text-[11px] text-gray-500">
+                  {order.refund_cases!.length}{" "}
+                  {order.refund_cases!.length === 1 ? "case" : "cases"}
+                </span>
+              </div>
+
+              <div className="space-y-4">
+                {order.refund_cases!.map((caseItem, idx) => (
+                  <div
+                    key={caseItem.id || `case-${idx}`}
+                    className="rounded-lg border bg-gray-100 p-4 text-xs space-y-3.5"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-3">
+                      <div className="space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="rounded-full border border-primary-normal/40 bg-primary-normal/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary-active">
+                            {getRefundCaseTypeLabel(caseItem.case_type)}
+                          </span>
+                          <span
+                            className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${getRefundStatusTone(
+                              caseItem.status,
+                            )}`}
+                          >
+                            {getRefundCaseStatusLabel(caseItem.status)}
+                          </span>
+                        </div>
+                        <p className="text-xs font-semibold text-foreground">
+                          Reason: {getRefundReasonLabel(caseItem.reason)}
+                        </p>
+                      </div>
+
+                      <div className="text-right text-[11px] text-gray-500">
+                        <p className="font-medium text-foreground">
+                          {caseItem.created_by?.name ? (
+                            <>Created by {caseItem.created_by.name}</>
+                          ) : (
+                            "Created by Admin"
+                          )}
+                        </p>
+                        {caseItem.created_by?.email && (
+                          <p>{caseItem.created_by.email}</p>
+                        )}
+                        <p className="text-[10px]">
+                          {formatOrderDate(caseItem.created_at)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Note if available */}
+                    {caseItem.note && (
+                      <div className="rounded bg-background/80 p-2.5 text-[11px] border border-border/60">
+                        <span className="font-semibold text-foreground">Note: </span>
+                        <span className="text-gray-500">{caseItem.note}</span>
+                      </div>
+                    )}
+
+                    {/* Financial Summary */}
+                    <div className="space-y-1.5">
+                      <p className="text-[11px] font-semibold text-gray-500">
+                        Financial Summary
+                      </p>
+                      <div className="grid grid-cols-2 gap-2 rounded-lg bg-card p-3 text-[11px] sm:grid-cols-4 border">
+                        <div>
+                          <span className="text-gray-500">Merchandise:</span>
+                          <p className="font-medium">
+                            {formatOrderMoney(
+                              caseItem.merchandise_refund,
+                              caseItem.currency || order.currency,
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Delivery:</span>
+                          <p className="font-medium">
+                            {formatOrderMoney(
+                              caseItem.delivery_refund,
+                              caseItem.currency || order.currency,
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Cancellation fee:</span>
+                          <p className="font-medium">
+                            {formatOrderMoney(
+                              caseItem.cancellation_fee,
+                              caseItem.currency || order.currency,
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Final refund:</span>
+                          <p className="font-semibold text-primary-active text-xs">
+                            {formatOrderMoney(
+                              caseItem.final_refund,
+                              caseItem.currency || order.currency,
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Items table / breakdown */}
+                    {caseItem.items && caseItem.items.length > 0 && (
+                      <div className="space-y-2 border-t pt-3">
+                        <p className="text-[11px] font-semibold text-gray-500">
+                          Case items ({caseItem.items.length})
+                        </p>
+                        <div className="space-y-2">
+                          {caseItem.items.map((item, itemIdx) => (
+                            <div
+                              key={item.id || `case-item-${itemIdx}`}
+                              className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-card p-2.5 text-[11px]"
+                            >
+                              <div className="space-y-0.5">
+                                <p className="font-medium text-foreground">
+                                  {item.product_name}
+                                </p>
+                                <p className="text-[10px] text-gray-500">
+                                  {item.variant_name
+                                    ? `${item.variant_name} · `
+                                    : ""}
+                                  {item.sku ? `SKU: ${item.sku} · ` : ""}
+                                  Qty: {item.quantity} ×{" "}
+                                  {formatOrderMoney(
+                                    item.unit_price,
+                                    caseItem.currency || order.currency,
+                                  )}
+                                </p>
+                                <div className="flex flex-wrap gap-1.5 pt-0.5 text-[10px]">
+                                  {item.condition && (
+                                    <span className="rounded bg-gray-100 px-1.5 py-0.5 text-gray-500">
+                                      Condition:{" "}
+                                      {item.condition
+                                        .replaceAll("_", " ")
+                                        .toLowerCase()}
+                                    </span>
+                                  )}
+                                  {item.disposition && (
+                                    <span className="rounded bg-gray-100 px-1.5 py-0.5 text-gray-500">
+                                      Disposition:{" "}
+                                      {item.disposition
+                                        .replaceAll("_", " ")
+                                        .toLowerCase()}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="text-right">
+                                <span className="text-[10px] text-gray-500 block">
+                                  Line refund
+                                </span>
+                                <span className="font-semibold text-foreground">
+                                  {formatOrderMoney(
+                                    item.line_refund,
+                                    caseItem.currency || order.currency,
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Associated Payment Refunds */}
+                    {caseItem.payment_refunds &&
+                      caseItem.payment_refunds.length > 0 && (
+                        <div className="space-y-2 border-t pt-3">
+                          <p className="text-[11px] font-semibold text-gray-500">
+                            Payment Refunds ({caseItem.payment_refunds.length})
+                          </p>
+                          <div className="space-y-2">
+                            {caseItem.payment_refunds.map((pr, prIdx) => (
+                              <div
+                                key={pr.id || `case-pr-${prIdx}`}
+                                className="rounded-md border bg-card p-2.5 text-[11px] space-y-1.5"
+                              >
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span
+                                      className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${getRefundStatusTone(
+                                        pr.status,
+                                      )}`}
+                                    >
+                                      {pr.status}
+                                    </span>
+                                    <span className="rounded border bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500 font-medium">
+                                      Source: {pr.source}
+                                    </span>
+                                    <span className="text-gray-500">
+                                      {getRefundReasonLabel(pr.reason)}
+                                    </span>
+                                  </div>
+                                  <span className="font-bold text-foreground">
+                                    {formatOrderMoney(
+                                      pr.amount,
+                                      pr.currency ||
+                                      caseItem.currency ||
+                                      order.currency,
+                                    )}
+                                  </span>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-3 text-[10px] text-gray-500">
+                                  <span>
+                                    Requested: {formatOrderDate(pr.requested_at)}
+                                  </span>
+                                  {pr.completed_at && (
+                                    <span>
+                                      Completed:{" "}
+                                      {formatOrderDate(pr.completed_at)}
+                                    </span>
+                                  )}
+                                  {pr.failed_at && (
+                                    <span className="text-destructive font-medium">
+                                      Failed: {formatOrderDate(pr.failed_at)}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {pr.failure_message && (
+                                  <div className="rounded bg-destructive/10 p-2 text-[10px] text-destructive">
+                                    <span className="font-semibold">
+                                      Failure ({pr.failure_code || "Error"}):{" "}
+                                    </span>
+                                    {pr.failure_message}
+                                  </div>
+                                )}
+
+                                {pr.note && (
+                                  <p className="text-[10px] text-gray-500">
+                                    Note: {pr.note}
+                                  </p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* ========================================================= */}
+          {/* 3. UNASSOCIATED PAYMENT REFUNDS (System created)           */}
+          {/* ========================================================= */}
+          {hasUnassociatedRefunds && (
+            <section className="border bg-card p-5 ring-1 ring-foreground/5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Icon
+                    icon="solar:server-square-linear"
+                    className="size-4 text-primary-active"
+                  />
+                  <h2 className="text-sm font-semibold">
+                    Automatic / System payment refunds
+                  </h2>
+                </div>
+                <span className="text-[11px] text-gray-500">
+                  {order.unassociated_payment_refunds!.length}{" "}
+                  {order.unassociated_payment_refunds!.length === 1
+                    ? "refund"
+                    : "refunds"}
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {order.unassociated_payment_refunds!.map((pr, idx) => (
+                  <div
+                    key={pr.id || `unassociated-pr-${idx}`}
+                    className="rounded-lg border bg-gray-100 p-3.5 text-xs space-y-2"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${getRefundStatusTone(
+                            pr.status,
+                          )}`}
+                        >
+                          {pr.status}
+                        </span>
+                        <span className="rounded border bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500 font-medium">
+                          Source: {pr.source}
+                        </span>
+                        <span className="text-xs font-medium text-foreground">
+                          {getRefundReasonLabel(pr.reason)}
+                        </span>
+                      </div>
+
+                      <span className="text-sm font-bold text-foreground">
+                        {formatOrderMoney(
+                          pr.amount,
+                          pr.currency || order.currency,
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3 text-[11px] text-gray-500">
+                      <span>Requested: {formatOrderDate(pr.requested_at)}</span>
+                      {pr.completed_at && (
+                        <span>
+                          Completed: {formatOrderDate(pr.completed_at)}
+                        </span>
+                      )}
+                      {pr.failed_at && (
+                        <span className="text-destructive font-medium">
+                          Failed: {formatOrderDate(pr.failed_at)}
+                        </span>
+                      )}
+                    </div>
+
+                    {pr.failure_message && (
+                      <div className="rounded bg-destructive/10 p-2 text-[11px] text-destructive">
+                        <span className="font-semibold">
+                          Failure ({pr.failure_code || "Error"}):{" "}
+                        </span>
+                        {pr.failure_message}
+                      </div>
+                    )}
+
+                    {pr.note && (
+                      <div className="rounded bg-card p-2 text-[11px] text-gray-500 border">
+                        <span className="font-semibold text-foreground">
+                          Note:{" "}
+                        </span>
+                        {pr.note}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* ========================================================= */}
+          {/* 4. BELOW: FULFILLMENT HISTORY (Disabled if refunds)        */}
+          {/* ========================================================= */}
+          <section
+            className={`border p-5 ring-1 ${hasRefunds
+              ? "bg-gray-100 border-gray-200 ring-black/5 opacity-80"
+              : "bg-card ring-foreground/5"
+              }`}
+          >
             <h2 className="text-sm font-semibold">Fulfillment history</h2>
             <div className="mt-5 space-y-0">
               <div className="relative flex gap-3 pb-6">
@@ -286,7 +731,7 @@ export default function AdminOrderDetailPage() {
                 </span>
                 <div>
                   <p className="text-xs font-semibold">Order placed</p>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  <p className="mt-0.5 text-[11px] text-gray-500">
                     {formatOrderDate(order.created_at)}
                   </p>
                 </div>
@@ -308,7 +753,7 @@ export default function AdminOrderDetailPage() {
                       />
                     )}
                     <span
-                      className={`relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full ring-1 ${complete ? "bg-primary-normal ring-primary-normal" : "bg-card text-muted-foreground ring-border"}`}
+                      className={`relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full ring-1 ${complete ? "bg-primary-normal ring-primary-normal" : "bg-card text-gray-500 ring-border"}`}
                     >
                       <Icon
                         icon={
@@ -321,11 +766,11 @@ export default function AdminOrderDetailPage() {
                     </span>
                     <div>
                       <p
-                        className={`text-xs font-semibold ${complete ? "" : "text-muted-foreground"}`}
+                        className={`text-xs font-semibold ${complete ? "" : "text-gray-500"}`}
                       >
                         {fulfillmentLabel[eventType]}
                       </p>
-                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      <p className="mt-0.5 text-[11px] text-gray-500">
                         {event
                           ? formatOrderDate(event.created_at)
                           : order.fulfillment_status === eventType
@@ -333,7 +778,7 @@ export default function AdminOrderDetailPage() {
                             : "Pending"}
                       </p>
                       {event?.note && (
-                        <p className="mt-2 bg-gray-100 p-2 text-xs">
+                        <p className="mt-2 bg-gray-200/70 p-2 text-xs">
                           {event.note}
                         </p>
                       )}
@@ -373,7 +818,15 @@ export default function AdminOrderDetailPage() {
             </div>
           </section>
 
-          <section className="border bg-card p-5 ring-1 ring-foreground/5">
+          {/* ========================================================= */}
+          {/* 5. BELOW: ORDER ITEMS (Disabled with gray-100 if refunds)  */}
+          {/* ========================================================= */}
+          <section
+            className={`border p-5 ring-1 ${hasRefunds
+              ? "bg-gray-100 border-gray-200 ring-black/5 opacity-80"
+              : "bg-card ring-foreground/5"
+              }`}
+          >
             <h2 className="text-sm font-semibold">Order items</h2>
             <div className="mt-3 divide-y">
               {order.items.map((item) => (
@@ -383,7 +836,7 @@ export default function AdminOrderDetailPage() {
                 >
                   <div>
                     <p className="text-xs font-semibold">{item.product_name}</p>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-[11px] text-gray-500">
                       {item.volume_ml}ml · {item.quantity} ×{" "}
                       {formatOrderMoney(item.unit_price, order.currency)}
                     </p>
@@ -396,11 +849,11 @@ export default function AdminOrderDetailPage() {
             </div>
             <div className="ml-auto mt-4 max-w-xs space-y-2 border-t pt-4 text-xs">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Subtotal</span>
+                <span className="text-gray-500">Subtotal</span>
                 <span>{formatOrderMoney(order.subtotal, order.currency)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Delivery fee</span>
+                <span className="text-gray-500">Delivery fee</span>
                 <span>
                   {formatOrderMoney(order.delivery_fee, order.currency)}
                 </span>
@@ -412,12 +865,20 @@ export default function AdminOrderDetailPage() {
             </div>
           </section>
 
+          {/* ========================================================= */}
+          {/* 6. BELOW: DELIVERY DETAILS (Disabled if refunds)          */}
+          {/* ========================================================= */}
           {order.delivery && (
-            <section className="border bg-card p-5 text-xs ring-1 ring-foreground/5">
+            <section
+              className={`border p-5 text-xs ring-1 ${hasRefunds
+                ? "bg-gray-100 border-gray-200 ring-black/5 opacity-80"
+                : "bg-card ring-foreground/5"
+                }`}
+            >
               <h2 className="text-sm font-semibold">Delivery details</h2>
               <div className="mt-4 grid gap-5 sm:grid-cols-2">
                 <div>
-                  <p className="text-muted-foreground">Recipient and address</p>
+                  <p className="text-gray-500">Recipient and address</p>
                   <p className="mt-1 font-semibold">
                     {order.delivery.recipient_first_name}{" "}
                     {order.delivery.recipient_last_name}
@@ -436,7 +897,7 @@ export default function AdminOrderDetailPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Handoff instructions</p>
+                  <p className="text-gray-500">Handoff instructions</p>
                   <p className="mt-1 leading-5">
                     {order.delivery.handoff_instructions ||
                       "No instructions provided."}
@@ -447,47 +908,70 @@ export default function AdminOrderDetailPage() {
           )}
         </div>
 
-        <aside className="h-fit border bg-card p-5 ring-1 ring-foreground/5 xl:sticky xl:top-20">
-          <h2 className="text-sm font-semibold">Update fulfillment</h2>
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            This creates a fulfillment event visible to the customer.
+        {/* ========================================================= */}
+        {/* RIGHT ASIDE: UPDATE FULFILLMENT                           */}
+        {/* ========================================================= */}
+        <aside
+          className={`h-fit border p-5 ring-1 xl:sticky xl:top-20 ${hasRefunds
+            ? "bg-gray-100 border-gray-200 ring-black/5 opacity-85"
+            : "bg-card ring-foreground/5"
+            }`}
+        >
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold">Update fulfillment</h2>
+            {hasRefunds && (
+              <span className="rounded bg-gray-200 px-2 py-0.5 text-[10px] font-semibold text-gray-600">
+                Disabled
+              </span>
+            )}
+          </div>
+          <p className="mt-1 text-[11px] text-gray-500">
+            {hasRefunds
+              ? "Fulfillment updates are locked because this order has refund or cancellation records."
+              : isTerminalStatus
+                ? "Fulfillment has reached its final state. No further updates are available."
+                : "This creates a fulfillment event visible to the customer."}
           </p>
+
           <div className="mt-5 space-y-4">
             <div>
               <label className="mb-1.5 block text-xs font-medium">
-                Fulfillment status
+                Change  Fulfillment status
               </label>
               <Select
-                items={allowedStatuses.map((value) => ({
-                  value,
-                  label: fulfillmentLabel[value],
-                }))}
+                disabled={hasRefunds || isUpdating || isTerminalStatus}
+                items={dropdownItems}
                 value={status}
                 onValueChange={(value) => value && setStatus(value)}
               >
-                <SelectTrigger className="h-10 w-full">
+                <SelectTrigger className="h-10 w-full bg-white disabled:bg-gray-200/60 disabled:cursor-not-allowed">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {allowedStatuses.map((value) => (
-                    <SelectItem key={value} value={value}>
-                      {fulfillmentLabel[value]}
+                  {dropdownItems.map((item) => (
+                    <SelectItem
+                      key={item.value}
+                      value={item.value}
+                      disabled={item.disabled}
+                    >
+                      {item.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            {status === "REFUSED" && (
+            {status === "REFUSED" && !isTerminalStatus && (
               <div>
                 <label className="mb-1.5 block text-xs font-medium">
                   Refusal reason
                 </label>
                 <Select
+                  disabled={hasRefunds || isUpdating}
                   items={refusalReasons}
                   value={refusalReason || null}
                   onValueChange={(value) => setRefusalReason(value ?? "")}
                 >
-                  <SelectTrigger className="h-10 w-full">
+                  <SelectTrigger className="h-10 w-full bg-white disabled:bg-gray-200/60 disabled:cursor-not-allowed">
                     <SelectValue placeholder="Choose a reason" />
                   </SelectTrigger>
                   <SelectContent>
@@ -510,24 +994,35 @@ export default function AdminOrderDetailPage() {
               <Textarea
                 id="fulfillment-note"
                 value={note}
+                disabled={hasRefunds || isUpdating || isTerminalStatus}
                 onChange={(event) => setNote(event.target.value)}
                 maxLength={500}
-                placeholder="Add a description or update for the customer"
-                className="min-h-28 resize-none"
+                placeholder={
+                  hasRefunds
+                    ? "Fulfillment updates disabled for this order"
+                    : isTerminalStatus
+                      ? "Fulfillment has reached its final state"
+                      : "Add a description or update for the customer"
+                }
+                className="min-h-28 resize-none bg-white disabled:bg-gray-200/60 disabled:cursor-not-allowed"
               />
-              <p className="mt-1 text-right text-[10px] text-muted-foreground">
+              <p className="mt-1 text-right text-[10px] text-gray-500">
                 {note.length}/500
               </p>
             </div>
             <Button
               onClick={saveStatus}
-              disabled={isUpdating}
-              className="w-full bg-primary-normal text-black hover:bg-primary-hover"
+              disabled={hasRefunds || isUpdating || isTerminalStatus}
+              className="w-full bg-primary-normal text-black hover:bg-primary-hover disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
             >
               {isUpdating && (
                 <Icon icon="svg-spinners:180-ring" className="size-4" />
               )}
-              Update status
+              {hasRefunds
+                ? "Updates Locked"
+                : isTerminalStatus
+                  ? "Order Completed"
+                  : "Update status"}
             </Button>
           </div>
         </aside>

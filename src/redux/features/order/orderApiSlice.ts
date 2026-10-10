@@ -21,6 +21,7 @@ export interface OrderPayment {
   amount: string;
   currency: string;
   paid_at: string | null;
+  is_retry_eligible?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -165,6 +166,24 @@ export interface CheckoutPreviewData {
   delivery_slot_id: string | null;
 }
 
+export interface RefundBreakdown {
+  merchandise_refund: string;
+  delivery_refund: string;
+  cancellation_fee: string;
+  final_refund: string;
+}
+
+export interface RefundHistoryItem {
+  id?: string;
+  status: string;
+  status_label?: string;
+  amount: string;
+  currency: string;
+  requested_at: string;
+  completed_at?: string | null;
+  breakdown?: RefundBreakdown | null;
+}
+
 export interface Order {
   id: string;
   status: OrderStatus;
@@ -179,19 +198,105 @@ export interface Order {
   pickup_scheduled_end_at: string | null;
   delivery: OrderDelivery | null;
   fulfillment_events: FulfillmentEvent[];
+  refund_history?: RefundHistoryItem[];
   items: OrderItem[];
   created_at: string;
   updated_at: string;
 }
 
-export interface OrderCustomer {
+export type RefundCaseType = "CANCELLATION" | "RETURN" | string;
+export type RefundCaseStatus =
+  | "NO_REFUND_REQUIRED"
+  | "REFUND_PENDING"
+  | "REFUNDED"
+  | "REFUND_FAILED"
+  | string;
+
+export type PaymentRefundStatus = "PENDING" | "SUCCEEDED" | "FAILED" | string;
+export type PaymentRefundSource = "SYSTEM" | "ADMIN" | string;
+export type PaymentRefundReason =
+  | "RESERVATION_EXPIRED"
+  | "ORDER_REFUSED"
+  | "CUSTOMER_CANCELLED"
+  | "STORE_CANCELLED"
+  | "ITEM_UNAVAILABLE"
+  | "DUPLICATE_PAYMENT"
+  | "OTHER"
+  | string;
+
+export interface RefundCaseUser {
+  id?: string;
+  name: string;
+  email: string;
+}
+
+export interface RefundCaseItem {
   id: string;
+  order_item_id?: string;
+  product_variant_id?: string;
+  product_name: string;
+  variant_name?: string;
+  sku?: string;
+  unit_price: string;
+  quantity: number;
+  line_refund: string;
+  condition: ItemCondition | string;
+  disposition: ItemDisposition | string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PaymentRefund {
+  id: string;
+  refund_case_id?: string | null;
+  status: PaymentRefundStatus;
+  amount: string;
+  currency: string;
+  stripe_refund_id?: string | null;
+  source: PaymentRefundSource;
+  reason: PaymentRefundReason;
+  note?: string | null;
+  requested_by_user_id?: string | null;
+  requested_at: string;
+  completed_at?: string | null;
+  failed_at?: string | null;
+  failure_code?: string | null;
+  failure_message?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RefundCase {
+  id: string;
+  order_id: string;
+  created_by_user_id?: string;
+  created_by?: RefundCaseUser | null;
+  case_type: RefundCaseType;
+  status: RefundCaseStatus;
+  reason: string;
+  note?: string | null;
+  refund_delivery_fee?: boolean;
+  merchandise_refund: string;
+  delivery_refund: string;
+  cancellation_fee: string;
+  final_refund: string;
+  currency: string;
+  items: RefundCaseItem[];
+  payment_refunds: PaymentRefund[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrderCustomer {
+  id?: string;
   name: string;
   email: string;
 }
 
 export interface AdminOrder extends Order {
   customer: OrderCustomer;
+  refund_cases?: RefundCase[];
+  unassociated_payment_refunds?: PaymentRefund[];
 }
 
 export type DeliveryRefusalReason = "ID_INVALID" | "CUSTOMER_INTOXICATED" | "CUSTOMER_REFUSED" | "OTHER";

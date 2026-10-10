@@ -200,7 +200,7 @@ const VariantWizard = ({
                         className="data-checked:bg-primary-normal data-checked:border-primary-normal data-checked:text-white"
                       />
                       <FieldLabel htmlFor="variant-is-liquor" className="font-semibold text-gray-950 cursor-pointer">
-                        Contains Alcohol
+                        Contains Volumle/ml or Alcohol
                       </FieldLabel>
                     </Field>
                   </div>

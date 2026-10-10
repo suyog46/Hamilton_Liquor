@@ -32,9 +32,82 @@ export const statusTone: Record<OrderStatus, string> = {
   REFUSED: "border-red-200 bg-red-50/70 text-red-700",
 };
 
-export const formatOrderMoney = (value: string, currency = "USD") => {
-  const amount = Number(value);
-  if (!Number.isFinite(amount)) return value;
+export const refundStatusTone: Record<string, string> = {
+  PENDING: "border-amber-200 bg-amber-50 text-amber-700",
+  PROCESSING: "border-blue-200 bg-blue-50 text-blue-700",
+  COMPLETED: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  SUCCEEDED: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  REFUNDED: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  REFUND_PENDING: "border-amber-200 bg-amber-50 text-amber-700",
+  REFUND_FAILED: "border-red-200 bg-red-50 text-red-700",
+  NO_REFUND_REQUIRED: "border-slate-200 bg-slate-100 text-slate-700",
+  FAILED: "border-red-200 bg-red-50 text-red-700",
+  REJECTED: "border-red-200 bg-red-50 text-red-700",
+  CANCELLED: "border-gray-200 bg-gray-50 text-gray-700",
+};
+
+export const getRefundStatusTone = (status?: string): string => {
+  if (!status) return "border-gray-200 bg-gray-50 text-gray-700";
+  return refundStatusTone[status.toUpperCase()] ?? "border-gray-200 bg-gray-50 text-gray-700";
+};
+
+export const getRefundCaseStatusLabel = (status?: string): string => {
+  if (!status) return "Unknown";
+  switch (status.toUpperCase()) {
+    case "NO_REFUND_REQUIRED":
+      return "No refund required";
+    case "REFUND_PENDING":
+      return "Refund pending";
+    case "REFUNDED":
+      return "Refunded";
+    case "REFUND_FAILED":
+      return "Refund failed";
+    default:
+      return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase().replaceAll("_", " ");
+  }
+};
+
+export const getRefundCaseTypeLabel = (caseType?: string): string => {
+  if (!caseType) return "Refund Case";
+  switch (caseType.toUpperCase()) {
+    case "CANCELLATION":
+      return "Order Cancellation";
+    case "RETURN":
+      return "Return / Refund";
+    default:
+      return caseType.charAt(0).toUpperCase() + caseType.slice(1).toLowerCase().replaceAll("_", " ");
+  }
+};
+
+export const getRefundReasonLabel = (reason?: string): string => {
+  if (!reason) return "Not specified";
+  const reasonMap: Record<string, string> = {
+    RESERVATION_EXPIRED: "Reservation Expired",
+    ORDER_REFUSED: "Order Refused",
+    CUSTOMER_CANCELLED: "Customer Cancelled",
+    STORE_CANCELLED: "Store Cancelled",
+    ITEM_UNAVAILABLE: "Item Unavailable",
+    DUPLICATE_PAYMENT: "Duplicate Payment",
+    CUSTOMER_RETURN: "Customer Return",
+    DAMAGED_ITEM: "Damaged Item",
+    INCORRECT_ITEM: "Incorrect Item",
+    MISSING_ITEM: "Missing Item",
+    REFUSED_DELIVERY: "Refused Delivery",
+    OTHER: "Other",
+  };
+  return reasonMap[reason.toUpperCase()] ?? reason.charAt(0).toUpperCase() + reason.slice(1).toLowerCase().replaceAll("_", " ");
+};
+
+export const getRefundStatusLabel = (status?: string, statusLabel?: string): string => {
+  if (statusLabel && statusLabel.trim()) return statusLabel;
+  if (!status) return "Unknown";
+  return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase().replaceAll("_", " ");
+};
+
+export const formatOrderMoney = (value: string | number | null | undefined, currency = "USD") => {
+  if (value === null || value === undefined || value === "") return "$0.00";
+  const amount = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(amount)) return String(value);
   try {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: currency || "USD" }).format(amount);
   } catch {

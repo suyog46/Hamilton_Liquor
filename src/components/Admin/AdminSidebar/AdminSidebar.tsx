@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/sidebar";
 import {
   adminNavCatalog,
-  adminNavMarketing,
   adminNavOverview,
   adminNavSales,
   adminNavSecondary,
@@ -43,7 +42,6 @@ const enabledAdminLinks = new Set([
   "/admin/store-information",
   "/admin/store-location",
   "/admin/social-links",
-  "/admin/delivery-zones",
   "/admin/store-closures",
 ]);
 
@@ -53,7 +51,6 @@ const navGroups: { label: string; items: AdminNavItem[] }[] = [
   { label: "Overview", items: adminNavOverview },
   { label: "Catalog", items: adminNavCatalog },
   { label: "Sales", items: adminNavSales },
-  { label: "Marketing", items: adminNavMarketing },
   { label: "Store Operations", items: adminNavStore },
 ];
 

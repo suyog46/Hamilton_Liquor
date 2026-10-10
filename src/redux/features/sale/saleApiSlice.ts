@@ -84,6 +84,10 @@ export interface PublicSaleVariant {
   price: string;
   sale_price: string;
   sale_percentage: string;
+  sale_started_at?: string;
+  sale_ended_at?: string;
+  started_at?: string;
+  ended_at?: string;
   available_quantity: number;
   media?: MediaLatestRef[];
   thumbnail?: MediaRef | null;

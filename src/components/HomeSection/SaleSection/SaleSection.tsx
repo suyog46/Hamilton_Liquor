@@ -13,10 +13,9 @@ import { formatAbv, formatPrice, formatVolume } from "@/lib/utils/productDisplay
 import {
   cartApiSlice,
   useAddToCartMutation,
-  useGetCartQuery,
   type CartProductVariant,
 } from "@/redux/features/cart/cartApiSlice";
-import { useGetMeQuery } from "@/redux/features/user/userApiSlice";
+import { useGetMaximumQuantity } from "@/hooks/use-get-maximum-quantity";
 import { useCartStore, type CartStore } from "@/lib/stores/cartStore";
 import { getCartItemCount } from "@/lib/utils/cartDisplay";
 import { useAppDispatch } from "@/redux/hooks";
@@ -96,15 +95,16 @@ const SaleCard = ({ item }: { item: PublicSaleItem }) => {
   const guestItems = useCartStore((state: CartStore) => state.guestItems);
   const openCartSheet = useCartStore((state: CartStore) => state.openCartSheet);
 
-  const { data: meData } = useGetMeQuery();
-  const isLoggedIn = !!meData?.data;
-  const { data: cartData } = useGetCartQuery(undefined, { skip: !isLoggedIn });
-
   const { product, variant } = item;
   const originalPrice = Number(variant.price);
   const salePrice = Number(variant.sale_price);
   const percentage = Math.round(Math.abs(Number(variant.sale_percentage)));
   const inStock = variant.available_quantity > 0;
+
+  const { isLoggedIn, isAtCartLimit } = useGetMaximumQuantity({
+    variantId: variant.id,
+    availableQuantity: variant.available_quantity,
+  });
 
   const rawItem = item as any;
   const rawVariant = variant as any;
@@ -133,12 +133,6 @@ const SaleCard = ({ item }: { item: PublicSaleItem }) => {
 
   const timeLeft = useCountdown(saleEndDate);
 
-  const quantityInCart = isLoggedIn
-    ? cartData?.data.items.find((i) => i.product_variant.id === variant.id)?.quantity ?? 0
-    : guestItems.find((i: any) => i.variant.id === variant.id)?.quantity ?? 0;
-
-  const isAtCartLimit = quantityInCart >= variant.available_quantity;
-
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -146,14 +140,18 @@ const SaleCard = ({ item }: { item: PublicSaleItem }) => {
 
     const cartVariant: CartProductVariant = {
       id: variant.id,
+      sku: variant.sku,
+      display_name: variant.display_name,
       product: { id: product.id, name: product.name, slug: product.slug },
       volume_ml: variant.volume_ml,
       price: variant.price,
       sale_price: variant.sale_price,
       sale_percentage: variant.sale_percentage,
+      sale_started_at: variant.sale_started_at,
+      sale_ended_at: variant.sale_ended_at,
       has_sale: true,
       alcohol_percentage: variant.alcohol_percentage ?? "",
-      quantity: variant.available_quantity,
+      available_quantity: variant.available_quantity,
       is_active: true,
       thumbnail: primaryMedia ?? { id: `product:${product.id}`, url: "" },
     };
@@ -198,10 +196,11 @@ const SaleCard = ({ item }: { item: PublicSaleItem }) => {
         ],
       }).unwrap();
       setCartCount(getCartItemCount(res.data));
-      dispatch(cartApiSlice.util.upsertQueryData("getCart", undefined, res));
       dispatch(
         apiSlice.util.invalidateTags([
           { type: "Product", id: product.id },
+          { type: "Product", id: product.slug },
+          { type: "Product", id: "PUBLIC_LIST" },
           { type: "Sale", id: "PUBLIC_LIST" },
         ]),
       );

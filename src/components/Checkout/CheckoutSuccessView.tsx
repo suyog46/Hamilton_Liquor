@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
+import { toast } from "sonner";
 import PageBanner from "@/components/Common/PageBanner/PageBanner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatOrderDate, formatOrderMoney, fulfillmentLabel, getOrderScheduledEnd, getOrderScheduledStart } from "@/components/Order/orderDisplay";
@@ -11,6 +12,7 @@ import { useClearCartMutation } from "@/redux/features/cart/cartApiSlice";
 import { useGetOrderQuery } from "@/redux/features/order/orderApiSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { useCartStore } from "@/lib/stores/cartStore";
+import { cn } from "@/lib/utils";
 
 interface CheckoutSuccessViewProps {
   orderId: string;
@@ -19,8 +21,36 @@ interface CheckoutSuccessViewProps {
 export default function CheckoutSuccessView({ orderId }: CheckoutSuccessViewProps) {
   const dispatch = useAppDispatch();
   const setCartCount = useCartStore((state) => state.setCount);
-  const { data, isLoading, isError, refetch } = useGetOrderQuery(orderId, { skip: !orderId });
+  const [pollingInterval, setPollingInterval] = useState(0);
+  const { data, isLoading, isError, refetch } = useGetOrderQuery(orderId, {
+    skip: !orderId,
+    pollingInterval,
+  });
   const [clearCart] = useClearCartMutation();
+
+  const paymentStatus = data?.data?.payment?.status?.toUpperCase();
+  const isPaymentPending = paymentStatus === "PENDING";
+
+  useEffect(() => {
+    if (isPaymentPending) {
+      setPollingInterval(3000);
+      toast.loading("Payment might still be processing. Checking status...", {
+        id: "checkout-payment-processing",
+      });
+    } else {
+      setPollingInterval(0);
+      toast.dismiss("checkout-payment-processing");
+      if (paymentStatus && ["SUCCEEDED", "COMPLETED", "PAID"].includes(paymentStatus)) {
+        toast.success("Payment confirmed! Your order is placed.", {
+          id: "checkout-payment-confirmed",
+        });
+      }
+    }
+
+    return () => {
+      toast.dismiss("checkout-payment-processing");
+    };
+  }, [isPaymentPending, paymentStatus]);
 
   useEffect(() => {
     setCartCount(0);
@@ -67,13 +97,33 @@ export default function CheckoutSuccessView({ orderId }: CheckoutSuccessViewProp
 
   return (
     <>  
-      <PageBanner eyebrow="Payment successful" title="Thank you for your order" breadcrumbs={[{ name: "Checkout" }, { name: "Success" }]} />
+      <PageBanner
+        eyebrow={isPaymentPending ? "Payment processing" : "Payment successful"}
+        title={isPaymentPending ? "Processing your order" : "Thank you for your order"}
+        breadcrumbs={[{ name: "Checkout" }, { name: "Success" }]}
+      />
       <section className="bg-gray-50 py-10 sm:py-14">
         <div className="mx-auto max-w-5xl px-6">
           <div className="rounded-2xl bg-white p-6 text-center shadow-sm ring-1 ring-gray-200 sm:p-10">
-            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-green-100 text-green-700"><Icon icon="solar:check-circle-bold" className="size-9" /></div>
-            <h2 className="mt-5 font-title text-2xl font-semibold">Payment successful</h2>
-            <p className="mt-2 text-sm text-gray-500">Your order has been placed and a confirmation is being prepared.</p>
+            <div
+              className={cn(
+                "mx-auto flex size-16 items-center justify-center rounded-full",
+                isPaymentPending ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700",
+              )}
+            >
+              <Icon
+                icon={isPaymentPending ? "svg-spinners:180-ring" : "solar:check-circle-bold"}
+                className="size-9"
+              />
+            </div>
+            <h2 className="mt-5 font-title text-2xl font-semibold">
+              {isPaymentPending ? "Payment processing" : "Payment successful"}
+            </h2>
+            <p className="mt-2 text-sm text-gray-500">
+              {isPaymentPending
+                ? "Your order has been placed and payment is currently being processed. This page will update automatically."
+                : "Your order has been placed and a confirmation is being prepared."}
+            </p>
             <p className="mt-4 text-sm font-semibold">Order #{order.id.slice(-8).toUpperCase()}</p>
           </div>
 
@@ -86,7 +136,20 @@ export default function CheckoutSuccessView({ orderId }: CheckoutSuccessViewProp
 
               <div className="grid gap-5 border-b border-gray-100 py-5 sm:grid-cols-2">
                 <div><p className="text-xs uppercase tracking-wide text-gray-400">Scheduled window</p><p className="mt-1 text-sm font-semibold">{formatOrderDate(scheduledStart)}{scheduledEnd ? ` – ${new Date(scheduledEnd).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}` : ""}</p></div>
-                <div><p className="text-xs uppercase tracking-wide text-gray-400">Payment</p><p className="mt-1 text-sm font-semibold">{order.payment?.status ?? "Successful"}</p>{order.payment?.provider && <p className="mt-0.5 text-xs text-gray-500">Processed by {order.payment.provider}</p>}</div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-400">Payment</p>
+                  <div className="mt-1">
+                    {isPaymentPending ? (
+                      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-600">
+                        <Icon icon="svg-spinners:180-ring" className="size-4 shrink-0" />
+                        Processing (Pending)
+                      </span>
+                    ) : (
+                      <p className="text-sm font-semibold">{order.payment?.status ?? "Successful"}</p>
+                    )}
+                  </div>
+                  {order.payment?.provider && <p className="mt-0.5 text-xs text-gray-500">Processed by {order.payment.provider}</p>}
+                </div>
               </div>
 
               {order.delivery && (

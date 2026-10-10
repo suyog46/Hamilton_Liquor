@@ -57,15 +57,6 @@ const AdminNavbar = () => {
           <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-primary-normal" />
         </span>
 
-        <span
-          aria-label="Storefront shortcut (coming soon)"
-          aria-disabled="true"
-          title="Storefront shortcut coming soon"
-          className="flex size-9 cursor-not-allowed items-center justify-center text-muted-foreground opacity-40"
-        >
-          <Icon icon="solar:shop-linear" className="h-5 w-5" />
-        </span>
-
         <Separator orientation="vertical" className="mx-1 h-5" />
 
         <DropdownMenu>
@@ -85,11 +76,6 @@ const AdminNavbar = () => {
             />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52 rounded-lg p-1.5">
-            <DropdownMenuItem className="rounded-md" onClick={() => router.push("/")}>
-              <Icon icon="solar:shop-linear" />
-              Switch to user side
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"
               disabled={isLoggingOut}

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractAuthTokensFromHeaders } from "@/lib/api/authCookies";
 
-const ACCESS_TOKEN_MAX_AGE = 60 * 15; // 15 minutes
-const REFRESH_TOKEN_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
+const ACCESS_TOKEN_MAX_AGE = 60 * 15;
+const REFRESH_TOKEN_MAX_AGE = 60 * 60 * 24 * 30;
 
 interface MeResponse {
   data?: { role?: string };
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
       userRole = meData.data?.role?.toUpperCase() ?? "UNKNOWN";
     }
   } catch {
-    // Login remains valid; an unknown role simply cannot enter /admin.
+
   }
 
   const response = NextResponse.json({ success: true, role: userRole });
