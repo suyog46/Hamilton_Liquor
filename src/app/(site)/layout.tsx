@@ -4,20 +4,23 @@ import AosProvider from "@/components/Common/AosProvider/AosProvider";
 import Footer from "@/components/Common/Footer/Footer";
 import Navbar from "@/components/Common/Navbar/Navbar";
 import TopBar from "@/components/Common/TopBar/TopBar";
-import { AGE_GATE_COOKIE_NAME } from "@/lib/utils";
+import { AGE_GATE_COOKIE_NAME, SALE_DIALOG_COOKIE_NAME } from "@/lib/utils";
 import { AgeVerificationProvider } from "@/lib/context/AgeVerification";
 import React from "react";
 import CartSheet from "@/components/Common/CartSheet/CartSheet";
 import MaintenanceNotice from "@/components/Common/MaintenanceNotice/MaintenanceNotice";
+import SaleDialog from "@/components/Common/SaleDialog/SaleDialog";
 
 const SiteLayout = async ({ children }: { children: React.ReactNode }) => {
   const cookieStore = await cookies();
   const isAgeVerified = cookieStore.get(AGE_GATE_COOKIE_NAME)?.value === "true";
+  const isSaleDismissed = cookieStore.get(SALE_DIALOG_COOKIE_NAME)?.value === "true";
 
   return (
     <AgeVerificationProvider initiallyVerified={isAgeVerified}>
       <AosProvider />
       <AgeGate initiallyVerified={isAgeVerified} />
+      <SaleDialog initiallyDismissed={isSaleDismissed} />
       {/* <MaintenanceNotice /> */}
       <TopBar />
       <Navbar />

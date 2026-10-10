@@ -34,7 +34,7 @@ const Home = async () => {
       <Categories />
       <SaleSection hideIfEmpty />
       {/* Weekly specials promo */}
-      <Advertisement />
+      {/* <Advertisement /> */}
       <ProductShelf
         eyebrow="Fan Favorites"
         title="Best Sellers"
@@ -56,7 +56,7 @@ const Home = async () => {
       />
       <FeaturedProducts />
       <PickupDeliveryInfo />
-      <NewsletterSignup />
+      {/* <NewsletterSignup /> */}
       <GoogleMapSection />
       <GoogleReviews />
     </>

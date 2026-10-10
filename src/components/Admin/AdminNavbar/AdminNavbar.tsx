@@ -35,16 +35,16 @@ const AdminNavbar = () => {
       <SidebarTrigger />
       <Separator orientation="vertical" className="h-5" />
 
-      <div className="relative w-full max-w-sm">
+      {/* <div className="relative w-full max-w-sm">
         <Icon
           icon="solar:magnifer-linear"
           className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-muted-foreground"
         />
         <Input
-          placeholder="Search orders, products, customers..."
+          placeholder="Search orders, products, customers...  "
           className="h-9 pl-8"
         />
-      </div>
+      </div> */}
 
       <div className="ml-auto flex items-center gap-1.5">
         <span

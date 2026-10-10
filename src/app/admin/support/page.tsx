@@ -54,12 +54,22 @@ const AdminSupportPage = () => {
       </div>
 
       <Card>
-        <CardContent className="flex flex-col gap-1">
-          <p className="font-medium">Need more help?</p>
-          <p className="text-xs text-muted-foreground">
-            Contact the site developer for technical support or training on the
-            admin dashboard.
-          </p>
+        <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5">
+          <div className="space-y-1">
+            <p className="font-medium text-sm">Need help?</p>
+            <p className="text-xs text-muted-foreground">
+              Contact technical support directly via WhatsApp for quick assistance.
+            </p>
+          </div>
+          <a
+            href="https://wa.me/9779866396831"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-md bg-[#25D366] hover:bg-[#20ba59] text-white px-4 py-2 text-xs font-semibold transition-colors w-fit shrink-0 shadow-xs"
+          >
+            <Icon icon="logos:whatsapp-icon" className="size-4" />
+            Chat on WhatsApp (+977 9866396831)
+          </a>
         </CardContent>
       </Card>
     </div>

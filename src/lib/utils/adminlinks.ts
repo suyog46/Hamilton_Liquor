@@ -69,11 +69,14 @@ export const adminNavStore: AdminNavItem[] = [
   },
 ];
 
+export const WHATSAPP_SUPPORT_URL = "https://wa.me/9779866396831";
+
 export const adminNavSecondary: AdminNavItem[] = [
   // { name: "Settings", href: "/admin/settings", icon: "solar:settings-linear" },
   {
     name: "Help & Support",
-    href: "/admin/support",
+    href: WHATSAPP_SUPPORT_URL,
     icon: "solar:question-circle-linear",
   },
 ];
+

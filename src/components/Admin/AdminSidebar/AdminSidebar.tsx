@@ -21,6 +21,7 @@ import {
   adminNavSales,
   adminNavSecondary,
   adminNavStore,
+  WHATSAPP_SUPPORT_URL,
   type AdminNavItem,
 } from "@/lib/utils";
 
@@ -45,7 +46,7 @@ const enabledAdminLinks = new Set([
   "/admin/store-closures",
 ]);
 
-const enabledSecondaryLinks = new Set(["/admin/settings"]);
+const enabledSecondaryLinks = new Set(["/admin/settings", WHATSAPP_SUPPORT_URL]);
 
 const navGroups: { label: string; items: AdminNavItem[] }[] = [
   { label: "Overview", items: adminNavOverview },
@@ -121,12 +122,27 @@ const AdminSidebar = () => {
         <SidebarMenu>
           {adminNavSecondary.map((item) => {
             const enabled = enabledSecondaryLinks.has(item.href);
+            const isExternal = item.href.startsWith("http");
             return (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
-                  isActive={enabled && isLinkActive(pathname, item.href)}
+                  isActive={
+                    enabled && !isExternal && isLinkActive(pathname, item.href)
+                  }
                   tooltip={enabled ? item.name : `${item.name} (Coming soon)`}
-                  render={enabled ? <Link href={item.href} /> : undefined}
+                  render={
+                    enabled ? (
+                      isExternal ? (
+                        <a
+                          href={item.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        />
+                      ) : (
+                        <Link href={item.href} />
+                      )
+                    ) : undefined
+                  }
                   disabled={!enabled}
                   aria-disabled={!enabled}
                   className={

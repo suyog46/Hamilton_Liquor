@@ -26,4 +26,5 @@ export const footerCompanyLinks = [
 export const footerPolicyLinks = [
   { name: "Age Verification Policy", href: "/age-verification-policy" },
   { name: "Pickup & Delivery Policy", href: "/pickup-delivery-policy" },
+  { name: "Refund & Return Policy", href: "/refund-policy" },
 ];

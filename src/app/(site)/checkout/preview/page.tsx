@@ -15,6 +15,7 @@ import { formatStoreTime } from "@/lib/utils";
 import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
 import { useCheckoutMutation } from "@/redux/features/order/orderApiSlice";
 import { useClearCartMutation } from "@/redux/features/cart/cartApiSlice";
+import RefundPolicyDialog from "@/components/Common/RefundPolicy/RefundPolicyDialog";
 
 const moneyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -59,6 +60,7 @@ const CheckoutPreviewPage = () => {
   const setCartCount = useCartStore((state: CartStore) => state.setCount);
   const clearGuestItems = useCartStore((state: CartStore) => state.clearGuestItems);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [refundModalOpen, setRefundModalOpen] = useState(false);
 
   useEffect(() => {
     if (!previewResponse || !paymentRequest || !idempotencyKey) {
@@ -214,7 +216,31 @@ const CheckoutPreviewPage = () => {
               </div>
             </div>
 
-            <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+            <div className="mt-6 rounded-xl border border-amber-200/70 bg-amber-50/50 p-4 text-xs text-gray-700">
+              <div className="flex items-start gap-2.5">
+                <Icon
+                  icon="solar:shield-warning-bold"
+                  className="mt-0.5 size-4 shrink-0 text-amber-600"
+                />
+                <div className="space-y-1">
+                  <span className="font-semibold text-gray-900">
+                    Hamilton Liquor Store Refund Policy
+                  </span>
+                  <p className="text-gray-600 leading-relaxed">
+                    Unopened items in original condition may be refunded within 24 hours (or 1 business day) when brought in-store. Opened bottles cannot be refunded.{" "}
+                    <button
+                      type="button"
+                      onClick={() => setRefundModalOpen(true)}
+                      className="font-semibold text-black underline underline-offset-2 hover:text-primary-dark transition-colors cursor-pointer"
+                    >
+                      View full Refund &amp; Return Policy
+                    </button>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 flex flex-col-reverse gap-4 sm:flex-row sm:items-end sm:justify-between">
               <Button
                 variant="outline"
                 className="h-12"
@@ -223,23 +249,41 @@ const CheckoutPreviewPage = () => {
               >
                 Back
               </Button>
-              <Button
-                type="button"
-                onClick={continueToPayment}
-                disabled={isLoading || isRedirecting}
-                className="h-12 bg-primary-normal px-8 text-black hover:bg-primary-hover disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {(isLoading || isRedirecting) && (
-                  <Icon icon="svg-spinners:180-ring" className="size-4 mr-2" />
-                )}
-                {isRedirecting
-                  ? "Redirecting to payment..."
-                  : "Continue to payment"}
-              </Button>
+              <div className="flex flex-col items-stretch sm:items-end gap-2">
+                <p className="text-xs text-gray-500 text-left sm:text-right">
+                  Please review our{" "}
+                  <button
+                    type="button"
+                    onClick={() => setRefundModalOpen(true)}
+                    className="font-semibold text-gray-900 underline underline-offset-2 hover:text-primary-dark transition-colors cursor-pointer"
+                  >
+                    Refund &amp; Return Policy
+                  </button>{" "}
+                  before completing payment.
+                </p>
+                <Button
+                  type="button"
+                  onClick={continueToPayment}
+                  disabled={isLoading || isRedirecting}
+                  className="h-12 bg-primary-normal px-8 text-black hover:bg-primary-hover disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {(isLoading || isRedirecting) && (
+                    <Icon icon="svg-spinners:180-ring" className="size-4 mr-2" />
+                  )}
+                  {isRedirecting
+                    ? "Redirecting to payment..."
+                    : "Continue to payment"}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       </section>
+
+      <RefundPolicyDialog
+        open={refundModalOpen}
+        onOpenChange={setRefundModalOpen}
+      />
     </>
   );
 };
