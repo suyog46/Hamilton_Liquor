@@ -129,6 +129,7 @@ function SaleDetailDialog({
   const sale = data?.data;
   const isMutating = isUpdating || isEnding || isCancelling;
   const minDateTime = getTodayMinDateTime();
+  const isClosed = sale?.status === "expired" || sale?.status === "cancelled";
 
   const originalStart = sale ? toDateTimeInputValue(sale.started_at) : "";
   const originalEnd = sale ? toDateTimeInputValue(sale.ended_at) : "";
@@ -226,7 +227,7 @@ function SaleDetailDialog({
                     value={startedAt}
                     onChange={setStartedAt}
                     min={minDateTime}
-                    disabled={isMutating}
+                    disabled={isMutating || isClosed}
                     placeholder="Pick start date & time"
                   />
                 </Field>
@@ -236,7 +237,7 @@ function SaleDetailDialog({
                     value={endedAt}
                     onChange={setEndedAt}
                     min={startedAt || minDateTime}
-                    disabled={isMutating}
+                    disabled={isMutating || isClosed}
                     placeholder="Pick end date & time"
                   />
                 </Field>
@@ -244,30 +245,42 @@ function SaleDetailDialog({
               {dateError && <FieldError>{dateError}</FieldError>}
             </FieldGroup>
 
-            <DialogFooter className="mt-5 flex-col gap-2 sm:flex-row sm:justify-between">
-              <Button
-                type="button"
-                variant={sale.is_active ? "destructive" : "outline"}
-                onClick={handleStatusAction}
-                disabled={isMutating}
-              >
-                {isEnding || isCancelling ? (
-                  <Icon icon="svg-spinners:180-ring" className="h-4 w-4" />
-                ) : null}
-                {sale.is_active ? "End sale" : "Cancel sale"}
-              </Button>
-              {datesChanged && (
+            {isClosed ? (
+              <DialogFooter className="mt-5 flex justify-end">
                 <Button
                   type="button"
-                  className="bg-primary-normal text-black hover:bg-primary-hover"
-                  onClick={updateDates}
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                >
+                  Close
+                </Button>
+              </DialogFooter>
+            ) : (
+              <DialogFooter className="mt-5 flex-col gap-2 sm:flex-row sm:justify-between">
+                <Button
+                  type="button"
+                  variant={sale.is_active ? "destructive" : "outline"}
+                  onClick={handleStatusAction}
                   disabled={isMutating}
                 >
-                  {isUpdating ? <Icon icon="svg-spinners:180-ring" className="h-4 w-4" /> : null}
-                  Save dates
+                  {isEnding || isCancelling ? (
+                    <Icon icon="svg-spinners:180-ring" className="h-4 w-4" />
+                  ) : null}
+                  {sale.is_active ? "End sale" : "Cancel sale"}
                 </Button>
-              )}
-            </DialogFooter>
+                {datesChanged && (
+                  <Button
+                    type="button"
+                    className="bg-primary-normal text-black hover:bg-primary-hover"
+                    onClick={updateDates}
+                    disabled={isMutating}
+                  >
+                    {isUpdating ? <Icon icon="svg-spinners:180-ring" className="h-4 w-4" /> : null}
+                    Save dates
+                  </Button>
+                )}
+              </DialogFooter>
+            )}
           </>
         )}
       </DialogContent>

@@ -48,15 +48,15 @@ const CartSheet = () => {
 
   const lines: CartSheetLine[] = isLoggedIn
     ? (cartData?.data.items ?? []).map((item) => ({
-        id: item.id,
-        quantity: item.quantity,
-        variant: item.product_variant,
-      }))
+      id: item.id,
+      quantity: item.quantity,
+      variant: item.product_variant,
+    }))
     : guestItems.map((item) => ({
-        id: item.variant.id,
-        quantity: item.quantity,
-        variant: item.variant,
-      }));
+      id: item.variant.id,
+      quantity: item.quantity,
+      variant: item.variant,
+    }));
 
   const subtotal = lines.reduce((sum, line) => {
     const v = line.variant;
@@ -194,8 +194,10 @@ const CartSheet = () => {
                       </div>
                       <p className="mt-1 text-xs text-gray-500">
                         {isLiquor
-                          ? (line.variant.display_name || formatVolume(line.variant.volume_ml))
-                          : formatVolume(line.variant.volume_ml)}
+                          ? formatVolume(line.variant.volume_ml)
+                          : (line.variant.display_name || formatVolume(line.variant.volume_ml))
+
+                        }
                       </p>
                       {isOutOfStock && (
                         <p className="mt-0.5 text-[11px] font-medium text-red-600">

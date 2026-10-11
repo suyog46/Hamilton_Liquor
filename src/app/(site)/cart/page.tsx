@@ -278,8 +278,9 @@ const CartPage = () => {
                             </div>
                             <p className="text-xs text-gray-500 mt-0.5">
                               {isLiquor
-                                ? (variant.display_name || formatVolume(variant.volume_ml))
-                                : formatVolume(variant.volume_ml)}
+
+                                ? formatVolume(variant.volume_ml)
+                                : (variant.display_name || formatVolume(variant.volume_ml))}
                               {variant.alcohol_percentage && (
                                 <>
                                   {" "}
