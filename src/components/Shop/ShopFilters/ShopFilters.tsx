@@ -14,10 +14,7 @@ import {
 import type { Category } from "@/redux/features/category/categoryApiSlice";
 import type { Brand } from "@/redux/features/brand/brandApiSlice";
 import type { Country } from "@/redux/features/country/countryApiSlice";
-import { formatVolume } from "@/lib/utils/productDisplay";
 import { cn } from "@/lib/utils";
-
-export const SHOP_VOLUMES = [50, 187.5, 200, 222, 330, 355, 375, 473, 500, 591, 700, 750, 1000, 1500, 1750, 3000];
 
 interface ShopFiltersProps {
   categories: Category[];
@@ -28,15 +25,27 @@ interface ShopFiltersProps {
   countryId: string;
   minPrice: string;
   maxPrice: string;
-  volumes: number[];
+  minVolume: string;
+  maxVolume: string;
+  minAlcohol: string;
+  maxAlcohol: string;
   inStockOnly: boolean;
+  isStaffPick: boolean;
+  isFeatured: boolean;
+  isLiquor: boolean;
   onCategoryChange: (value: string[]) => void;
   onBrandChange: (value: string) => void;
   onCountryChange: (value: string) => void;
   onMinPriceChange: (value: string) => void;
   onMaxPriceChange: (value: string) => void;
-  onVolumeChange: (volume: number, checked: boolean) => void;
+  onMinVolumeChange: (value: string) => void;
+  onMaxVolumeChange: (value: string) => void;
+  onMinAlcoholChange: (value: string) => void;
+  onMaxAlcoholChange: (value: string) => void;
   onInStockChange: (checked: boolean) => void;
+  onStaffPickChange: (checked: boolean) => void;
+  onFeaturedChange: (checked: boolean) => void;
+  onLiquorChange: (checked: boolean) => void;
   onClear: () => void;
   isMobileDialog?: boolean;
   className?: string;
@@ -97,15 +106,27 @@ const ShopFilters = ({
   countryId,
   minPrice,
   maxPrice,
-  volumes,
+  minVolume,
+  maxVolume,
+  minAlcohol,
+  maxAlcohol,
   inStockOnly,
+  isStaffPick,
+  isFeatured,
+  isLiquor,
   onCategoryChange,
   onBrandChange,
   onCountryChange,
   onMinPriceChange,
   onMaxPriceChange,
-  onVolumeChange,
+  onMinVolumeChange,
+  onMaxVolumeChange,
+  onMinAlcoholChange,
+  onMaxAlcoholChange,
   onInStockChange,
+  onStaffPickChange,
+  onFeaturedChange,
+  onLiquorChange,
   onClear,
   isMobileDialog = false,
   className,
@@ -261,21 +282,140 @@ const ShopFilters = ({
         </div>
 
         <div className="flex flex-col gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Volume</span>
-          <div className="grid max-h-52 grid-cols-2 gap-2 overflow-y-auto pr-1">
-            {SHOP_VOLUMES.map((volume) => (
-              <label key={volume} className="flex cursor-pointer items-center gap-2 text-xs text-gray-700">
-                <Checkbox checked={volumes.includes(volume)} onCheckedChange={(checked) => onVolumeChange(volume, !!checked)} />
-                {formatVolume(volume)}
-              </label>
-            ))}
+          <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Volume (ml)</span>
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              type="number"
+              min="0"
+              step="1"
+              value={minVolume}
+              onChange={(event) => onMinVolumeChange(event.target.value)}
+              placeholder="Min ml"
+              className="h-10 rounded-lg bg-white"
+            />
+            <Input
+              type="number"
+              min="0"
+              step="1"
+              value={maxVolume}
+              onChange={(event) => onMaxVolumeChange(event.target.value)}
+              placeholder="Max ml"
+              className="h-10 rounded-lg bg-white"
+            />
+          </div>
+          <div className="flex flex-wrap gap-1.5 pt-0.5">
+            {[
+              { label: "≤ 375ml", min: "", max: "375" },
+              { label: "750ml", min: "750", max: "750" },
+              { label: "1000ml (1L)", min: "1000", max: "1000" },
+              { label: "≥ 1750ml", min: "1750", max: "" },
+            ].map((preset) => {
+              const isActive = minVolume === preset.min && maxVolume === preset.max;
+              return (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => {
+                    if (isActive) {
+                      onMinVolumeChange("");
+                      onMaxVolumeChange("");
+                    } else {
+                      onMinVolumeChange(preset.min);
+                      onMaxVolumeChange(preset.max);
+                    }
+                  }}
+                  className={cn(
+                    "rounded-md border px-2 py-1 text-[11px] font-medium transition cursor-pointer",
+                    isActive
+                      ? "border-primary-normal bg-primary-normal/10 text-primary-active font-semibold"
+                      : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50",
+                  )}
+                >
+                  {preset.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
-          <Checkbox checked={inStockOnly} onCheckedChange={(checked) => onInStockChange(!!checked)} />
-          In stock only
-        </label>
+        <div className="flex flex-col gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Alcohol (% ABV)</span>
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              type="number"
+              min="0"
+              max="100"
+              step="0.1"
+              value={minAlcohol}
+              onChange={(event) => onMinAlcoholChange(event.target.value)}
+              placeholder="Min %"
+              className="h-10 rounded-lg bg-white"
+            />
+            <Input
+              type="number"
+              min="0"
+              max="100"
+              step="0.1"
+              value={maxAlcohol}
+              onChange={(event) => onMaxAlcoholChange(event.target.value)}
+              placeholder="Max %"
+              className="h-10 rounded-lg bg-white"
+            />
+          </div>
+          <div className="flex flex-wrap gap-1.5 pt-0.5">
+            {[
+              { label: "≤ 0.5% (Non-Alc)", min: "0", max: "0.5" },
+              { label: "< 15% (Beer/Wine)", min: "0", max: "15" },
+              { label: "15% - 40%", min: "15", max: "40" },
+              { label: "≥ 40% (Spirits)", min: "40", max: "" },
+            ].map((preset) => {
+              const isActive = minAlcohol === preset.min && maxAlcohol === preset.max;
+              return (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => {
+                    if (isActive) {
+                      onMinAlcoholChange("");
+                      onMaxAlcoholChange("");
+                    } else {
+                      onMinAlcoholChange(preset.min);
+                      onMaxAlcoholChange(preset.max);
+                    }
+                  }}
+                  className={cn(
+                    "rounded-md border px-2 py-1 text-[11px] font-medium transition cursor-pointer",
+                    isActive
+                      ? "border-primary-normal bg-primary-normal/10 text-primary-active font-semibold"
+                      : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50",
+                  )}
+                >
+                  {preset.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2.5 pt-1">
+          <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Product Highlights</span>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+            <Checkbox checked={inStockOnly} onCheckedChange={(checked) => onInStockChange(!!checked)} />
+            In stock only
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+            <Checkbox checked={isStaffPick} onCheckedChange={(checked) => onStaffPickChange(!!checked)} />
+            Staff picks
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+            <Checkbox checked={isFeatured} onCheckedChange={(checked) => onFeaturedChange(!!checked)} />
+            Featured products
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+            <Checkbox checked={isLiquor} onCheckedChange={(checked) => onLiquorChange(!!checked)} />
+            Liquor only
+          </label>
+        </div>
       </div>
     </aside>
   );

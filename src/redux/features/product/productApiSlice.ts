@@ -131,9 +131,14 @@ export interface PublicGetProductsParams extends GetProductsParams {
   min_price?: number;
   max_price?: number;
   volume_ml?: number[];
-  in_stock?: boolean;
-  is_staff_pick?: boolean;
-  is_featured?: boolean;
+  min_volume_ml?: number | null;
+  max_volume_ml?: number | null;
+  min_alcohol_percentage?: number | string | null;
+  max_alcohol_percentage?: number | string | null;
+  in_stock?: boolean | null;
+  is_staff_pick?: boolean | null;
+  is_featured?: boolean | null;
+  is_liquor?: boolean | null;
 }
 
 export interface CreateProductRequest {

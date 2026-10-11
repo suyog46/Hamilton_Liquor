@@ -77,8 +77,22 @@ const ProductGridTemplate = ({
   const [sortOrder, setSortOrder] = useState<SortOrder>(defaultSortOrder ?? "desc");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
-  const [volumes, setVolumes] = useState<number[]>([]);
+  const [minVolume, setMinVolume] = useState("");
+  const [maxVolume, setMaxVolume] = useState("");
+  const [minAlcohol, setMinAlcohol] = useState("");
+  const [maxAlcohol, setMaxAlcohol] = useState("");
   const [inStockOnly, setInStockOnly] = useState(false);
+  const [isStaffPick, setIsStaffPick] = useState(false);
+  const [isFeatured, setIsFeatured] = useState(false);
+  const [isLiquor, setIsLiquor] = useState(false);
+
+  const [debouncedMinPrice] = useDebounce(minPrice, 400);
+  const [debouncedMaxPrice] = useDebounce(maxPrice, 400);
+  const [debouncedMinVolume] = useDebounce(minVolume, 400);
+  const [debouncedMaxVolume] = useDebounce(maxVolume, 400);
+  const [debouncedMinAlcohol] = useDebounce(minAlcohol, 400);
+  const [debouncedMaxAlcohol] = useDebounce(maxAlcohol, 400);
+
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
   const [limitInput, setLimitInput] = useState(String(DEFAULT_PAGE_SIZE));
@@ -109,10 +123,28 @@ const ProductGridTemplate = ({
     if (brandId) count += 1;
     if (countryId) count += 1;
     if (minPrice !== "" || maxPrice !== "") count += 1;
-    if (volumes.length > 0) count += volumes.length;
+    if (minVolume !== "" || maxVolume !== "") count += 1;
+    if (minAlcohol !== "" || maxAlcohol !== "") count += 1;
     if (inStockOnly) count += 1;
+    if (isStaffPick) count += 1;
+    if (isFeatured) count += 1;
+    if (isLiquor) count += 1;
     return count;
-  }, [categoryIds, brandId, countryId, minPrice, maxPrice, volumes, inStockOnly]);
+  }, [
+    categoryIds,
+    brandId,
+    countryId,
+    minPrice,
+    maxPrice,
+    minVolume,
+    maxVolume,
+    minAlcohol,
+    maxAlcohol,
+    inStockOnly,
+    isStaffPick,
+    isFeatured,
+    isLiquor,
+  ]);
 
   useEffect(() => {
     const currentCategory = categoryIds[0];
@@ -146,7 +178,24 @@ const ProductGridTemplate = ({
 
   useEffect(() => {
     setPage(1);
-  }, [categoryIds, brandId, countryId, debouncedSearch, sortBy, sortOrder, minPrice, maxPrice, volumes, inStockOnly]);
+  }, [
+    categoryIds,
+    brandId,
+    countryId,
+    debouncedSearch,
+    sortBy,
+    sortOrder,
+    debouncedMinPrice,
+    debouncedMaxPrice,
+    debouncedMinVolume,
+    debouncedMaxVolume,
+    debouncedMinAlcohol,
+    debouncedMaxAlcohol,
+    inStockOnly,
+    isStaffPick,
+    isFeatured,
+    isLiquor,
+  ]);
 
   const selectedCategorySlugs = useMemo(
     () =>
@@ -166,12 +215,37 @@ const ProductGridTemplate = ({
       category: selectedCategorySlugs.length > 0 ? selectedCategorySlugs : undefined,
       brand: brandId || undefined,
       country: countryId || undefined,
-      min_price: minPrice === "" ? undefined : Number(minPrice),
-      max_price: maxPrice === "" ? undefined : Number(maxPrice),
-      volume_ml: volumes.length > 0 ? volumes : undefined,
-      in_stock: inStockOnly || undefined,
+      min_price: debouncedMinPrice === "" ? undefined : Number(debouncedMinPrice),
+      max_price: debouncedMaxPrice === "" ? undefined : Number(debouncedMaxPrice),
+      min_volume_ml: debouncedMinVolume === "" ? undefined : Math.round(Number(debouncedMinVolume)),
+      max_volume_ml: debouncedMaxVolume === "" ? undefined : Math.round(Number(debouncedMaxVolume)),
+      min_alcohol_percentage: debouncedMinAlcohol === "" ? undefined : Number(debouncedMinAlcohol),
+      max_alcohol_percentage: debouncedMaxAlcohol === "" ? undefined : Number(debouncedMaxAlcohol),
+      in_stock: inStockOnly ? true : undefined,
+      is_staff_pick: isStaffPick ? true : undefined,
+      is_featured: isFeatured ? true : undefined,
+      is_liquor: isLiquor ? true : undefined,
     }),
-    [page, limit, debouncedSearch, sortBy, sortOrder, selectedCategorySlugs, brandId, countryId, minPrice, maxPrice, volumes, inStockOnly]
+    [
+      page,
+      limit,
+      debouncedSearch,
+      sortBy,
+      sortOrder,
+      selectedCategorySlugs,
+      brandId,
+      countryId,
+      debouncedMinPrice,
+      debouncedMaxPrice,
+      debouncedMinVolume,
+      debouncedMaxVolume,
+      debouncedMinAlcohol,
+      debouncedMaxAlcohol,
+      inStockOnly,
+      isStaffPick,
+      isFeatured,
+      isLiquor,
+    ]
   );
 
   const { data, isLoading, isFetching } = useGetPublicProductsQuery(queryParams, {
@@ -207,8 +281,14 @@ const ProductGridTemplate = ({
     setCountryId("");
     setMinPrice("");
     setMaxPrice("");
-    setVolumes([]);
+    setMinVolume("");
+    setMaxVolume("");
+    setMinAlcohol("");
+    setMaxAlcohol("");
     setInStockOnly(false);
+    setIsStaffPick(false);
+    setIsFeatured(false);
+    setIsLiquor(false);
   };
 
   return (
@@ -308,19 +388,27 @@ const ProductGridTemplate = ({
                 countryId={countryId}
                 minPrice={minPrice}
                 maxPrice={maxPrice}
-                volumes={volumes}
+                minVolume={minVolume}
+                maxVolume={maxVolume}
+                minAlcohol={minAlcohol}
+                maxAlcohol={maxAlcohol}
                 inStockOnly={inStockOnly}
+                isStaffPick={isStaffPick}
+                isFeatured={isFeatured}
+                isLiquor={isLiquor}
                 onCategoryChange={handleCategoryChange}
                 onBrandChange={setBrandId}
                 onCountryChange={setCountryId}
                 onMinPriceChange={setMinPrice}
                 onMaxPriceChange={setMaxPrice}
-                onVolumeChange={(volume, checked) =>
-                  setVolumes((current) =>
-                    checked ? [...current, volume] : current.filter((item) => item !== volume),
-                  )
-                }
+                onMinVolumeChange={setMinVolume}
+                onMaxVolumeChange={setMaxVolume}
+                onMinAlcoholChange={setMinAlcohol}
+                onMaxAlcoholChange={setMaxAlcohol}
                 onInStockChange={setInStockOnly}
+                onStaffPickChange={setIsStaffPick}
+                onFeaturedChange={setIsFeatured}
+                onLiquorChange={setIsLiquor}
                 onClear={clearFilters}
               />
             </div>
@@ -443,21 +531,27 @@ const ProductGridTemplate = ({
               countryId={countryId}
               minPrice={minPrice}
               maxPrice={maxPrice}
-              volumes={volumes}
+              minVolume={minVolume}
+              maxVolume={maxVolume}
+              minAlcohol={minAlcohol}
+              maxAlcohol={maxAlcohol}
               inStockOnly={inStockOnly}
+              isStaffPick={isStaffPick}
+              isFeatured={isFeatured}
+              isLiquor={isLiquor}
               onCategoryChange={handleCategoryChange}
               onBrandChange={setBrandId}
               onCountryChange={setCountryId}
               onMinPriceChange={setMinPrice}
               onMaxPriceChange={setMaxPrice}
-              onVolumeChange={(volume, checked) =>
-                setVolumes((current) =>
-                  checked
-                    ? [...current, volume]
-                    : current.filter((item) => item !== volume),
-                )
-              }
+              onMinVolumeChange={setMinVolume}
+              onMaxVolumeChange={setMaxVolume}
+              onMinAlcoholChange={setMinAlcohol}
+              onMaxAlcoholChange={setMaxAlcohol}
               onInStockChange={setInStockOnly}
+              onStaffPickChange={setIsStaffPick}
+              onFeaturedChange={setIsFeatured}
+              onLiquorChange={setIsLiquor}
               onClear={clearFilters}
             />
           </div>
