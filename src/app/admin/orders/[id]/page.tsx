@@ -31,14 +31,8 @@ import {
   orderStatusLabel,
   statusTone,
 } from "@/components/Order/orderDisplay";
-import {
-  CancelOrderDialog,
-  isOrderCancellable,
-} from "@/components/Admin/CancelOrderDialog/CancelOrderDialog";
-import {
-  CreateRefundDialog,
-  isOrderRefundable,
-} from "@/components/Admin/CreateRefundDialog/CreateRefundDialog";
+import { CancelOrderDialog } from "@/components/Admin/CancelOrderDialog/CancelOrderDialog";
+import { CreateRefundDialog } from "@/components/Admin/CreateRefundDialog/CreateRefundDialog";
 import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
 import {
   type DeliveryRefusalReason,
@@ -241,10 +235,8 @@ export default function AdminOrderDetailPage() {
     order.unassociated_payment_refunds.length > 0,
   );
 
-  const cancellable =
-    !hasRefunds && isOrderCancellable(order.status, order.fulfillment_status);
-  const refundable =
-    !hasRefunds && isOrderRefundable(order.status, order.fulfillment_status);
+  const cancellable = Boolean(order.can_cancel);
+  const refundable = Boolean(order.can_create_refund_case);
 
   return (
     <div className="flex flex-col gap-4">

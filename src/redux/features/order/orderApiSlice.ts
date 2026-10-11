@@ -297,6 +297,8 @@ export interface AdminOrder extends Order {
   customer: OrderCustomer;
   refund_cases?: RefundCase[];
   unassociated_payment_refunds?: PaymentRefund[];
+  can_cancel?: boolean;
+  can_create_refund_case?: boolean;
 }
 
 export type DeliveryRefusalReason = "ID_INVALID" | "CUSTOMER_INTOXICATED" | "CUSTOMER_REFUSED" | "OTHER";
@@ -374,6 +376,53 @@ export interface CancellationPreviewData {
 
 export type CancellationPreviewResponse = ApiResponse<CancellationPreviewData>;
 export type RefundCasePreviewResponse = ApiResponse<CancellationPreviewData>;
+
+export interface RefundConditionOption {
+  condition: ItemCondition | string;
+  dispositions: (ItemDisposition | string)[];
+}
+
+export interface RefundReasonOption {
+  reason: RefundReason | string;
+  conditions: RefundConditionOption[];
+}
+
+export interface RefundConfigItemUiBehavior {
+  selection_editable: boolean;
+  quantity_editable: boolean;
+  condition_editable: boolean;
+  disposition_editable: boolean;
+}
+
+export interface RefundConfigItem {
+  order_item_id: string;
+  product_variant_id: string;
+  product_name: string;
+  variant_name: string;
+  sku: string;
+  unit_price: string;
+  original_quantity: number;
+  claimed_quantity: number;
+  remaining_refundable_quantity: number;
+  selectable: boolean;
+  ui_behavior: RefundConfigItemUiBehavior;
+}
+
+export interface RefundConfigUiBehavior {
+  reason_editable: boolean;
+}
+
+export interface RefundConfigurationData {
+  order_id: string;
+  order_status: OrderStatus | string;
+  fulfillment_status: FulfillmentStatus | string;
+  fulfillment_method: FulfillmentMethod | string;
+  reason_options: RefundReasonOption[];
+  items: RefundConfigItem[];
+  ui_behavior: RefundConfigUiBehavior;
+}
+
+export type RefundConfigurationResponse = ApiResponse<RefundConfigurationData>;
 
 export interface UpdateFulfillmentRequest {
   order_id: string;
@@ -499,6 +548,10 @@ export const orderApiSlice = apiSlice.injectEndpoints({
         body,
       }),
     }),
+    getRefundConfiguration: builder.query<RefundConfigurationResponse, string>({
+      query: (orderId) => `admin/orders/${orderId}/refund-configuration`,
+      providesTags: (_result, _error, orderId) => [{ type: "Order", id: `REFUND-CONFIG-${orderId}` }],
+    }),
   }),
 });
 
@@ -514,4 +567,5 @@ export const {
   useCreateRefundCaseMutation,
   useCheckoutMutation,
   useCheckoutPreviewMutation,
+  useGetRefundConfigurationQuery,
 } = orderApiSlice;
