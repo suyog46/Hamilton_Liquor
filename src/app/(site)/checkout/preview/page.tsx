@@ -250,17 +250,7 @@ const CheckoutPreviewPage = () => {
                 Back
               </Button>
               <div className="flex flex-col items-stretch sm:items-end gap-2">
-                <p className="text-xs text-gray-500 text-left sm:text-right">
-                  Please review our{" "}
-                  <button
-                    type="button"
-                    onClick={() => setRefundModalOpen(true)}
-                    className="font-semibold text-gray-900 underline underline-offset-2 hover:text-primary-dark transition-colors cursor-pointer"
-                  >
-                    Refund &amp; Return Policy
-                  </button>{" "}
-                  before completing payment.
-                </p>
+
                 <Button
                   type="button"
                   onClick={continueToPayment}

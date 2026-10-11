@@ -76,6 +76,7 @@ const ProductCard = ({ product }: { product: PublicProductListItem }) => {
       alcohol_percentage: variant.alcohol_percentage ?? "",
       available_quantity: variant.available_quantity,
       is_active: true,
+      is_liquor: variant.is_liquor,
       thumbnail: product.thumbnail ?? { id: `product:${product.id}`, url: "" },
     };
 

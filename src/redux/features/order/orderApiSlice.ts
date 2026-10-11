@@ -48,11 +48,29 @@ export interface OrderDelivery {
   updated_at: string;
 }
 
+export type FulfillmentAttachmentCategory =
+  | "AGE_VERIFICATION"
+  | "REFUSAL_EVIDENCE"
+  | "OTHER"
+  | "GENERAL_PHOTO";
+
+export interface FulfillmentEventAttachment {
+  id?: string;
+  media_id: string;
+  category: FulfillmentAttachmentCategory;
+  label?: string | null;
+  media?: {
+    id: string;
+    url: string;
+  };
+}
+
 export interface FulfillmentEvent {
   id: string;
   event_type: FulfillmentEventType;
   refusal_reason: string | null;
   note: string | null;
+  attachments?: FulfillmentEventAttachment[];
   performed_by_user_id: string | null;
   created_at: string;
   updated_at: string;
@@ -424,11 +442,18 @@ export interface RefundConfigurationData {
 
 export type RefundConfigurationResponse = ApiResponse<RefundConfigurationData>;
 
+export interface FulfillmentAttachmentInput {
+  media_id: string;
+  category: FulfillmentAttachmentCategory;
+  label: string;
+}
+
 export interface UpdateFulfillmentRequest {
   order_id: string;
   fulfillment_status: FulfillmentStatus;
   refusal_reason: DeliveryRefusalReason | null;
   note: string;
+  attachments?: FulfillmentAttachmentInput[];
 }
 
 export interface CheckoutData {

@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
 import AdminPageHeader from "@/components/Admin/AdminPageHeader/AdminPageHeader";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -34,8 +35,10 @@ import {
 import { CancelOrderDialog } from "@/components/Admin/CancelOrderDialog/CancelOrderDialog";
 import { CreateRefundDialog } from "@/components/Admin/CreateRefundDialog/CreateRefundDialog";
 import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
+import { useUploadMediaMutation } from "@/redux/features/media/mediaApiSlice";
 import {
   type DeliveryRefusalReason,
+  type FulfillmentAttachmentCategory,
   type FulfillmentEventType,
   type FulfillmentMethod,
   type FulfillmentStatus,
@@ -48,6 +51,16 @@ const refusalReasons: Array<{ value: DeliveryRefusalReason; label: string }> = [
   { value: "CUSTOMER_INTOXICATED", label: "Customer intoxicated" },
   { value: "OTHER", label: "Other" },
 ];
+
+const attachmentCategories: Array<{
+  value: FulfillmentAttachmentCategory;
+  label: string;
+}> = [
+    { value: "AGE_VERIFICATION", label: "Age Verification" },
+    { value: "REFUSAL_EVIDENCE", label: "Refusal Evidence" },
+    { value: "OTHER", label: "Other" },
+    { value: "GENERAL_PHOTO", label: "General Photo" },
+  ];
 
 const errorMessage = (error: unknown) => {
   if (!isFetchBaseQueryError(error))
@@ -100,6 +113,14 @@ const getNextFulfillmentStatuses = (
   }
 };
 
+interface AttachedMediaItem {
+  id: string;
+  media_id: string;
+  url: string;
+  category: FulfillmentAttachmentCategory;
+  label: string;
+}
+
 export default function AdminOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, isError, refetch } = useGetAdminOrderQuery(id);
@@ -109,20 +130,34 @@ export default function AdminOrderDetailPage() {
     DeliveryRefusalReason | ""
   >("");
   const [note, setNote] = useState("");
+  const [attachments, setAttachments] = useState<AttachedMediaItem[]>([]);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [isRefundDialogOpen, setIsRefundDialogOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [updateFulfillment, { isLoading: isUpdating }] =
     useUpdateOrderFulfillmentMutation();
+  const [uploadMedia, { isLoading: isUploadingMedia }] =
+    useUploadMediaMutation();
+
+  const isCurrentOutForDelivery =
+    order?.fulfillment_status === "OUT_FOR_DELIVERY";
+
+  const isCancelled = order?.status === "CANCELLED";
+  const hasRefunds = Boolean(
+    (order?.refund_cases && order.refund_cases.length > 0) ||
+    (order?.unassociated_payment_refunds && order.unassociated_payment_refunds.length > 0),
+  );
+  const isFulfillmentLocked = isCancelled || hasRefunds;
 
   const nextStatuses = useMemo<FulfillmentStatus[]>(() => {
-    if (!order) return [];
+    if (!order || isCancelled) return [];
     return getNextFulfillmentStatuses(
       order.fulfillment_status,
       order.fulfillment_method,
     );
-  }, [order]);
+  }, [order, isCancelled]);
 
-  const isTerminalStatus = Boolean(order && nextStatuses.length === 0);
+  const isTerminalStatus = Boolean(order && (isCancelled || nextStatuses.length === 0));
 
   useEffect(() => {
     if (order) {
@@ -130,16 +165,68 @@ export default function AdminOrderDetailPage() {
         order.fulfillment_status,
         order.fulfillment_method,
       );
-      if (next.length > 0) {
+      if (next.length > 0 && !isCancelled) {
         setStatus(next[0]);
       } else {
         setStatus(order.fulfillment_status);
       }
     }
-  }, [order]);
+  }, [order, isCancelled]);
+
+  const handleFilesSelected = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (files.length === 0) return;
+
+    try {
+      const uploaded = await Promise.all(
+        files.map((file) => uploadMedia(file).unwrap()),
+      );
+      const defaultCategory: FulfillmentAttachmentCategory =
+        status === "REFUSED" ? "REFUSAL_EVIDENCE" : "AGE_VERIFICATION";
+
+      const newItems: AttachedMediaItem[] = uploaded.map((res, i) => ({
+        id: `${res.data.id}-${Date.now()}-${i}`,
+        media_id: res.data.id,
+        url: res.data.url,
+        category: defaultCategory,
+        label: "",
+      }));
+      setAttachments((prev) => [...prev, ...newItems]);
+      toast.success(
+        `Uploaded ${files.length} image${files.length > 1 ? "s" : ""}.`,
+      );
+    } catch {
+      toast.error("Failed to upload image(s).");
+    }
+  };
+
+  const updateAttachment = (
+    index: number,
+    patch: Partial<AttachedMediaItem>,
+  ) => {
+    setAttachments((prev) =>
+      prev.map((item, idx) => (idx === index ? { ...item, ...patch } : item)),
+    );
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, idx) => idx !== index));
+  };
 
   const dropdownItems = useMemo(() => {
     if (!order) return [];
+    if (isCancelled) {
+      return [
+        {
+          value: order.fulfillment_status,
+          label: `${fulfillmentLabel[order.fulfillment_status]} (Cancelled)`,
+          disabled: true,
+        },
+      ];
+    }
     if (isTerminalStatus) {
       return [
         {
@@ -154,16 +241,15 @@ export default function AdminOrderDetailPage() {
       label: fulfillmentLabel[value],
       disabled: false,
     }));
-  }, [order, isTerminalStatus, nextStatuses]);
-
-  const hasRefunds = Boolean(
-    (order?.refund_cases && order.refund_cases.length > 0) ||
-    (order?.unassociated_payment_refunds && order.unassociated_payment_refunds.length > 0),
-  );
+  }, [order, isCancelled, isTerminalStatus, nextStatuses]);
 
   const saveStatus = async () => {
-    if (isTerminalStatus || !nextStatuses.includes(status)) {
-      toast.error("No further status transitions available.");
+    if (isFulfillmentLocked || isTerminalStatus || !nextStatuses.includes(status)) {
+      toast.error(
+        isCancelled
+          ? "Cannot update fulfillment for a cancelled order."
+          : "No further status transitions available.",
+      );
       return;
     }
     if (status === "REFUSED" && !refusalReason) {
@@ -179,9 +265,19 @@ export default function AdminOrderDetailPage() {
             ? (refusalReason as DeliveryRefusalReason)
             : null,
         note: note.trim(),
+        ...(isCurrentOutForDelivery
+          ? {
+            attachments: attachments.map((att) => ({
+              media_id: att.media_id,
+              category: att.category,
+              label: att.label.trim(),
+            })),
+          }
+          : {}),
       }).unwrap();
       toast.success("Fulfillment status updated.");
       setNote("");
+      setAttachments([]);
       if (status !== "REFUSED") setRefusalReason("");
     } catch (error) {
       toast.error(errorMessage(error));
@@ -774,6 +870,42 @@ export default function AdminOrderDetailPage() {
                           {event.note}
                         </p>
                       )}
+                      {event?.attachments && event.attachments.length > 0 && (
+                        <div className="mt-2.5 flex flex-wrap gap-2">
+                          {event.attachments.map((att, attIdx) => (
+                            <div
+                              key={att.id || att.media_id || `att-${attIdx}`}
+                              className="flex items-center gap-2 rounded-lg border bg-card p-1.5 shadow-2xs text-[11px]"
+                            >
+                              {att.media?.url && (
+                                <a
+                                  href={att.media.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="block shrink-0"
+                                >
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={att.media.url}
+                                    alt={att.label || "Attachment"}
+                                    className="size-10 rounded object-cover border"
+                                  />
+                                </a>
+                              )}
+                              <div className="text-[10px] space-y-0.5">
+                                <span className="font-semibold text-foreground block">
+                                  {att.category.replaceAll("_", " ")}
+                                </span>
+                                {att.label && (
+                                  <span className="text-gray-500 block">
+                                    {att.label}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -803,6 +935,42 @@ export default function AdminOrderDetailPage() {
                       <p className="mt-2 bg-destructive/5 p-2 text-xs">
                         {refused.note}
                       </p>
+                    )}
+                    {refused.attachments && refused.attachments.length > 0 && (
+                      <div className="mt-2.5 flex flex-wrap gap-2">
+                        {refused.attachments.map((att, attIdx) => (
+                          <div
+                            key={att.id || att.media_id || `refused-att-${attIdx}`}
+                            className="flex items-center gap-2 rounded-lg border bg-card p-1.5 shadow-2xs text-[11px]"
+                          >
+                            {att.media?.url && (
+                              <a
+                                href={att.media.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block shrink-0"
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={att.media.url}
+                                  alt={att.label || "Attachment"}
+                                  className="size-10 rounded object-cover border"
+                                />
+                              </a>
+                            )}
+                            <div className="text-[10px] space-y-0.5">
+                              <span className="font-semibold text-foreground block">
+                                {att.category.replaceAll("_", " ")}
+                              </span>
+                              {att.label && (
+                                <span className="text-gray-500 block">
+                                  {att.label}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -904,25 +1072,35 @@ export default function AdminOrderDetailPage() {
         {/* RIGHT ASIDE: UPDATE FULFILLMENT                           */}
         {/* ========================================================= */}
         <aside
-          className={`h-fit border p-5 ring-1 xl:sticky xl:top-20 ${hasRefunds
+          className={`h-fit border p-5 ring-1 xl:sticky xl:top-20 ${isFulfillmentLocked
             ? "bg-gray-100 border-gray-200 ring-black/5 opacity-85"
             : "bg-card ring-foreground/5"
             }`}
         >
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold">Update fulfillment</h2>
-            {hasRefunds && (
+            {isCancelled ? (
+              <span className="rounded bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">
+                Cancelled
+              </span>
+            ) : hasRefunds ? (
               <span className="rounded bg-gray-200 px-2 py-0.5 text-[10px] font-semibold text-gray-600">
                 Disabled
               </span>
-            )}
+            ) : isTerminalStatus ? (
+              <span className="rounded bg-gray-200 px-2 py-0.5 text-[10px] font-semibold text-gray-600">
+                Completed
+              </span>
+            ) : null}
           </div>
           <p className="mt-1 text-[11px] text-gray-500">
-            {hasRefunds
-              ? "Fulfillment updates are locked because this order has refund or cancellation records."
-              : isTerminalStatus
-                ? "Fulfillment has reached its final state. No further updates are available."
-                : "This creates a fulfillment event visible to the customer."}
+            {isCancelled
+              ? "Fulfillment updates are locked because this order has been cancelled."
+              : hasRefunds
+                ? "Fulfillment updates are locked because this order has refund or cancellation records."
+                : isTerminalStatus
+                  ? "Fulfillment has reached its final state. No further updates are available."
+                  : "This creates a fulfillment event visible to the customer."}
           </p>
 
           <div className="mt-5 space-y-4">
@@ -931,7 +1109,7 @@ export default function AdminOrderDetailPage() {
                 Change  Fulfillment status
               </label>
               <Select
-                disabled={hasRefunds || isUpdating || isTerminalStatus}
+                disabled={isFulfillmentLocked || isUpdating || isTerminalStatus}
                 items={dropdownItems}
                 value={status}
                 onValueChange={(value) => value && setStatus(value)}
@@ -958,7 +1136,7 @@ export default function AdminOrderDetailPage() {
                   Refusal reason
                 </label>
                 <Select
-                  disabled={hasRefunds || isUpdating}
+                  disabled={isFulfillmentLocked || isUpdating}
                   items={refusalReasons}
                   value={refusalReason || null}
                   onValueChange={(value) => setRefusalReason(value ?? "")}
@@ -976,6 +1154,126 @@ export default function AdminOrderDetailPage() {
                 </Select>
               </div>
             )}
+            {isCurrentOutForDelivery && !isTerminalStatus && (
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="block text-xs font-medium">
+                    Delivery Attachments ({attachments.length})
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isFulfillmentLocked || isUpdating || isUploadingMedia}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary-active hover:underline disabled:opacity-50 cursor-pointer"
+                  >
+                    <Icon icon="solar:camera-add-bold" className="size-3.5" />
+                    Add images
+                  </button>
+                </div>
+
+                {attachments.length > 0 && (
+                  <div className="space-y-2 mb-3 max-h-72 overflow-y-auto pr-1">
+                    {attachments.map((att, idx) => (
+                      <div
+                        key={att.id}
+                        className="flex items-start gap-2.5 rounded-lg border bg-white p-2.5 text-xs shadow-2xs"
+                      >
+                        <div className="relative size-12 shrink-0 overflow-hidden rounded-md border bg-gray-50">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={att.url}
+                            alt=""
+                            className="size-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 space-y-1.5 min-w-0">
+                          <Select
+                            value={att.category}
+                            disabled={isFulfillmentLocked || isUpdating}
+                            onValueChange={(val) =>
+                              val &&
+                              updateAttachment(idx, {
+                                category: val as FulfillmentAttachmentCategory,
+                              })
+                            }
+                          >
+                            <SelectTrigger className="h-7 w-full text-[11px] bg-white">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {attachmentCategories.map((cat) => (
+                                <SelectItem
+                                  key={cat.value}
+                                  value={cat.value}
+                                  className="text-xs"
+                                >
+                                  {cat.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            value={att.label}
+                            disabled={isFulfillmentLocked || isUpdating}
+                            onChange={(e) =>
+                              updateAttachment(idx, { label: e.target.value })
+                            }
+                            placeholder="Label (optional)"
+                            className="h-7 text-[11px]"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          aria-label="Remove image"
+                          onClick={() => removeAttachment(idx)}
+                          disabled={isFulfillmentLocked || isUpdating}
+                          className="p-1 text-gray-400 hover:text-destructive cursor-pointer disabled:opacity-40"
+                        >
+                          <Icon
+                            icon="solar:trash-bin-minimalistic-linear"
+                            className="size-4"
+                          />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isFulfillmentLocked || isUpdating || isUploadingMedia}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 bg-gray-50/60 p-3 text-xs text-gray-600 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                >
+                  {isUploadingMedia ? (
+                    <>
+                      <Icon
+                        icon="svg-spinners:180-ring"
+                        className="size-4 text-primary-active"
+                      />
+                      <span>Uploading image(s)...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Icon
+                        icon="solar:gallery-add-linear"
+                        className="size-4 text-gray-500"
+                      />
+                      <span>Attach image(s) for verification or evidence</span>
+                    </>
+                  )}
+                </button>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleFilesSelected}
+                />
+              </div>
+            )}
             <div>
               <label
                 htmlFor="fulfillment-note"
@@ -986,15 +1284,17 @@ export default function AdminOrderDetailPage() {
               <Textarea
                 id="fulfillment-note"
                 value={note}
-                disabled={hasRefunds || isUpdating || isTerminalStatus}
+                disabled={isFulfillmentLocked || isUpdating || isTerminalStatus}
                 onChange={(event) => setNote(event.target.value)}
                 maxLength={500}
                 placeholder={
-                  hasRefunds
-                    ? "Fulfillment updates disabled for this order"
-                    : isTerminalStatus
-                      ? "Fulfillment has reached its final state"
-                      : "Add a description or update for the customer"
+                  isCancelled
+                    ? "Fulfillment updates locked because order is cancelled"
+                    : hasRefunds
+                      ? "Fulfillment updates disabled for this order"
+                      : isTerminalStatus
+                        ? "Fulfillment has reached its final state"
+                        : "Add a description or update for the customer"
                 }
                 className="min-h-28 resize-none bg-white disabled:bg-gray-200/60 disabled:cursor-not-allowed"
               />
@@ -1004,17 +1304,19 @@ export default function AdminOrderDetailPage() {
             </div>
             <Button
               onClick={saveStatus}
-              disabled={hasRefunds || isUpdating || isTerminalStatus}
+              disabled={isFulfillmentLocked || isUpdating || isTerminalStatus || isUploadingMedia}
               className="w-full bg-primary-normal text-black hover:bg-primary-hover disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
             >
               {isUpdating && (
                 <Icon icon="svg-spinners:180-ring" className="size-4" />
               )}
-              {hasRefunds
-                ? "Updates Locked"
-                : isTerminalStatus
-                  ? "Order Completed"
-                  : "Update status"}
+              {isCancelled
+                ? "Order Cancelled"
+                : hasRefunds
+                  ? "Updates Locked"
+                  : isTerminalStatus
+                    ? "Order Completed"
+                    : "Update status"}
             </Button>
           </div>
         </aside>

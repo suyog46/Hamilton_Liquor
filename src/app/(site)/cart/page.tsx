@@ -31,6 +31,7 @@ import SaleSection from "@/components/HomeSection/SaleSection/SaleSection";
 interface DisplayLine {
   id: string;
   quantity: number;
+  is_liquor?: boolean;
   product_variant: CartProductVariant;
 }
 
@@ -62,13 +63,19 @@ const CartPage = () => {
     : guestItems.map((item) => ({
       id: item.variant.id,
       quantity: item.quantity,
+      is_liquor: item.variant.is_liquor,
       product_variant: item.variant,
     }));
+
+  const hasOutOfStockItems = items.some(
+    (line) => (line.product_variant.available_quantity ?? 0) <= 0,
+  );
 
   const getMaxQuantity = (line: DisplayLine) =>
     line.product_variant.available_quantity ?? 99;
 
   const updateQty = async (line: DisplayLine, quantity: number) => {
+    if ((line.product_variant.available_quantity ?? 0) <= 0) return;
     const nextQuantity = Math.max(1, Math.min(quantity, getMaxQuantity(line)));
     if (nextQuantity === line.quantity) return;
 
@@ -126,16 +133,7 @@ const CartPage = () => {
     }
   };
 
-  const handleCheckout = () => {
-    if (!isLoggedIn) {
-      toast.error("You are not logged in. Log in first.");
-      router.push("/login?redirect=/cart");
-      return;
-    }
-    router.push("/checkout");
-  };
-
-  const showSkeleton = isLoggedIn ? isLoading : !hasHydrated;
+  const MINIMUM_ORDER_AMOUNT = 30;
 
   const cartSubtotal = items.reduce((sum, line) => {
     const v = line.product_variant;
@@ -145,6 +143,31 @@ const CartPage = () => {
         : Number(v.price);
     return sum + effectivePrice * line.quantity;
   }, 0);
+
+  const isUnderMinimumOrder = cartSubtotal < MINIMUM_ORDER_AMOUNT;
+  const isCheckoutDisabled =
+    hasOutOfStockItems || isUnderMinimumOrder || items.length === 0;
+
+  const handleCheckout = () => {
+    if (hasOutOfStockItems) {
+      toast.error("Please remove out of stock items before proceeding to checkout.");
+      return;
+    }
+    if (isUnderMinimumOrder) {
+      toast.error(
+        `Minimum order amount is ${formatPrice(MINIMUM_ORDER_AMOUNT)}. Please add ${formatPrice(MINIMUM_ORDER_AMOUNT - cartSubtotal)} more to proceed.`,
+      );
+      return;
+    }
+    if (!isLoggedIn) {
+      toast.error("You are not logged in. Log in first.");
+      router.push("/login?redirect=/cart");
+      return;
+    }
+    router.push("/checkout");
+  };
+
+  const showSkeleton = isLoggedIn ? isLoading : !hasHydrated;
 
   return (
     <>
@@ -185,6 +208,8 @@ const CartPage = () => {
                 {items.map((line) => {
                   const variant = line.product_variant;
                   const media = variant.thumbnail;
+                  const isOutOfStock = (variant.available_quantity ?? 0) <= 0;
+                  const isLiquor = line.is_liquor ?? variant.is_liquor ?? false;
                   const hasSale =
                     (variant.has_sale ||
                       (variant.sale_price && Number(variant.sale_price) > 0)) &&
@@ -197,14 +222,22 @@ const CartPage = () => {
                   return (
                     <div
                       key={line.id}
-                      className="flex gap-4 p-4 rounded-2xl border border-gray-100 shadow-sm"
+                      className={cn(
+                        "flex gap-4 p-4 rounded-2xl border transition-colors",
+                        isOutOfStock
+                          ? "border-red-200 bg-red-50/20"
+                          : "border-gray-100 shadow-sm",
+                      )}
                     >
                       <div className="relative w-20 h-24 sm:w-24 sm:h-28 shrink-0 rounded-xl overflow-hidden bg-gray-50">
                         {media?.url ? (
                           <img
                             src={media.url}
                             alt={variant.product.name}
-                            className="absolute inset-0 h-full w-full object-cover"
+                            className={cn(
+                              "absolute inset-0 h-full w-full object-cover",
+                              isOutOfStock && "opacity-50 grayscale",
+                            )}
                           />
                         ) : (
                           <div className="absolute inset-0 flex items-center justify-center text-gray-300">
@@ -212,6 +245,11 @@ const CartPage = () => {
                               icon="solar:bottle-linear"
                               className="w-8 h-8"
                             />
+                          </div>
+                        )}
+                        {isOutOfStock && (
+                          <div className="absolute inset-x-0 bottom-0 bg-red-600/90 py-1 text-center text-[9px] font-bold uppercase tracking-wider text-white">
+                            Out of Stock
                           </div>
                         )}
                       </div>
@@ -226,16 +264,22 @@ const CartPage = () => {
                               >
                                 {variant.product.name}
                               </Link>
-                              {hasSale && (
+                              {isOutOfStock ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 shrink-0">
+                                  Out of Stock
+                                </span>
+                              ) : hasSale ? (
                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-primary-normal text-black shrink-0">
                                   {variant.sale_percentage
                                     ? `${Math.round(Number(variant.sale_percentage))}% OFF`
                                     : "SALE"}
                                 </span>
-                              )}
+                              ) : null}
                             </div>
                             <p className="text-xs text-gray-500 mt-0.5">
-                              {formatVolume(variant.volume_ml)}
+                              {isLiquor
+                                ? (variant.display_name || formatVolume(variant.volume_ml))
+                                : formatVolume(variant.volume_ml)}
                               {variant.alcohol_percentage && (
                                 <>
                                   {" "}
@@ -244,13 +288,19 @@ const CartPage = () => {
                                 </>
                               )}
                             </p>
+                            {isOutOfStock && (
+                              <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600">
+                                <Icon icon="solar:danger-triangle-linear" className="w-3.5 h-3.5 shrink-0" />
+                                Currently unavailable. Please remove to continue.
+                              </p>
+                            )}
                           </div>
                           <button
                             aria-label="Remove item"
                             onClick={() => removeLine(line)}
                             disabled={removingId === line.id}
                             className={cn(
-                              "shrink-0 transition-colors disabled:cursor-not-allowed",
+                              "shrink-0 transition-colors disabled:cursor-not-allowed p-1 -m-1 rounded-lg hover:bg-red-50",
                               removingId === line.id
                                 ? "text-gray-300"
                                 : "text-red-500 hover:text-red-600",
@@ -264,15 +314,23 @@ const CartPage = () => {
                         </div>
 
                         <div className="flex items-center justify-between mt-3">
-                          <div className="flex items-center gap-3 rounded-lg border border-gray-200 px-2 py-1">
+                          <div
+                            className={cn(
+                              "flex items-center gap-3 rounded-lg border px-2 py-1",
+                              isOutOfStock
+                                ? "border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed"
+                                : "border-gray-200",
+                            )}
+                          >
                             <button
                               aria-label="Decrease quantity"
                               onClick={() => updateQty(line, line.quantity - 1)}
                               disabled={
+                                isOutOfStock ||
                                 line.quantity <= 1 ||
                                 (isLoggedIn && isUpdatingCart)
                               }
-                              className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-black disabled:opacity-30"
+                              className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-black disabled:opacity-30 disabled:cursor-not-allowed"
                             >
                               <Icon
                                 icon="solar:minus-circle-linear"
@@ -286,10 +344,11 @@ const CartPage = () => {
                               aria-label="Increase quantity"
                               onClick={() => updateQty(line, line.quantity + 1)}
                               disabled={
+                                isOutOfStock ||
                                 line.quantity >= getMaxQuantity(line) ||
                                 (isLoggedIn && isUpdatingCart)
                               }
-                              className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-black disabled:opacity-30"
+                              className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-black disabled:opacity-30 disabled:cursor-not-allowed"
                             >
                               <Icon
                                 icon="solar:add-circle-linear"
@@ -300,7 +359,12 @@ const CartPage = () => {
                           <div className="flex flex-col items-end">
                             {hasSale ? (
                               <>
-                                <span className="text-sm sm:text-base font-bold text-primary-active">
+                                <span
+                                  className={cn(
+                                    "text-sm sm:text-base font-bold",
+                                    isOutOfStock ? "text-gray-400" : "text-primary-active",
+                                  )}
+                                >
                                   {formatPrice(effectiveUnitPrice * line.quantity)}
                                 </span>
                                 <span className="text-xs text-gray-400 line-through">
@@ -308,7 +372,12 @@ const CartPage = () => {
                                 </span>
                               </>
                             ) : (
-                              <span className="text-sm sm:text-base font-bold text-black">
+                              <span
+                                className={cn(
+                                  "text-sm sm:text-base font-bold",
+                                  isOutOfStock ? "text-gray-400" : "text-black",
+                                )}
+                              >
                                 {formatPrice(Number(variant.price) * line.quantity)}
                               </span>
                             )}
@@ -329,6 +398,21 @@ const CartPage = () => {
               </div>
 
               <div className="flex flex-col gap-4 border-t border-gray-100 pt-6">
+                {hasOutOfStockItems ? (
+                  <div className="flex items-center gap-2.5 rounded-xl border border-red-200 bg-red-50/80 p-3.5 text-xs text-red-800">
+                    <Icon icon="solar:danger-triangle-bold" className="w-4 h-4 text-red-600 shrink-0" />
+                    <span>
+                      Some items in your cart are currently <strong>out of stock</strong>. Please remove them before proceeding to checkout.
+                    </span>
+                  </div>
+                ) : isUnderMinimumOrder ? (
+                  <div className="flex items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50/80 p-3.5 text-xs text-amber-900">
+                    <Icon icon="solar:info-circle-bold" className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>
+                      Minimum order amount is <strong>{formatPrice(MINIMUM_ORDER_AMOUNT)}</strong>. Add <strong>{formatPrice(MINIMUM_ORDER_AMOUNT - cartSubtotal)}</strong> more to check out.
+                    </span>
+                  </div>
+                ) : null}
                 <div className="flex items-center justify-between text-base font-semibold text-black">
                   <span>Subtotal</span>
                   <span className="font-bold text-lg text-primary-active">
@@ -339,13 +423,24 @@ const CartPage = () => {
                   <Button
                     type="button"
                     onClick={handleCheckout}
-                    className="h-12 w-full rounded-lg bg-primary-normal text-sm font-semibold text-black hover:bg-primary-hover sm:w-auto sm:min-w-64"
+                    disabled={isCheckoutDisabled}
+                    className="h-12 w-full rounded-lg bg-primary-normal text-sm font-semibold text-black hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 disabled:hover:bg-gray-200 sm:w-auto sm:min-w-64"
                   >
                     Proceed to Checkout
                   </Button>
-                  <p className="text-xs text-gray-500">
-                    Review delivery and payment details on the next step.
-                  </p>
+                  {hasOutOfStockItems ? (
+                    <p className="text-xs font-medium text-red-600">
+                      Remove out-of-stock items to continue
+                    </p>
+                  ) : isUnderMinimumOrder ? (
+                    <p className="text-xs font-medium text-amber-700">
+                      Add {formatPrice(MINIMUM_ORDER_AMOUNT - cartSubtotal)} more to reach the {formatPrice(MINIMUM_ORDER_AMOUNT)} minimum
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-500">
+                      Review delivery and payment details on the next step.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

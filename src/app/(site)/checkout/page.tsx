@@ -249,6 +249,19 @@ export default function CheckoutPage() {
       toast.error("Your cart is empty.");
       return;
     }
+    const cartSubtotal = cart.items.reduce((sum, item) => {
+      const v = item.product_variant;
+      const effectivePrice =
+        (v.has_sale || (v.sale_price && Number(v.sale_price) > 0)) && v.sale_price
+          ? Number(v.sale_price)
+          : Number(v.price);
+      return sum + effectivePrice * item.quantity;
+    }, 0);
+    if (cartSubtotal < 30) {
+      toast.error("Minimum order amount is $30.00.");
+      router.push("/cart");
+      return;
+    }
     if (method === "PICKUP" && !selectedPickupSlot) {
       toast.error("Choose an available pickup time.");
       return;

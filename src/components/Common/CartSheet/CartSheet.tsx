@@ -27,6 +27,7 @@ import {
 } from "@/redux/features/cart/cartApiSlice";
 import { formatPrice, formatVolume } from "@/lib/utils/productDisplay";
 import { getCartItemCount } from "@/lib/utils/cartDisplay";
+import { cn } from "@/lib/utils";
 import { useAppDispatch } from "@/redux/hooks";
 import { apiSlice } from "@/redux/apiSlice";
 
@@ -114,6 +115,10 @@ const CartSheet = () => {
     });
   };
 
+  const hasOutOfStockItems = lines.some(
+    (line) => (line.variant.available_quantity ?? 0) <= 0,
+  );
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent side="right" className="w-full sm:max-w-md">
@@ -138,6 +143,8 @@ const CartSheet = () => {
             <div className="divide-y divide-gray-100">
               {lines.map((line) => {
                 const media = line.variant.thumbnail;
+                const isOutOfStock = (line.variant.available_quantity ?? 0) <= 0;
+                const isLiquor = line.variant.is_liquor ?? false;
                 const hasSale =
                   (line.variant.has_sale ||
                     (line.variant.sale_price && Number(line.variant.sale_price) > 0)) &&
@@ -149,34 +156,66 @@ const CartSheet = () => {
 
                 return (
                   <div key={line.id} className="flex gap-4 py-4">
-                    <div className="h-20 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-50">
+                    <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-50">
                       {media?.url ? (
-                        <img src={media.url} alt={line.variant.product.name} className="h-full w-full object-cover" />
+                        <img
+                          src={media.url}
+                          alt={line.variant.product.name}
+                          className={cn(
+                            "h-full w-full object-cover",
+                            isOutOfStock && "opacity-50 grayscale",
+                          )}
+                        />
                       ) : (
                         <div className="flex h-full items-center justify-center text-gray-300">
                           <Icon icon="solar:bottle-linear" className="h-7 w-7" />
+                        </div>
+                      )}
+                      {isOutOfStock && (
+                        <div className="absolute inset-x-0 bottom-0 bg-red-600/90 py-0.5 text-center text-[8px] font-bold uppercase tracking-wider text-white">
+                          Sold Out
                         </div>
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <p className="truncate text-sm font-semibold text-black">{line.variant.product.name}</p>
-                        {hasSale && (
+                        {isOutOfStock ? (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-100 text-red-700 shrink-0">
+                            Out of Stock
+                          </span>
+                        ) : hasSale ? (
                           <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary-normal text-black shrink-0">
                             {line.variant.sale_percentage
                               ? `${Math.round(Number(line.variant.sale_percentage))}% OFF`
                               : "SALE"}
                           </span>
-                        )}
+                        ) : null}
                       </div>
-                      <p className="mt-1 text-xs text-gray-500">{formatVolume(line.variant.volume_ml)}</p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        {isLiquor
+                          ? (line.variant.display_name || formatVolume(line.variant.volume_ml))
+                          : formatVolume(line.variant.volume_ml)}
+                      </p>
+                      {isOutOfStock && (
+                        <p className="mt-0.5 text-[11px] font-medium text-red-600">
+                          Out of stock
+                        </p>
+                      )}
                       <div className="mt-2 flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2 rounded-lg border border-gray-200 px-1.5 py-1">
+                        <div
+                          className={cn(
+                            "flex items-center gap-2 rounded-lg border px-1.5 py-1",
+                            isOutOfStock
+                              ? "border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed"
+                              : "border-gray-200",
+                          )}
+                        >
                           <button
                             type="button"
                             aria-label={`Decrease ${line.variant.product.name} quantity`}
                             onClick={() => updateQuantity(line, line.quantity - 1)}
-                            disabled={line.id.startsWith("optimistic:") || line.quantity <= 1}
+                            disabled={isOutOfStock || line.id.startsWith("optimistic:") || line.quantity <= 1}
                             className="flex h-6 w-6 items-center justify-center text-gray-500 hover:text-black disabled:cursor-not-allowed disabled:opacity-30"
                           >
                             <Icon icon="solar:minus-circle-linear" className="h-4 w-4" />
@@ -186,7 +225,7 @@ const CartSheet = () => {
                             type="button"
                             aria-label={`Increase ${line.variant.product.name} quantity`}
                             onClick={() => updateQuantity(line, line.quantity + 1)}
-                            disabled={line.id.startsWith("optimistic:") || line.quantity >= getMaxQuantity(line)}
+                            disabled={isOutOfStock || line.id.startsWith("optimistic:") || line.quantity >= getMaxQuantity(line)}
                             className="flex h-6 w-6 items-center justify-center text-gray-500 hover:text-black disabled:cursor-not-allowed disabled:opacity-30"
                           >
                             <Icon icon="solar:add-circle-linear" className="h-4 w-4" />
@@ -195,7 +234,12 @@ const CartSheet = () => {
                         <div className="flex flex-col items-end">
                           {hasSale ? (
                             <>
-                              <span className="text-sm font-bold text-primary-active">
+                              <span
+                                className={cn(
+                                  "text-sm font-bold",
+                                  isOutOfStock ? "text-gray-400" : "text-primary-active",
+                                )}
+                              >
                                 {formatPrice(effectiveUnitPrice * line.quantity)}
                               </span>
                               <span className="text-xs text-gray-400 line-through">
@@ -203,7 +247,12 @@ const CartSheet = () => {
                               </span>
                             </>
                           ) : (
-                            <p className="text-sm font-bold text-black">
+                            <p
+                              className={cn(
+                                "text-sm font-bold",
+                                isOutOfStock ? "text-gray-400" : "text-black",
+                              )}
+                            >
                               {formatPrice(Number(line.variant.price) * line.quantity)}
                             </p>
                           )}
@@ -224,6 +273,15 @@ const CartSheet = () => {
               <span>{formatPrice(subtotal)}</span>
             </div>
           )}
+          {hasOutOfStockItems ? (
+            <p className="mb-2 text-xs text-center font-medium text-red-600">
+              Some items are out of stock. View cart to remove them.
+            </p>
+          ) : subtotal < 30 && lines.length > 0 ? (
+            <p className="mb-2 text-xs text-center font-medium text-amber-700">
+              Minimum order is $30.00 ({formatPrice(30 - subtotal)} remaining).
+            </p>
+          ) : null}
           <Link
             href="/cart"
             onClick={closeCartSheet}

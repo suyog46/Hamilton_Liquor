@@ -25,12 +25,14 @@ export interface CartProductVariant {
   alcohol_percentage: string;
   available_quantity: number;
   is_active: boolean;
+  is_liquor?: boolean;
   thumbnail: CartVariantMedia;
 }
 
 export interface CartItem {
   id: string;
   quantity: number;
+  is_liquor?: boolean;
   product_variant: CartProductVariant;
   created_at: string;
   updated_at: string;

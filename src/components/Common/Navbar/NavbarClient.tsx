@@ -112,13 +112,13 @@ const NavbarClient = () => {
       } catch (error) {
         const errorData = isFetchBaseQueryError(error)
           ? (error.data as
-              | {
-                  message?: string;
-                  detail?: string | { msg?: string }[];
-                  error?: { message?: string };
-                }
-              | string
-              | undefined)
+            | {
+              message?: string;
+              detail?: string | { msg?: string }[];
+              error?: { message?: string };
+            }
+            | string
+            | undefined)
           : undefined;
         const message =
           typeof errorData === "string"
@@ -189,10 +189,7 @@ const NavbarClient = () => {
           <Icon icon="solar:bag-4-linear" className="w-4 h-4" />
           My Orders
         </DropdownMenuItem>
-        <DropdownMenuItem disabled className="rounded-md">
-          <Icon icon="solar:heart-linear" className="w-4 h-4" />
-          Saved Items
-        </DropdownMenuItem>
+
         <DropdownMenuItem
           variant="destructive"
           disabled={isLoggingOut}
