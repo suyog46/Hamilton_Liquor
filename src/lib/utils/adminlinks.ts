@@ -22,6 +22,11 @@ export const adminNavCatalog: AdminNavItem[] = [
 export const adminNavSales: AdminNavItem[] = [
   { name: "Orders", href: "/admin/orders", icon: "solar:bag-check-linear" },
   {
+    name: "Customers",
+    href: "/admin/customers",
+    icon: "solar:users-group-rounded-linear",
+  },
+  {
     name: "Inventory",
     href: "/admin/inventory",
     icon: "solar:box-minimalistic-linear",

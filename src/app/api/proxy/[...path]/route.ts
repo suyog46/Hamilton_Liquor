@@ -41,6 +41,14 @@ async function handler(
   const contentType = backendRes.headers.get("content-type");
   if (contentType) responseHeaders.set("content-type", contentType);
 
+  const xRequestId =
+    backendRes.headers.get("x-request-id") ||
+    backendRes.headers.get("X-Request-ID");
+  if (xRequestId) {
+    responseHeaders.set("x-request-id", xRequestId);
+    responseHeaders.set("X-Request-ID", xRequestId);
+  }
+
   return new NextResponse(backendRes.body, {
     status: backendRes.status,
     headers: responseHeaders,

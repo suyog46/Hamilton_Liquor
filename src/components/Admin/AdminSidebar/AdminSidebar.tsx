@@ -36,6 +36,7 @@ const enabledAdminLinks = new Set([
   "/admin/brands",
   "/admin/inventory",
   "/admin/orders",
+  "/admin/customers",
   "/admin/sales",
   "/admin/contact-messages",
   "/admin/store-hours",
