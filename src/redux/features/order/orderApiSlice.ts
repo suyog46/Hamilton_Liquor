@@ -466,6 +466,14 @@ export type CheckoutPreviewResponse = ApiResponse<CheckoutPreviewData>;
 export type OrdersResponse = ApiListResponse<Order>;
 export type OrderResponse = ApiResponse<Order>;
 export type GetOrdersParams = Pick<BaseGetListParams, "page" | "limit">;
+
+export interface GetAdminOrdersParams {
+  page?: number;
+  limit?: number;
+  status?: OrderStatus | string | null;
+  customer_id?: string | null;
+}
+
 export type AdminOrdersResponse = ApiListResponse<AdminOrder>;
 export type AdminOrderResponse = ApiResponse<AdminOrder>;
 
@@ -489,7 +497,7 @@ export const orderApiSlice = apiSlice.injectEndpoints({
       query: (orderId) => `orders/${orderId}`,
       providesTags: (_result, _error, orderId) => [{ type: "Order", id: orderId }],
     }),
-    getAdminOrders: builder.query<AdminOrdersResponse, GetOrdersParams | void>({
+    getAdminOrders: builder.query<AdminOrdersResponse, GetAdminOrdersParams | void>({
       query: (params) => ({ url: "admin/orders", params: params ?? undefined }),
       providesTags: (result) => result
         ? [...result.data.items.map(({ id }) => ({ type: "Order" as const, id: `ADMIN-${id}` })), { type: "Order" as const, id: "ADMIN-LIST" }]

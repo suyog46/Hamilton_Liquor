@@ -188,9 +188,9 @@ export default function AdminCustomerDetailPage() {
               </div>
             </div>
 
-            {/* <div className="flex items-center gap-2 self-start sm:self-auto">
+            <div className="flex items-center gap-2 self-start sm:self-auto">
               <Link
-                href={`/admin/orders?search=${encodeURIComponent(customer.email)}`}
+                href={`/admin/orders?customer_id=${encodeURIComponent(customer.id)}`}
                 className={buttonVariants({
                   size: "sm",
                   variant: "default",
@@ -200,7 +200,7 @@ export default function AdminCustomerDetailPage() {
                 <Icon icon="solar:bag-check-linear" className="mr-1.5 size-4" />
                 View Customer Orders
               </Link>
-            </div> */}
+            </div>
           </div>
         </CardContent>
       </Card>
