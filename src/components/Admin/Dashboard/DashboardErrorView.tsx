@@ -118,7 +118,7 @@ export function DashboardErrorView({
         </div>
 
         {error.requestId && (
-          <div className="flex flex-col items-center gap-1.5 rounded-lg border bg-muted/40 p-3 text-xs w-full">
+          <div className="flex flex-col items-center gap-1.5 rounded-lg border bg-gray-100 p-3 text-xs w-full">
             <div className="flex items-center justify-between w-full gap-2">
               <span className="text-[11px] font-medium text-muted-foreground">
                 Request ID:

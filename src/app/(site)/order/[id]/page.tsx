@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   formatOrderDate,
   formatOrderMoney,
+  formatOrderNumber,
   fulfillmentLabel,
   fulfillmentSequence,
   getOrderScheduledEnd,
@@ -188,10 +189,10 @@ export default function OrderDetailPage() {
     <>
       <PageBanner
         eyebrow="Order details"
-        title={`Order #${order.id.slice(-8).toUpperCase()}`}
+        title={`Order ${formatOrderNumber(order)}`}
         breadcrumbs={[
           { name: "My Orders", href: "/order" },
-          { name: `#${order.id.slice(-8).toUpperCase()}` },
+          { name: formatOrderNumber(order) },
         ]}
       />
       <section className="bg-gray-50 py-10 sm:py-14">
@@ -459,6 +460,21 @@ export default function OrderDetailPage() {
                           </p>
                         </div>
                       </div>
+
+                      {refund.customer_message && refund.customer_message.trim() && (
+                        <div className="mt-3.5 rounded-lg border border-amber-200/80 bg-amber-50/70 p-3 text-xs text-amber-950">
+                          <div className="flex items-center gap-1.5 font-semibold text-amber-900 mb-1">
+                            <Icon
+                              icon="solar:chat-round-dots-linear"
+                              className="size-4 shrink-0 text-amber-700"
+                            />
+                            <span>Customer message:</span>
+                          </div>
+                          <p className="whitespace-pre-wrap leading-relaxed text-amber-900/90 pl-5">
+                            {refund.customer_message}
+                          </p>
+                        </div>
+                      )}
 
                       {refund.breakdown && (
                         <div className="mt-4 border-t border-gray-200/80 pt-3">

@@ -112,14 +112,19 @@ export function CustomersTable({ search }: CustomersTableProps) {
           <div className="flex items-center gap-1.5 text-xs">
             <span className="text-[11px] text-muted-foreground hidden sm:inline">Sort by:</span>
             <Select
+              items={SORT_BY_OPTIONS}
               value={sortBy}
               onValueChange={(val) => {
-                setSortBy(val as CustomerSortBy);
-                setPage(1);
+                if (val) {
+                  setSortBy(val as CustomerSortBy);
+                  setPage(1);
+                }
               }}
             >
               <SelectTrigger className="h-8 w-[150px] text-xs">
-                <SelectValue placeholder="Sort by" />
+                <SelectValue placeholder="Sort by">
+                  {(val) => SORT_BY_OPTIONS.find((o) => o.value === val)?.label ?? "Date joined"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {SORT_BY_OPTIONS.map((opt) => (
@@ -133,14 +138,19 @@ export function CustomersTable({ search }: CustomersTableProps) {
 
           {/* Sort Order Direction */}
           <Select
+            items={SORT_ORDER_OPTIONS}
             value={sortOrder}
             onValueChange={(val) => {
-              setSortOrder(val as SortOrder);
-              setPage(1);
+              if (val) {
+                setSortOrder(val as SortOrder);
+                setPage(1);
+              }
             }}
           >
-            <SelectTrigger className="h-8 w-[160px] text-xs">
-              <SelectValue placeholder="Order" />
+            <SelectTrigger className="h-8 w-[170px] text-xs">
+              <SelectValue placeholder="Order">
+                {(val) => SORT_ORDER_OPTIONS.find((o) => o.value === val)?.label ?? "Newest / Highest first"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {SORT_ORDER_OPTIONS.map((opt) => (

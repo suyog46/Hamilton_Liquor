@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { formatOrderMoney } from "@/components/Order/orderDisplay";
+import { formatOrderMoney, formatOrderNumber } from "@/components/Order/orderDisplay";
 import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
 import {
   type AdminOrder,
@@ -373,7 +373,7 @@ export function CreateRefundDialog({ order, open, onOpenChange }: CreateRefundDi
         <DialogHeader>
           <DialogTitle>Create Refund Case</DialogTitle>
           <DialogDescription>
-            Order #{order.id.slice(-8).toUpperCase()} —{" "}
+            Order {formatOrderNumber(order)} —{" "}
             {isFirstStepCompleted
               ? "Step 2: Preview Summary & Confirmation"
               : "Step 1: Reason, Notes & Items Inspection"}
@@ -520,7 +520,7 @@ export function CreateRefundDialog({ order, open, onOpenChange }: CreateRefundDi
                         className={`rounded-lg border p-3.5 shadow-xs transition-all space-y-3 ${
                           isChecked
                             ? "bg-card/60 border-border"
-                            : "bg-muted/10 border-dashed border-border/50 opacity-60 text-muted-foreground"
+                            : "bg-gray-100/60 border-dashed border-border/50 opacity-60 text-muted-foreground"
                         }`}
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2.5">
@@ -559,7 +559,7 @@ export function CreateRefundDialog({ order, open, onOpenChange }: CreateRefundDi
                               className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${
                                 isChecked
                                   ? "bg-gray-100 text-muted-foreground"
-                                  : "bg-muted/30 text-muted-foreground/60"
+                                  : "bg-gray-100 text-muted-foreground/60"
                               }`}
                             >
                               Remaining: {item.remaining_refundable_quantity}

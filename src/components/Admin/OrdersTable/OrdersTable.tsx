@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
 import {
+  type FulfillmentStatus,
   type OrderStatus,
   useGetAdminOrdersQuery,
 } from "@/redux/features/order/orderApiSlice";
@@ -16,22 +17,34 @@ const DEFAULT_LIMIT = 10;
 
 interface OrdersTableProps {
   status?: "ALL" | OrderStatus;
+  fulfillmentStatus?: "ALL" | FulfillmentStatus;
   customerId?: string;
+  search?: string;
+  sortBy?: "created_at" | "total" | string;
+  sortOrder?: "asc" | "desc";
+  createdFrom?: string;
+  createdTo?: string;
   onResetFilters?: () => void;
 }
 
 export function OrdersTable({
   status = "ALL",
+  fulfillmentStatus = "ALL",
   customerId = "",
+  search = "",
+  sortBy = "created_at",
+  sortOrder = "desc",
+  createdFrom = "",
+  createdTo = "",
   onResetFilters,
 }: OrdersTableProps) {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(DEFAULT_LIMIT);
 
-  // Reset to first page whenever status or customerId changes
+  // Reset to first page whenever any filter changes
   useEffect(() => {
     setPage(1);
-  }, [status, customerId]);
+  }, [status, fulfillmentStatus, customerId, search, sortBy, sortOrder, createdFrom, createdTo]);
 
   const handleLimitChange = (nextLimit: number) => {
     setLimit(nextLimit);
@@ -39,14 +52,34 @@ export function OrdersTable({
   };
 
   const cleanCustomerId = customerId.trim();
+  const cleanSearch = search.trim();
+  const cleanCreatedFrom = createdFrom.trim();
+  const cleanCreatedTo = createdTo.trim();
+
   const queryStatus = status === "ALL" ? undefined : status;
-  const hasActiveFilters = status !== "ALL" || Boolean(cleanCustomerId);
+  const queryFulfillmentStatus = fulfillmentStatus === "ALL" ? undefined : fulfillmentStatus;
+
+  const hasActiveFilters =
+    status !== "ALL" ||
+    fulfillmentStatus !== "ALL" ||
+    Boolean(cleanCustomerId) ||
+    Boolean(cleanSearch) ||
+    Boolean(cleanCreatedFrom) ||
+    Boolean(cleanCreatedTo) ||
+    sortBy !== "created_at" ||
+    sortOrder !== "desc";
 
   const { data, isLoading, isFetching, isError, refetch } = useGetAdminOrdersQuery({
     page,
     limit,
     status: queryStatus,
+    fulfillment_status: queryFulfillmentStatus,
     customer_id: cleanCustomerId || undefined,
+    search: cleanSearch || undefined,
+    sort_by: sortBy || undefined,
+    sort_order: sortOrder || undefined,
+    created_from: cleanCreatedFrom || undefined,
+    created_to: cleanCreatedTo || undefined,
   });
 
   const orders = data?.data.items ?? [];
@@ -97,7 +130,9 @@ export function OrdersTable({
                 <p className="text-xs text-muted-foreground max-w-sm">
                   {cleanCustomerId
                     ? `No orders found for customer ID: ${cleanCustomerId}`
-                    : "No orders match the selected status filter."}
+                    : cleanSearch
+                      ? `No orders found matching "${cleanSearch}".`
+                      : "No orders match the current filter criteria."}
                 </p>
                 {onResetFilters && (
                   <Button

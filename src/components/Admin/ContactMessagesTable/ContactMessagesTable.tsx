@@ -125,7 +125,9 @@ export function ContactMessagesTable({ search }: ContactMessagesTableProps) {
             onValueChange={(value) => value && setReadFilter(value)}
           >
             <SelectTrigger size="sm" className="w-36">
-              <SelectValue />
+              <SelectValue>
+                {(val) => READ_FILTER_OPTIONS.find((o) => o.value === val)?.label ?? "All messages"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {READ_FILTER_OPTIONS.map((opt) => (
@@ -142,7 +144,9 @@ export function ContactMessagesTable({ search }: ContactMessagesTableProps) {
             onValueChange={(value) => value && setSortBy(value)}
           >
             <SelectTrigger size="sm" className="w-40">
-              <SelectValue />
+              <SelectValue>
+                {(val) => SORT_BY_OPTIONS.find((o) => o.value === val)?.label ?? "Sort by"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {SORT_BY_OPTIONS.map((opt) => (
@@ -158,8 +162,10 @@ export function ContactMessagesTable({ search }: ContactMessagesTableProps) {
             value={sortOrder}
             onValueChange={(value) => value && setSortOrder(value)}
           >
-            <SelectTrigger size="sm" className="w-36">
-              <SelectValue />
+            <SelectTrigger size="sm" className="w-44">
+              <SelectValue>
+                {(val) => SORT_ORDER_OPTIONS.find((o) => o.value === val)?.label ?? "Sort order"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {SORT_ORDER_OPTIONS.map((opt) => (

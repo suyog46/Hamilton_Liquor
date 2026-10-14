@@ -195,6 +195,7 @@ export interface RefundHistoryItem {
   id?: string;
   status: string;
   status_label?: string;
+  customer_message?: string | null;
   amount: string;
   currency: string;
   requested_at: string;
@@ -204,6 +205,7 @@ export interface RefundHistoryItem {
 
 export interface Order {
   id: string;
+  order_number?: string;
   status: OrderStatus;
   fulfillment_method: FulfillmentMethod;
   fulfillment_status: FulfillmentStatus;
@@ -324,13 +326,7 @@ export type DeliveryRefusalReason = "ID_INVALID" | "CUSTOMER_INTOXICATED" | "CUS
 export type CancelOrderReason =
   | "CUSTOMER_CANCELLED"
   | "STORE_CANCELLED"
-  | "ITEM_UNAVAILABLE"
-  | "CUSTOMER_RETURN"
-  | "DAMAGED_ITEM"
-  | "INCORRECT_ITEM"
-  | "MISSING_ITEM"
-  | "REFUSED_DELIVERY"
-  | "OTHER";
+
 
 export type RefundReason = CancelOrderReason;
 
@@ -471,7 +467,13 @@ export interface GetAdminOrdersParams {
   page?: number;
   limit?: number;
   status?: OrderStatus | string | null;
+  fulfillment_status?: FulfillmentStatus | string | null;
   customer_id?: string | null;
+  search?: string | null;
+  sort_by?: "created_at" | "total" | string | null;
+  sort_order?: "asc" | "desc" | string | null;
+  created_from?: string | null;
+  created_to?: string | null;
 }
 
 export type AdminOrdersResponse = ApiListResponse<AdminOrder>;
@@ -488,9 +490,9 @@ export const orderApiSlice = apiSlice.injectEndpoints({
       query: (params) => ({ url: "orders", params: params ?? undefined }),
       providesTags: (result) => result
         ? [
-            ...result.data.items.map(({ id }) => ({ type: "Order" as const, id })),
-            { type: "Order" as const, id: "LIST" },
-          ]
+          ...result.data.items.map(({ id }) => ({ type: "Order" as const, id })),
+          { type: "Order" as const, id: "LIST" },
+        ]
         : [{ type: "Order" as const, id: "LIST" }],
     }),
     getOrder: builder.query<OrderResponse, string>({
@@ -498,7 +500,31 @@ export const orderApiSlice = apiSlice.injectEndpoints({
       providesTags: (_result, _error, orderId) => [{ type: "Order", id: orderId }],
     }),
     getAdminOrders: builder.query<AdminOrdersResponse, GetAdminOrdersParams | void>({
-      query: (params) => ({ url: "admin/orders", params: params ?? undefined }),
+      query: (params) => {
+        if (!params) return { url: "admin/orders" };
+        const cleanParams: Record<string, string | number> = {};
+        if (params.page !== undefined && params.page !== null) cleanParams.page = params.page;
+        if (params.limit !== undefined && params.limit !== null) cleanParams.limit = params.limit;
+        if (params.status && params.status !== "ALL") cleanParams.status = params.status;
+        if (params.fulfillment_status && params.fulfillment_status !== "ALL") {
+          cleanParams.fulfillment_status = params.fulfillment_status;
+        }
+        if (params.customer_id && params.customer_id.trim()) {
+          cleanParams.customer_id = params.customer_id.trim();
+        }
+        if (params.search && params.search.trim()) {
+          cleanParams.search = params.search.trim();
+        }
+        if (params.sort_by) cleanParams.sort_by = params.sort_by;
+        if (params.sort_order) cleanParams.sort_order = params.sort_order;
+        if (params.created_from && params.created_from.trim()) {
+          cleanParams.created_from = params.created_from.trim();
+        }
+        if (params.created_to && params.created_to.trim()) {
+          cleanParams.created_to = params.created_to.trim();
+        }
+        return { url: "admin/orders", params: cleanParams };
+      },
       providesTags: (result) => result
         ? [...result.data.items.map(({ id }) => ({ type: "Order" as const, id: `ADMIN-${id}` })), { type: "Order" as const, id: "ADMIN-LIST" }]
         : [{ type: "Order" as const, id: "ADMIN-LIST" }],
@@ -528,8 +554,8 @@ export const orderApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         headers: idempotencyKey
           ? {
-              "Idempotency-Key": idempotencyKey,
-            }
+            "Idempotency-Key": idempotencyKey,
+          }
           : undefined,
         body,
       }),
@@ -552,8 +578,8 @@ export const orderApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         headers: idempotencyKey
           ? {
-              "Idempotency-Key": idempotencyKey,
-            }
+            "Idempotency-Key": idempotencyKey,
+          }
           : undefined,
         body,
       }),

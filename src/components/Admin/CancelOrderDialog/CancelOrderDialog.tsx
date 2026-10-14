@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { formatOrderMoney } from "@/components/Order/orderDisplay";
+import { formatOrderMoney, formatOrderNumber } from "@/components/Order/orderDisplay";
 import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
 import {
   type AdminOrder,
@@ -42,22 +42,22 @@ export const CANCELLATION_RULES: CancellationRule[] = [
   {
     status: "CONFIRMED",
     fulfillment_status: "PENDING",
-    reasons: ["CUSTOMER_CANCELLED", "STORE_CANCELLED", "ITEM_UNAVAILABLE", "OTHER"],
+    reasons: ["CUSTOMER_CANCELLED", "STORE_CANCELLED"],
   },
   {
     status: "CONFIRMED",
     fulfillment_status: "PREPARING",
-    reasons: ["CUSTOMER_CANCELLED", "STORE_CANCELLED", "ITEM_UNAVAILABLE", "OTHER"],
+    reasons: ["CUSTOMER_CANCELLED", "STORE_CANCELLED"],
   },
   {
     status: "CONFIRMED",
     fulfillment_status: "READY_FOR_DELIVERY",
-    reasons: ["CUSTOMER_CANCELLED", "STORE_CANCELLED", "ITEM_UNAVAILABLE", "OTHER"],
+    reasons: ["CUSTOMER_CANCELLED", "STORE_CANCELLED"],
   },
   {
     status: "CONFIRMED",
     fulfillment_status: "OUT_FOR_DELIVERY",
-    reasons: ["CUSTOMER_CANCELLED", "STORE_CANCELLED", "OTHER"],
+    reasons: ["CUSTOMER_CANCELLED", "STORE_CANCELLED"],
   },
 ];
 
@@ -78,13 +78,7 @@ export function isOrderCancellable(status?: string, fulfillmentStatus?: string):
 const REASON_LABELS: Record<CancelOrderReason, string> = {
   CUSTOMER_CANCELLED: "Customer Cancelled",
   STORE_CANCELLED: "Store Cancelled",
-  ITEM_UNAVAILABLE: "Item Unavailable",
-  CUSTOMER_RETURN: "Customer Return",
-  DAMAGED_ITEM: "Damaged Item",
-  INCORRECT_ITEM: "Incorrect Item",
-  MISSING_ITEM: "Missing Item",
-  REFUSED_DELIVERY: "Refused Delivery",
-  OTHER: "Other",
+
 };
 
 const getErrorMessage = (error: unknown, fallback: string) => {
@@ -179,7 +173,7 @@ export function CancelOrderDialog({ order, open, onOpenChange }: CancelOrderDial
         <DialogHeader>
           <DialogTitle>Are you sure you want to cancel the order?</DialogTitle>
           <DialogDescription>
-            Order #{order.id.slice(-8).toUpperCase()} — {isFirstStepCompleted ? "Step 2: Preview Summary & Confirmation" : "Step 1: Reason & Notes"}
+            Order {formatOrderNumber(order)} — {isFirstStepCompleted ? "Step 2: Preview Summary & Confirmation" : "Step 1: Reason & Notes"}
           </DialogDescription>
         </DialogHeader>
 
@@ -193,7 +187,7 @@ export function CancelOrderDialog({ order, open, onOpenChange }: CancelOrderDial
           </div>
           <Icon icon="solar:alt-arrow-right-linear" className="size-4 text-muted-foreground/60" />
           <div className={`flex items-center gap-2 font-medium ${isFirstStepCompleted ? "text-primary-active font-semibold" : "text-muted-foreground"}`}>
-            <span className={`flex size-5 items-center justify-center rounded-full text-[10px] ${isFirstStepCompleted ? "bg-primary-normal text-black font-bold" : "bg-muted text-gray-100"}`}>
+            <span className={`flex size-5 items-center justify-center rounded-full text-[10px] ${isFirstStepCompleted ? "bg-primary-normal text-black font-bold" : "bg-gray-200 text-gray-700"}`}>
               2
             </span>
             Step 2: Preview & Confirm

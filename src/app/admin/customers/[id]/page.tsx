@@ -173,17 +173,7 @@ export default function AdminCustomerDetailPage() {
                     <Icon icon="solar:calendar-linear" className="size-3.5" />
                     Joined {formatCustomerDate(customer.created_at)}
                   </span>
-                  <span className="text-muted-foreground/40">•</span>
-                  <button
-                    type="button"
-                    onClick={handleCopyId}
-                    className="inline-flex items-center gap-1 font-mono text-[11px] text-muted-foreground hover:text-primary-active"
-                    title="Click to copy Customer ID"
-                  >
-                    <Icon icon={copiedId ? "solar:check-read-linear" : "solar:copy-linear"} className="size-3.5" />
-                    ID: {customer.id.slice(0, 8)}...
-                    {copiedId && <span className="text-emerald-600 font-sans text-[10px]">Copied</span>}
-                  </button>
+
                 </div>
               </div>
             </div>
@@ -191,11 +181,7 @@ export default function AdminCustomerDetailPage() {
             <div className="flex items-center gap-2 self-start sm:self-auto">
               <Link
                 href={`/admin/orders?customer_id=${encodeURIComponent(customer.id)}`}
-                className={buttonVariants({
-                  size: "sm",
-                  variant: "default",
-                  className: "bg-primary-normal hover:bg-primary-hover text-black shadow-xs",
-                })}
+                className="text-sm font-medium text-white p-3 rounded-lg flex items-center gap-1 bg-primary-normal hover:bg-primary-hover"
               >
                 <Icon icon="solar:bag-check-linear" className="mr-1.5 size-4" />
                 View Customer Orders
@@ -208,7 +194,7 @@ export default function AdminCustomerDetailPage() {
       {/* Financial Metrics Cards */}
       <section className="space-y-2">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Financial Summary
+          Financial Summarys
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* Net Spent */}
@@ -304,17 +290,23 @@ export default function AdminCustomerDetailPage() {
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-lg border bg-muted/20 p-4 flex items-center justify-between">
+            <Link
+              href={`/admin/orders?customer_id=${encodeURIComponent(customer.id)}`}
+              className="rounded-lg border bg-gray-100 p-4 flex items-center justify-between transition-colors hover:bg-gray-200/70 group cursor-pointer"
+              title={`View all orders for ${customer.name}`}
+            >
               <div>
-                <p className="text-xs text-muted-foreground font-medium">Total Orders Placed</p>
-                <p className="text-3xl font-bold tracking-tight text-foreground mt-0.5">
+                <p className="text-xs text-muted-foreground font-medium group-hover:text-foreground transition-colors">
+                  Total Orders Placed
+                </p>
+                <p className="text-3xl font-bold tracking-tight text-foreground mt-0.5 group-hover:text-primary-active transition-colors">
                   {summary.order_count.toLocaleString()}
                 </p>
               </div>
-              <div className="flex size-11 items-center justify-center rounded-lg bg-primary-normal/15 text-primary-active">
+              <div className="flex size-11 items-center justify-center rounded-lg bg-primary-normal/15 text-primary-active group-hover:bg-primary-normal/25 transition-colors">
                 <Icon icon="solar:bag-3-linear" className="size-5" />
               </div>
-            </div>
+            </Link>
 
             <div className="divide-y rounded-lg border text-xs">
               <div className="flex items-center justify-between p-3">
@@ -345,11 +337,19 @@ export default function AdminCustomerDetailPage() {
 
         {/* Order Counts By Status */}
         <Card className="shadow-xs">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold">Orders by Status</CardTitle>
-            <p className="text-[11px] text-muted-foreground">
-              Distribution of orders across processing stages
-            </p>
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <div>
+              <CardTitle className="text-sm font-semibold">Orders by Status</CardTitle>
+              <p className="text-[11px] text-muted-foreground">
+                Distribution of orders across processing stages
+              </p>
+            </div>
+            <Link
+              href={`/admin/orders?customer_id=${encodeURIComponent(customer.id)}`}
+              className="text-xs font-medium text-primary-active hover:underline"
+            >
+              View all &rarr;
+            </Link>
           </CardHeader>
           <CardContent>
             {statusEntries.length === 0 ? (
@@ -365,16 +365,18 @@ export default function AdminCustomerDetailPage() {
                     statusKey.replace(/_/g, " ");
                   const toneClass =
                     statusTone[statusKey as keyof typeof statusTone] ||
-                    "border-muted bg-muted/40 text-foreground";
+                    "border-gray-200 bg-gray-100 text-foreground";
                   const percentage =
                     summary.order_count > 0
                       ? Math.round((Number(count) / summary.order_count) * 100)
                       : 0;
 
                   return (
-                    <div
+                    <Link
                       key={statusKey}
-                      className="flex items-center justify-between rounded-lg border p-2.5 transition-colors hover:bg-muted/30"
+                      href={`/admin/orders?customer_id=${encodeURIComponent(customer.id)}&status=${encodeURIComponent(statusKey)}`}
+                      className="flex items-center justify-between rounded-lg border p-2.5 transition-colors hover:bg-gray-50 group cursor-pointer"
+                      title={`View ${label} orders for ${customer.name}`}
                     >
                       <div className="flex items-center gap-2">
                         <span
@@ -386,10 +388,16 @@ export default function AdminCustomerDetailPage() {
                           ({percentage}%)
                         </span>
                       </div>
-                      <span className="font-bold text-xs text-foreground">
-                        {Number(count).toLocaleString()}
-                      </span>
-                    </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-xs text-foreground group-hover:text-primary-active transition-colors">
+                          {Number(count).toLocaleString()}
+                        </span>
+                        <Icon
+                          icon="solar:alt-arrow-right-linear"
+                          className="size-3.5 text-muted-foreground group-hover:text-primary-active group-hover:translate-x-0.5 transition-all"
+                        />
+                      </div>
+                    </Link>
                   );
                 })}
               </div>

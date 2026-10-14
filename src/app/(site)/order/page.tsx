@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   formatOrderDate,
   formatOrderMoney,
+  formatOrderNumber,
   fulfillmentLabel,
   getOrderScheduledStart,
   orderStatusLabel,
@@ -126,7 +127,7 @@ export default function OrdersPage() {
                           </span>
                         </div>
                         <p className="mt-4 text-sm font-semibold">
-                          Order #{order.id.slice(-8).toUpperCase()}
+                          Order {formatOrderNumber(order)}
                         </p>
                         <p className="mt-1 text-xs text-gray-500">
                           Placed {formatOrderDate(order.created_at)}

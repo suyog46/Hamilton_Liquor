@@ -140,9 +140,11 @@ export function DashboardOrdersSection({ orders }: DashboardOrdersSectionProps) 
                 const count = orders.fulfillment_backlog[stage.key] ?? 0;
 
                 return (
-                  <div
+                  <Link
                     key={stage.key}
-                    className="flex items-center justify-between rounded-lg border bg-card p-2.5 transition-colors hover:bg-gray-50"
+                    href={`/admin/orders?fulfillment_status=${stage.key}`}
+                    className="flex items-center justify-between rounded-lg border bg-card p-2.5 transition-colors hover:bg-gray-50 group cursor-pointer"
+                    title={`View ${stage.label} orders`}
                   >
                     <div className="flex items-center gap-2.5">
                       <div
@@ -151,7 +153,7 @@ export function DashboardOrdersSection({ orders }: DashboardOrdersSectionProps) 
                         <Icon icon={stage.icon} className="size-4" />
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-foreground">
+                        <p className="text-xs font-medium text-foreground group-hover:text-primary-active transition-colors">
                           {stage.label}
                         </p>
                         <p className="text-[10px] text-muted-foreground">
@@ -167,13 +169,19 @@ export function DashboardOrdersSection({ orders }: DashboardOrdersSectionProps) 
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <span className="text-sm font-bold text-foreground">
-                        {count.toLocaleString()}
-                      </span>
-                      <p className="text-[10px] text-muted-foreground">in queue</p>
+                    <div className="flex items-center gap-2">
+                      <div className="text-right">
+                        <span className="text-sm font-bold text-foreground group-hover:text-primary-active transition-colors">
+                          {count.toLocaleString()}
+                        </span>
+                        <p className="text-[10px] text-muted-foreground">in queue</p>
+                      </div>
+                      <Icon
+                        icon="solar:alt-arrow-right-linear"
+                        className="size-4 text-muted-foreground group-hover:text-primary-active group-hover:translate-x-0.5 transition-all"
+                      />
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>

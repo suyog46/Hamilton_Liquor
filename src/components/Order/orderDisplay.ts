@@ -175,3 +175,17 @@ export const getOrderScheduledEnd = (order: {
   }
   return order.delivery.scheduled_end_at || order.delivery.scheduled_end_time || null;
 };
+
+export const formatOrderNumber = (
+  order?: { order_number?: string | null; id?: string } | null,
+): string => {
+  if (!order) return "";
+  if (order.order_number && order.order_number.trim()) {
+    const trimmed = order.order_number.trim();
+    return trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
+  }
+  if (order.id) {
+    return `#${order.id.slice(-8).toUpperCase()}`;
+  }
+  return "";
+};

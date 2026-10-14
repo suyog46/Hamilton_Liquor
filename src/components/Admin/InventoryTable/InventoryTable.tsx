@@ -94,7 +94,9 @@ export function InventoryTable({ search }: InventoryTableProps) {
             onValueChange={(value) => value && setSortBy(value)}
           >
             <SelectTrigger size="sm" className="w-40">
-              <SelectValue />
+              <SelectValue>
+                {(val) => SORT_BY_OPTIONS.find((o) => o.value === val)?.label ?? "Sort by"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {SORT_BY_OPTIONS.map((opt) => (
@@ -110,8 +112,10 @@ export function InventoryTable({ search }: InventoryTableProps) {
             value={sortOrder}
             onValueChange={(value) => value && setSortOrder(value)}
           >
-            <SelectTrigger size="sm" className="w-36">
-              <SelectValue />
+            <SelectTrigger size="sm" className="w-44">
+              <SelectValue>
+                {(val) => SORT_ORDER_OPTIONS.find((o) => o.value === val)?.label ?? "Sort order"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {SORT_ORDER_OPTIONS.map((opt) => (

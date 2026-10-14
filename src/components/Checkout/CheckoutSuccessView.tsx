@@ -6,7 +6,7 @@ import { Icon } from "@iconify/react";
 import { toast } from "sonner";
 import PageBanner from "@/components/Common/PageBanner/PageBanner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatOrderDate, formatOrderMoney, fulfillmentLabel, getOrderScheduledEnd, getOrderScheduledStart } from "@/components/Order/orderDisplay";
+import { formatOrderDate, formatOrderMoney, formatOrderNumber, fulfillmentLabel, getOrderScheduledEnd, getOrderScheduledStart } from "@/components/Order/orderDisplay";
 import { apiSlice } from "@/redux/apiSlice";
 import { useClearCartMutation } from "@/redux/features/cart/cartApiSlice";
 import { useGetOrderQuery } from "@/redux/features/order/orderApiSlice";
@@ -124,7 +124,7 @@ export default function CheckoutSuccessView({ orderId }: CheckoutSuccessViewProp
                 ? "Your order has been placed and payment is currently being processed. This page will update automatically."
                 : "Your order has been placed and a confirmation is being prepared."}
             </p>
-            <p className="mt-4 text-sm font-semibold">Order #{order.id.slice(-8).toUpperCase()}</p>
+            <p className="mt-4 text-sm font-semibold">Order {formatOrderNumber(order)}</p>
           </div>
 
           <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">

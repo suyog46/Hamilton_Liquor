@@ -20,6 +20,7 @@ import {
 import {
   formatOrderDate,
   formatOrderMoney,
+  formatOrderNumber,
   fulfillmentLabel,
   fulfillmentSequence,
   getOrderScheduledEnd,
@@ -337,8 +338,15 @@ export default function AdminOrderDetailPage() {
   return (
     <div className="flex flex-col gap-4">
       <AdminPageHeader
-        title={`Order #${order.id.slice(-8).toUpperCase()}`}
-        description={`Placed ${formatOrderDate(order.created_at)} by ${order.customer.name}`}
+        title={`Order ${formatOrderNumber(order)}`}
+        description={
+          <span>
+            Placed {formatOrderDate(order.created_at)} by {order.customer.name}
+            <span className="ml-2 font-mono text-[11px] text-muted-foreground">
+              (ID: {order.id})
+            </span>
+          </span>
+        }
         action={
           <div className="flex items-center gap-3">
             <Link

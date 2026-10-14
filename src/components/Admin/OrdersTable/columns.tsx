@@ -6,6 +6,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import {
   formatOrderDate,
   formatOrderMoney,
+  formatOrderNumber,
   fulfillmentLabel,
   orderStatusLabel,
   statusTone,
@@ -14,7 +15,7 @@ import type { AdminOrder } from "@/redux/features/order/orderApiSlice";
 
 export const orderColumns: ColumnDef<AdminOrder>[] = [
   {
-    accessorKey: "id",
+    accessorKey: "order_number",
     header: "Order",
     cell: ({ row }) => {
       const order = row.original;
@@ -24,7 +25,7 @@ export const orderColumns: ColumnDef<AdminOrder>[] = [
             href={`/admin/orders/${order.id}`}
             className="font-mono text-xs font-semibold text-foreground hover:text-primary-active transition-colors"
           >
-            #{order.id.slice(-8).toUpperCase()}
+            {formatOrderNumber(order)}
           </Link>
           <span
             className={`w-fit rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusTone[order.status]}`}
@@ -133,7 +134,7 @@ export const orderColumns: ColumnDef<AdminOrder>[] = [
         <div className="flex items-center justify-end pr-2">
           <Link
             href={`/admin/orders/${order.id}`}
-            aria-label={`View order ${order.id}`}
+            aria-label={`View order ${formatOrderNumber(order)}`}
             className="inline-flex size-8 items-center justify-center rounded hover:bg-gray-50 text-muted-foreground hover:text-primary-active transition-colors"
             title="View order details"
           >

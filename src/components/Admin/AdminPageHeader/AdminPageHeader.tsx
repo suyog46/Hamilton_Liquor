@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 interface AdminPageHeaderProps {
   title: string;
-  description?: string;
+  description?: ReactNode;
   action?: ReactNode;
 }
 

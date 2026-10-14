@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import {
   formatOrderMoney,
+  formatOrderNumber,
   fulfillmentLabel,
   orderStatusLabel,
   statusTone,
@@ -314,7 +315,7 @@ const AdminDashboardPage = () => {
                         href={`/admin/orders/${order.id}`}
                         className="hover:text-primary-active font-mono text-xs"
                       >
-                        #{order.id.slice(-8).toUpperCase()}
+                        {formatOrderNumber(order)}
                       </Link>
                     </TableCell>
                     <TableCell>
