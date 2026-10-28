@@ -15,6 +15,9 @@ import {
   useGetPublicOperatingHoursQuery,
   useGetPublicStoreInformationQuery,
   useGetPublicStoreLocationQuery,
+  type OperatingHour,
+  type StoreInformation,
+  type StoreLocation,
 } from "@/redux/features/store/storeApiSlice";
 import { useLogoutMutation } from "@/redux/features/auth/authApiSlice";
 import { useCartStore, type CartStore } from "@/lib/stores/cartStore";
@@ -34,7 +37,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const NavbarClient = () => {
+interface NavbarClientProps {
+  initialInformation?: StoreInformation | null;
+  initialLocation?: StoreLocation | null;
+  initialHours?: OperatingHour[];
+}
+
+const NavbarClient = ({
+  initialInformation,
+  initialLocation,
+  initialHours,
+}: NavbarClientProps) => {
   const router = useRouter();
   const pathname = usePathname();
   const dispatch = useAppDispatch();
@@ -53,17 +66,28 @@ const NavbarClient = () => {
   const isSolid = isScrolled || isOpen;
 
   const { data: meData, isLoading: isLoadingMe } = useGetMeQuery();
-  const { data: informationData } = useGetPublicStoreInformationQuery();
-  const { data: locationData } = useGetPublicStoreLocationQuery();
-  const { data: hoursData } = useGetPublicOperatingHoursQuery();
-  const phone = informationData?.data.primary_phone || siteConfig.phone;
-  const address = locationData?.data
-    ? `${locationData.data.address}, ${locationData.data.city}, ${locationData.data.state} ${locationData.data.zip_code}`
+  const { data: informationData } = useGetPublicStoreInformationQuery(
+    undefined,
+    { skip: Boolean(initialInformation) },
+  );
+  const { data: locationData } = useGetPublicStoreLocationQuery(undefined, {
+    skip: Boolean(initialLocation),
+  });
+  const { data: hoursData } = useGetPublicOperatingHoursQuery(undefined, {
+    skip: Boolean(initialHours && initialHours.length > 0),
+  });
+  const information = initialInformation ?? informationData?.data;
+  const location = initialLocation ?? locationData?.data;
+  const hours = initialHours ?? hoursData?.data.hours;
+
+  const phone = information?.primary_phone || siteConfig.phone;
+  const address = location
+    ? `${location.address}, ${location.city}, ${location.state} ${location.zip_code}`
     : siteConfig.address.full;
   const mapsUrl =
-    locationData?.data?.google_maps_url || siteConfig.mapsDirectionsUrl;
-  const hoursSummary = hoursData?.data.hours
-    ? formatOperatingHours(hoursData.data.hours)
+    location?.google_maps_url || siteConfig.mapsDirectionsUrl;
+  const hoursSummary = hours?.length
+    ? formatOperatingHours(hours)
     : "Mon–Thu 9am–10pm · Fri–Sat 9am–11pm · Sun Closed";
   const user = meData?.data;
   const isLoggedIn = !!user;

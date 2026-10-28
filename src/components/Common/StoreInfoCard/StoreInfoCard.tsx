@@ -8,22 +8,44 @@ import {
   useGetPublicStoreLocationQuery,
 } from "@/redux/features/store/storeApiSlice";
 
+import type {
+  OperatingHour,
+  StoreInformation,
+  StoreLocation,
+} from "@/redux/features/store/storeApiSlice";
+
 interface StoreInfoCardProps {
   className?: string;
   note?: string;
+  initialInformation?: StoreInformation | null;
+  initialLocation?: StoreLocation | null;
+  initialHours?: OperatingHour[];
 }
 
 // Shared "visit us" details card — same store info (address, hours, phone,
 // email, directions) rendered on the homepage (GoogleMapSection) and the
 // /contact page, both backed by the live store API instead of duplicated,
 // hardcoded copies.
-const StoreInfoCard = ({ className, note }: StoreInfoCardProps) => {
-  const { data: informationData } = useGetPublicStoreInformationQuery();
-  const { data: locationData } = useGetPublicStoreLocationQuery();
-  const { data: hoursData } = useGetPublicOperatingHoursQuery();
+const StoreInfoCard = ({
+  className,
+  note,
+  initialInformation,
+  initialLocation,
+  initialHours,
+}: StoreInfoCardProps) => {
+  const { data: informationData } = useGetPublicStoreInformationQuery(
+    undefined,
+    { skip: Boolean(initialInformation) },
+  );
+  const { data: locationData } = useGetPublicStoreLocationQuery(undefined, {
+    skip: Boolean(initialLocation),
+  });
+  const { data: hoursData } = useGetPublicOperatingHoursQuery(undefined, {
+    skip: Boolean(initialHours && initialHours.length > 0),
+  });
 
-  const information = informationData?.data;
-  const location = locationData?.data;
+  const information = initialInformation ?? informationData?.data;
+  const location = initialLocation ?? locationData?.data;
   const address = location
     ? `${location.address}, ${location.city}, ${location.state} ${location.zip_code}`
     : siteConfig.address.full;
@@ -31,8 +53,9 @@ const StoreInfoCard = ({ className, note }: StoreInfoCardProps) => {
   const phoneHref = phone.replace(/[^\d+]/g, "") || siteConfig.phoneHref;
   const email = information?.email || siteConfig.email;
   const mapsUrl = location?.google_maps_url || siteConfig.mapsDirectionsUrl;
-  const hours = hoursData?.data.hours?.length
-    ? formatFullOperatingHours(hoursData.data.hours)
+  const hoursList = initialHours ?? hoursData?.data.hours;
+  const hours = hoursList?.length
+    ? formatFullOperatingHours(hoursList)
     : siteConfig.hours.map((entry) => ({
         day: entry.day.slice(0, 3),
         time: entry.time,

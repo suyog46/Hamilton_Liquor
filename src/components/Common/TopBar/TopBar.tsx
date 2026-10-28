@@ -1,25 +1,25 @@
-"use client";
-
 import { Icon } from "@iconify/react";
 import { formatOperatingHours, siteConfig } from "@/lib/utils";
-import {
-  useGetPublicOperatingHoursQuery,
-  useGetPublicStoreInformationQuery,
-  useGetPublicStoreLocationQuery,
+import type {
+  OperatingHour,
+  StoreInformation,
+  StoreLocation,
 } from "@/redux/features/store/storeApiSlice";
 
-const TopBar = () => {
-  const { data: informationData } = useGetPublicStoreInformationQuery();
-  const { data: locationData } = useGetPublicStoreLocationQuery();
-  const { data: hoursData } = useGetPublicOperatingHoursQuery();
-  const phone = informationData?.data.primary_phone || siteConfig.phone;
-  const address = locationData?.data
-    ? `${locationData.data.address}, ${locationData.data.city}, ${locationData.data.state} ${locationData.data.zip_code}`
+export interface TopBarProps {
+  information?: StoreInformation | null;
+  location?: StoreLocation | null;
+  hours?: OperatingHour[];
+}
+
+const TopBar = ({ information, location, hours }: TopBarProps) => {
+  const phone = information?.primary_phone || siteConfig.phone;
+  const address = location
+    ? `${location.address}, ${location.city}, ${location.state} ${location.zip_code}`
     : siteConfig.address.full;
-  const mapsUrl =
-    locationData?.data?.google_maps_url || siteConfig.mapsDirectionsUrl;
-  const hoursSummary = hoursData?.data.hours?.length
-    ? formatOperatingHours(hoursData.data.hours)
+  const mapsUrl = location?.google_maps_url || siteConfig.mapsDirectionsUrl;
+  const hoursSummary = hours?.length
+    ? formatOperatingHours(hours)
     : "Mon–Thu: 9am–10pm · Fri–Sat: 9am–11pm · Sun: Closed";
 
   return (

@@ -1,7 +1,22 @@
 import { siteConfig } from "@/lib/utils";
 import StoreInfoCard from "@/components/Common/StoreInfoCard/StoreInfoCard";
+import type {
+  OperatingHour,
+  StoreInformation,
+  StoreLocation,
+} from "@/redux/features/store/storeApiSlice";
 
-const GoogleMapSection = () => {
+export interface GoogleMapSectionProps {
+  information?: StoreInformation | null;
+  location?: StoreLocation | null;
+  hours?: OperatingHour[];
+}
+
+const GoogleMapSection = ({
+  information,
+  location,
+  hours,
+}: GoogleMapSectionProps) => {
   return (
     <section className="bg-white py-16">
       <div className="max-w-[1280px] mx-auto px-6">
@@ -14,14 +29,19 @@ const GoogleMapSection = () => {
           <div className="relative h-64 sm:h-80 lg:h-full min-h-64 bg-gray-100">
             <iframe
               title={`${siteConfig.name} on Google Maps`}
-              src={siteConfig.mapsEmbedUrl}
+              src={location?.google_maps_url || siteConfig.mapsEmbedUrl}
               className="absolute inset-0 w-full h-full border-0"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
             />
           </div>
 
-          <StoreInfoCard className="rounded-none justify-center" />
+          <StoreInfoCard
+            className="rounded-none justify-center"
+            initialInformation={information}
+            initialLocation={location}
+            initialHours={hours}
+          />
         </div>
       </div>
     </section>

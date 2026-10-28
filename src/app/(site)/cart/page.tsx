@@ -27,6 +27,7 @@ import {
 import { useAppDispatch } from "@/redux/hooks";
 import { apiSlice } from "@/redux/apiSlice";
 import SaleSection from "@/components/HomeSection/SaleSection/SaleSection";
+import { useGetPublicSalesQuery } from "@/redux/features/sale/saleApiSlice";
 
 interface DisplayLine {
   id: string;
@@ -40,6 +41,7 @@ const CartPage = () => {
   const dispatch = useAppDispatch();
   const { data: meData } = useGetMeQuery();
   const isLoggedIn = !!meData?.data;
+  const { data: salesData } = useGetPublicSalesQuery({ limit: 8 });
 
   const { data, isLoading } = useGetCartQuery(undefined, { skip: !isLoggedIn });
   const [updateCartItem, { isLoading: isUpdatingCart }] =
@@ -450,7 +452,7 @@ const CartPage = () => {
       </section>
 
       {/* Featured Sale Items to attract buyers */}
-      <SaleSection hideIfEmpty />
+      <SaleSection items={salesData?.data?.items ?? []} hideIfEmpty />
     </>
   );
 };

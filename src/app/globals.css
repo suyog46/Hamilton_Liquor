@@ -61,16 +61,8 @@
   --color-primary-700: #1d4ed8;
   --color-primary-800: #1e40af;
   --color-primary-900: #1e3a8a;
-
-  /* Primary button hover — a darkened shade of primary-normal itself
-     (not an opacity fade) so filled buttons read as a clean, deliberate
-     dark-down on hover instead of a washed-out blend with the page bg. */
- --color-primary-hover: #D4A362;  /* Slightly darker, richer gold for hover */
-  --color-primary-active: #C28E47; /* Deep gold for click/active state */
-
-
-  /* Secondary (brand accent — distinct from the shadcn --secondary token,
-     which is mapped from :root below and drives Button/Badge variant="secondary") */
+ --color-primary-hover: #D4A362;  
+  --color-primary-active: #C28E47; 
   --color-secondary-normal: #5C1B2E;
 
   /* Hover accent — used for interactive rows/cards (e.g. admin lists) */

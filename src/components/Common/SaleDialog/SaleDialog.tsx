@@ -64,6 +64,7 @@ const SaleDialog = ({ initiallyDismissed }: SaleDialogProps) => {
         </button>
 
         <SaleSection
+          items={items}
           isDialog
           hideIfEmpty
           onItemClick={handleDismiss}

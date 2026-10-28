@@ -1,16 +1,14 @@
-"use client";
-
 import ProductCard from "@/components/Common/ProductCard/ProductCard";
 import GlowBackground from "@/components/Common/GlowBackground/GlowBackground";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
-import { useGetPublicProductsQuery } from "@/redux/features/product/productApiSlice";
+import type { PublicProductListItem } from "@/redux/features/product/productApiSlice";
 
-const FeaturedProducts = () => {
-  const { data, isLoading } = useGetPublicProductsQuery({ limit: 10, is_featured: true });
-  const products = data?.data.items ?? [];
+interface FeaturedProductsProps {
+  products?: PublicProductListItem[];
+}
 
-  if (!isLoading && products.length === 0) return null;
+const FeaturedProducts = ({ products = [] }: FeaturedProductsProps) => {
+  if (products.length === 0) return null;
 
   return (
     <section className="relative bg-gray-50 py-16 overflow-hidden">
@@ -28,27 +26,19 @@ const FeaturedProducts = () => {
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-96 w-full rounded-3xl" />
+        <Carousel>
+          <CarouselContent>
+            {products.map((product) => (
+              <CarouselItem key={product.id}>
+                <ProductCard product={product} />
+              </CarouselItem>
             ))}
+          </CarouselContent>
+          <div className="flex items-center justify-end gap-2 mt-6">
+            <CarouselPrevious />
+            <CarouselNext />
           </div>
-        ) : (
-          <Carousel>
-            <CarouselContent>
-              {products.map((product) => (
-                <CarouselItem key={product.id}>
-                  <ProductCard product={product} />
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <div className="flex items-center justify-end gap-2 mt-6">
-              <CarouselPrevious />
-              <CarouselNext />
-            </div>
-          </Carousel>
-        )}
+        </Carousel>
       </div>
     </section>
   );

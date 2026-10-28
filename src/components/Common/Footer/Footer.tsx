@@ -1,5 +1,3 @@
-"use client";
-
 import {
   footerCompanyLinks,
   footerPolicyLinks,
@@ -10,20 +8,26 @@ import {
 } from "@/lib/utils";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
-import {
-  useGetPublicOperatingHoursQuery,
-  useGetPublicSocialLinksQuery,
-  useGetPublicStoreInformationQuery,
-  useGetPublicStoreLocationQuery,
+import type {
+  OperatingHour,
+  SocialLink,
+  StoreInformation,
+  StoreLocation,
 } from "@/redux/features/store/storeApiSlice";
 
-const Footer = () => {
-  const { data: informationData } = useGetPublicStoreInformationQuery();
-  const { data: locationData } = useGetPublicStoreLocationQuery();
-  const { data: hoursData } = useGetPublicOperatingHoursQuery();
-  const { data: socialData } = useGetPublicSocialLinksQuery();
-  const information = informationData?.data;
-  const location = locationData?.data;
+export interface FooterProps {
+  information?: StoreInformation | null;
+  location?: StoreLocation | null;
+  hours?: OperatingHour[];
+  socialLinks?: SocialLink[];
+}
+
+const Footer = ({
+  information,
+  location,
+  hours,
+  socialLinks = [],
+}: FooterProps) => {
   const address = location
     ? `${location.address}, ${location.city}, ${location.state} ${location.zip_code}`
     : siteConfig.address.full;
@@ -31,12 +35,11 @@ const Footer = () => {
   const phoneHref = phone.replace(/[^\d+]/g, "");
   const email = information?.email || siteConfig.email;
   const mapsUrl = location?.google_maps_url || siteConfig.mapsDirectionsUrl;
-  const socialLinks = socialData?.data ?? [];
   const socialByPlatform = new Map(
     socialLinks.map((link) => [link.platform, link.url]),
   );
-  const hoursSummary = hoursData?.data.hours?.length
-    ? formatOperatingHours(hoursData.data.hours)
+  const hoursSummary = hours?.length
+    ? formatOperatingHours(hours)
     : siteConfig.hours
         .map(
           (entry) =>
