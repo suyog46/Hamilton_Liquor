@@ -36,6 +36,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import NotificationBell from "./NotificationBell";
 
 interface NavbarClientProps {
   initialInformation?: StoreInformation | null;
@@ -284,6 +285,7 @@ const NavbarClient = ({
             />
             {cartBadge}
           </Link>
+          {isLoggedIn && <NotificationBell isLoggedIn={isLoggedIn} />}
           {accountControl}
         </div>
 
@@ -300,6 +302,8 @@ const NavbarClient = ({
             />
             {cartBadge}
           </button>
+
+          {isLoggedIn && <NotificationBell isLoggedIn={isLoggedIn} />}
 
           <div className="p-2">{accountControl}</div>
 

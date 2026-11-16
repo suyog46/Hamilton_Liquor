@@ -41,6 +41,13 @@ async function handler(
   const contentType = backendRes.headers.get("content-type");
   if (contentType) responseHeaders.set("content-type", contentType);
 
+  // SSE support: ensure streaming headers are preserved and buffering is disabled
+  if (contentType?.includes("text/event-stream")) {
+    responseHeaders.set("Cache-Control", "no-cache, no-transform");
+    responseHeaders.set("Connection", "keep-alive");
+    responseHeaders.set("X-Accel-Buffering", "no");
+  }
+
   const xRequestId =
     backendRes.headers.get("x-request-id") ||
     backendRes.headers.get("X-Request-ID");
