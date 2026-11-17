@@ -71,11 +71,15 @@ const requiredFields: Array<keyof AddressInput> = [
   "label",
 ];
 
-const detailFields: Array<[keyof AddressInput, string]> = [
+const detailFields: Array<[keyof AddressInput, string, string?]> = [
   ["recipient_first_name", "First name"],
   ["recipient_last_name", "Last name"],
   ["address_line1", "Address line 1"],
-  ["address_line2", "Address line 2 (optional)"],
+  [
+    "address_line2",
+    "Apartment, suite, floor, etc. (optional)",
+    "e.g. 2nd floor, Room 3, Building B",
+  ],
   ["city", "City"],
   ["state", "State"],
   ["zip_code", "ZIP code"],
@@ -375,7 +379,7 @@ export default function AddressForm({ open, onOpenChange, address }: AddressForm
                 ? "Looking up the address for that location…"
                 : "We've filled in what we found from the map — please double-check it before saving."}
             </p>
-            {detailFields.map(([key, label]) => (
+            {detailFields.map(([key, label, placeholder]) => (
               <Field
                 key={key}
                 data-invalid={!!errors[key]}
@@ -385,6 +389,7 @@ export default function AddressForm({ open, onOpenChange, address }: AddressForm
                 <Input
                   id={`address-${key}`}
                   value={String(form[key])}
+                  placeholder={placeholder}
                   onChange={(event) => patch(key, event.target.value)}
                   disabled={isSaving || isLoadingDetail}
                 />

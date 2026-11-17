@@ -28,6 +28,7 @@ import MediaUpload, {
   type MediaValue,
 } from "@/components/Admin/MediaUpload/MediaUpload";
 import { ConfirmDialog } from "@/components/Admin/ConfirmDialog/ConfirmDialog";
+import { Switch } from "@/components/ui/switch";
 import {
   useCreateBrandMutation,
   useDeleteBrandMutation,
@@ -35,15 +36,7 @@ import {
   useUpdateBrandMutation,
   type Brand,
 } from "@/redux/features/brand/brandApiSlice";
-import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
-
-const getErrorMessage = (error: unknown, fallback: string) => {
-  if (isFetchBaseQueryError(error)) {
-    const data = error.data as { message?: string } | undefined;
-    if (typeof data?.message === "string") return data.message;
-  }
-  return fallback;
-};
+import { getErrorMessage } from "@/lib/api/getErrorMessage";
 
 const AdminBrandsPage = () => {
   const { data, isLoading, isError } = useGetBrandsQuery();
@@ -61,6 +54,8 @@ const AdminBrandsPage = () => {
   const [brandPendingDelete, setBrandPendingDelete] = useState<Brand | null>(
     null,
   );
+  const [isActive, setIsActive] = useState(true);
+  const [deactivateWarningOpen, setDeactivateWarningOpen] = useState(false);
 
   const brands = data?.data.items ?? [];
   const isSaving = isCreating || isUpdating;
@@ -71,6 +66,7 @@ const AdminBrandsPage = () => {
     setDescription("");
     setNameError(null);
     setMedia(null);
+    setIsActive(true);
     setDialogOpen(true);
   };
 
@@ -80,7 +76,22 @@ const AdminBrandsPage = () => {
     setDescription(brand.description);
     setNameError(null);
     setMedia(brand.media);
+    setIsActive(brand.is_active ?? true);
     setDialogOpen(true);
+  };
+
+  const handleToggleActive = (checked: boolean) => {
+    if (!checked) {
+      // Switching from active to inactive -> show warning dialog
+      setDeactivateWarningOpen(true);
+    } else {
+      setIsActive(true);
+    }
+  };
+
+  const confirmDeactivation = () => {
+    setIsActive(false);
+    setDeactivateWarningOpen(false);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -102,6 +113,7 @@ const AdminBrandsPage = () => {
           name: trimmedName,
           description: trimmedDescription,
           media_id: media?.id,
+          is_active: isActive,
         }).unwrap();
         toast.success("Brand updated successfully.");
       } else {
@@ -109,6 +121,7 @@ const AdminBrandsPage = () => {
           name: trimmedName,
           description: trimmedDescription,
           media_id: media?.id,
+          is_active: isActive,
         }).unwrap();
         toast.success("Brand created successfully.");
       }
@@ -309,6 +322,24 @@ const AdminBrandsPage = () => {
                   disabled={isSaving}
                 />
               </Field>
+
+              <div className="flex items-center justify-between rounded-lg border border-border p-3 mt-2 bg-muted/20">
+                <div className="space-y-0.5">
+                  <FieldLabel className="text-xs font-medium text-foreground cursor-pointer">
+                    Active Status
+                  </FieldLabel>
+                  <p className="text-[11px] text-muted-foreground">
+                    {isActive
+                      ? "This brand and its products are available on the store."
+                      : "This brand is inactive and its products will be hidden."}
+                  </p>
+                </div>
+                <Switch
+                  checked={isActive}
+                  onCheckedChange={handleToggleActive}
+                  disabled={isSaving}
+                />
+              </div>
             </FieldGroup>
 
             <DialogFooter className="mt-4">
@@ -342,6 +373,16 @@ const AdminBrandsPage = () => {
         description="This cannot be undone."
         isLoading={isDeleting}
         onConfirm={handleDelete}
+      />
+
+      <ConfirmDialog
+        open={deactivateWarningOpen}
+        onOpenChange={setDeactivateWarningOpen}
+        title="Deactivate Brand?"
+        description="Deactivating this brand will hide all products under it from the storefront and affect product availability for customers. Are you sure you want to deactivate it?"
+        confirmLabel="Deactivate"
+        destructive
+        onConfirm={confirmDeactivation}
       />
     </div>
   );

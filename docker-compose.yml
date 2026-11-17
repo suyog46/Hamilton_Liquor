@@ -1,0 +1,18 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SITE_API_URL: https://api.hamiltonliquor.shop/
+        SITE_API_URL: https://api.hamiltonliquor.shop/
+    container_name: hamilton-liquor-frontend
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+      - SITE_API_URL=https://api.hamiltonliquor.shop/
+      - NEXT_PUBLIC_SITE_API_URL=https://api.hamiltonliquor.shop/

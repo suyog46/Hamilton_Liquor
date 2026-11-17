@@ -36,15 +36,7 @@ import { useGetBrandsQuery } from "@/redux/features/brand/brandApiSlice";
 import { useGetCategoriesQuery } from "@/redux/features/category/categoryApiSlice";
 import { useGetCountriesQuery } from "@/redux/features/country/countryApiSlice";
 import { useCreateProductMutation } from "@/redux/features/product/productApiSlice";
-import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
-
-const getErrorMessage = (error: unknown) => {
-  if (isFetchBaseQueryError(error)) {
-    const data = error.data as { message?: string } | undefined;
-    if (typeof data?.message === "string") return data.message;
-  }
-  return "Failed to create product.";
-};
+import { getErrorMessage } from "@/lib/api/getErrorMessage";
 
 const NewProductPage = () => {
   const router = useRouter();

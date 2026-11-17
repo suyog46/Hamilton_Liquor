@@ -21,16 +21,8 @@ import {
   useUpdateProductVariantMutation,
 } from "@/redux/features/product/productVariantApiSlice";
 import { useGetProductDetailQuery } from "@/redux/features/product/productApiSlice";
-import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
 import { isLiquorParentCategory } from "@/lib/utils/categoryDisplay";
-
-const getErrorMessage = (error: unknown, fallback: string) => {
-  if (isFetchBaseQueryError(error)) {
-    const data = error.data as { message?: string } | undefined;
-    if (typeof data?.message === "string") return data.message;
-  }
-  return fallback;
-};
+import { getErrorMessage } from "@/lib/api/getErrorMessage";
 
 // Detail and edit live on the same page — view its current values, change
 // them, or delete it, all in one place.

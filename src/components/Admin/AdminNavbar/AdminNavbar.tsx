@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLogoutMutation } from "@/redux/features/auth/authApiSlice";
+import NotificationBell from "@/components/Common/Navbar/NotificationBell";
 
 const AdminNavbar = () => {
   const router = useRouter();
@@ -47,15 +48,10 @@ const AdminNavbar = () => {
       </div> */}
 
       <div className="ml-auto flex items-center gap-1.5">
-        <span
-          aria-label="Notifications (coming soon)"
-          aria-disabled="true"
-          title="Notifications coming soon"
-          className="relative flex size-9 cursor-not-allowed items-center justify-center text-muted-foreground opacity-40"
-        >
-          <Icon icon="solar:bell-linear" className="h-5 w-5" />
-          <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-primary-normal" />
-        </span>
+        <NotificationBell
+          allowedTypes={["admin.order.confirmed"]}
+          orderLinkPrefix="/admin/orders"
+        />
 
         <Separator orientation="vertical" className="mx-1 h-5" />
 

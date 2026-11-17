@@ -29,6 +29,7 @@ export interface CreateCategoryRequest {
   name: string;
   media_id: string;
   parent_id: string;
+  is_active?: boolean;
 }
 
 export interface UpdateCategoryRequest {
@@ -36,6 +37,7 @@ export interface UpdateCategoryRequest {
   name: string;
   media_id?: string;
   parent_id?: string;
+  is_active?: boolean;
 }
 
 export const categoryApiSlice = apiSlice.injectEndpoints({

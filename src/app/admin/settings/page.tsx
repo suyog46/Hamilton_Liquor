@@ -18,7 +18,7 @@ import {
   useGetMeQuery,
 } from "@/redux/features/user/userApiSlice";
 import { useLogoutMutation } from "@/redux/features/auth/authApiSlice";
-import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
+import { getErrorMessage } from "@/lib/api/getErrorMessage";
 
 const AdminSettingsPage = () => {
   const router = useRouter();
@@ -38,16 +38,7 @@ const AdminSettingsPage = () => {
       toast.success("Account deleted.");
       router.replace("/");
     } catch (error) {
-      const data = isFetchBaseQueryError(error)
-        ? (error.data as
-            | { message?: string; error?: { message?: string } }
-            | undefined)
-        : undefined;
-      toast.error(
-        data?.error?.message ??
-          data?.message ??
-          "Could not delete the account.",
-      );
+      toast.error(getErrorMessage(error, "Could not delete the account."));
     } finally {
       setIsDeleteConfirming(false);
     }

@@ -8,19 +8,11 @@ import type { ColumnDef } from "@tanstack/react-table";
 
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/Admin/ConfirmDialog/ConfirmDialog";
-import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
+import { getErrorMessage } from "@/lib/api/getErrorMessage";
 import {
   useDeleteProductMutation,
   type Product,
 } from "@/redux/features/product/productApiSlice";
-
-const getErrorMessage = (error: unknown, fallback: string) => {
-  if (isFetchBaseQueryError(error)) {
-    const data = error.data as { message?: string } | undefined;
-    if (typeof data?.message === "string") return data.message;
-  }
-  return fallback;
-};
 
 const formatPriceRange = (product: Product) => {
   if (product.variants.length === 0) return "—";

@@ -10,16 +10,8 @@ import VariantWizard, {
 } from "@/components/Admin/VariantWizard/VariantWizard";
 import { useGetProductDetailQuery } from "@/redux/features/product/productApiSlice";
 import { useCreateProductVariantMutation } from "@/redux/features/product/productVariantApiSlice";
-import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
 import { isLiquorParentCategory } from "@/lib/utils/categoryDisplay";
-
-const getErrorMessage = (error: unknown, fallback: string) => {
-  if (isFetchBaseQueryError(error)) {
-    const data = error.data as { message?: string } | undefined;
-    if (typeof data?.message === "string") return data.message;
-  }
-  return fallback;
-};
+import { getErrorMessage } from "@/lib/api/getErrorMessage";
 
 const NewVariantPage = () => {
   const params = useParams<{ productId: string }>();

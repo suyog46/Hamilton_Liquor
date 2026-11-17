@@ -35,15 +35,7 @@ import {
   useGetProductDetailQuery,
   useUpdateProductMutation,
 } from "@/redux/features/product/productApiSlice";
-import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
-
-const getErrorMessage = (error: unknown, fallback: string) => {
-  if (isFetchBaseQueryError(error)) {
-    const data = error.data as { message?: string } | undefined;
-    if (typeof data?.message === "string") return data.message;
-  }
-  return fallback;
-};
+import { getErrorMessage } from "@/lib/api/getErrorMessage";
 
 const ProductDetailPage = () => {
   const params = useParams<{ id: string }>();

@@ -75,6 +75,18 @@ interface NotificationBellProps {
    * Defaults to true.
    */
   isLoggedIn?: boolean;
+
+  /**
+   * Optional filter for notification types.
+   * E.g. ['admin.order.confirmed'] for admin side.
+   */
+  allowedTypes?: NotificationType[];
+
+  /**
+   * Base route prefix for order links.
+   * Defaults to "/order" (customer). For admin, pass "/admin/orders".
+   */
+  orderLinkPrefix?: string;
 }
 
 const getNotificationTypeConfig = (type: NotificationType) => {
@@ -118,7 +130,11 @@ const getNotificationTypeConfig = (type: NotificationType) => {
   }
 };
 
-export const NotificationBell = ({ isLoggedIn = true }: NotificationBellProps) => {
+export const NotificationBell = ({
+  isLoggedIn = true,
+  allowedTypes,
+  orderLinkPrefix = "/order",
+}: NotificationBellProps) => {
   const router = useRouter();
 
   // Dropdown open/close & filter state
@@ -136,6 +152,15 @@ export const NotificationBell = ({ isLoggedIn = true }: NotificationBellProps) =
   // Active stream controller & reconnect tracking
   const abortControllerRef = useRef<AbortController | null>(null);
   const isFirstConnection = useRef(true);
+
+  // Filter notifications if allowedTypes is specified (e.g. for Admin navbar)
+  const displayedNotifications = allowedTypes
+    ? notifications.filter((item) => allowedTypes.includes(item.type))
+    : notifications;
+
+  const effectiveUnreadCount = allowedTypes
+    ? displayedNotifications.filter((n) => !n.read_at).length
+    : unreadCount;
 
   // -------------------------------------------------------------
   // REST Helpers: GET /notifications/unread-count
@@ -196,10 +221,19 @@ export const NotificationBell = ({ isLoggedIn = true }: NotificationBellProps) =
     await Promise.all([fetchUnreadCount(), fetchNotificationList()]);
   }, [fetchUnreadCount, fetchNotificationList]);
 
-  // -------------------------------------------------------------
-  // REST Action: PATCH /notifications/{user_notification_id}/read
-  // -------------------------------------------------------------
+
   const markAsRead = async (userNotificationId: string) => {
+    const now = new Date().toISOString();
+
+    // 1. Optimistic update: mark as read immediately in UI
+    setNotifications((prev) =>
+      prev.map((n) =>
+        n.id === userNotificationId ? { ...n, read_at: n.read_at ?? now } : n
+      )
+    );
+    setUnreadCount((prev) => Math.max(0, prev - 1));
+
+    // 2. Persist to server via PATCH
     try {
       const res = await fetch(`/api/proxy/notifications/${userNotificationId}/read`, {
         method: "PATCH",
@@ -210,15 +244,17 @@ export const NotificationBell = ({ isLoggedIn = true }: NotificationBellProps) =
         const json: MarkAsReadResponse = await res.json();
         const updatedItem = json.data;
 
-        // Update local item
+        // Sync with exact server payload
         setNotifications((prev) =>
           prev.map((n) => (n.id === userNotificationId ? updatedItem : n))
         );
-        // Decrement unread count
-        setUnreadCount((prev) => Math.max(0, prev - 1));
+      } else {
+        // If server failed, revert by refreshing unread count
+        fetchUnreadCount();
       }
     } catch (err) {
       console.error(`[Notification] Failed to mark ${userNotificationId} as read:`, err);
+      fetchUnreadCount();
     }
   };
 
@@ -416,7 +452,6 @@ export const NotificationBell = ({ isLoggedIn = true }: NotificationBellProps) =
     });
   }, [isLoggedIn, refreshNotificationState, handleAuthRefresh]);
 
-  // Connect on mount / login change, cleanup on unmount
   useEffect(() => {
     if (isLoggedIn) {
       connectStream();
@@ -479,16 +514,16 @@ export const NotificationBell = ({ isLoggedIn = true }: NotificationBellProps) =
     // 2. Close dropdown
     setIsOpen(false);
 
-    // 3. Link to /order/[id]
+    // 3. Link to order details using orderLinkPrefix
     const orderId =
       item.resource_id ||
       (typeof item.metadata?.order_id === "string" ? item.metadata.order_id : null) ||
       (typeof item.metadata?.id === "string" ? item.metadata.id : null);
 
     if (orderId) {
-      router.push(`/order/${orderId}`);
+      router.push(`${orderLinkPrefix}/${orderId}`);
     } else {
-      router.push("/order");
+      router.push(orderLinkPrefix);
     }
   };
 
@@ -505,9 +540,9 @@ export const NotificationBell = ({ isLoggedIn = true }: NotificationBellProps) =
         <Icon icon="solar:bell-linear" className="w-6 h-6" />
 
         {/* Unread count badge */}
-        {unreadCount > 0 && (
+        {effectiveUnreadCount > 0 && (
           <span className="absolute top-1 right-1 flex min-w-4 h-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white leading-none">
-            {unreadCount > 99 ? "99+" : unreadCount}
+            {effectiveUnreadCount > 99 ? "99+" : effectiveUnreadCount}
           </span>
         )}
       </button>
@@ -519,15 +554,15 @@ export const NotificationBell = ({ isLoggedIn = true }: NotificationBellProps) =
           <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3 bg-gray-50/70">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-sm">Notifications</span>
-              {unreadCount > 0 && (
+              {effectiveUnreadCount > 0 && (
                 <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-600">
-                  {unreadCount} new
+                  {effectiveUnreadCount} new
                 </span>
               )}
             </div>
 
             <div className="flex items-center gap-2">
-              {unreadCount > 0 && (
+              {effectiveUnreadCount > 0 && (
                 <button
                   type="button"
                   onClick={markAllAsRead}
@@ -553,34 +588,32 @@ export const NotificationBell = ({ isLoggedIn = true }: NotificationBellProps) =
             <button
               type="button"
               onClick={() => setUnreadOnly(false)}
-              className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
-                !unreadOnly
-                  ? "bg-primary-normal text-white"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors ${!unreadOnly
+                ? "bg-primary-normal text-white"
+                : "text-gray-600 hover:bg-gray-100"
+                }`}
             >
               All
             </button>
             <button
               type="button"
               onClick={() => setUnreadOnly(true)}
-              className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
-                unreadOnly
-                  ? "bg-primary-normal text-white"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors ${unreadOnly
+                ? "bg-primary-normal text-white"
+                : "text-gray-600 hover:bg-gray-100"
+                }`}
             >
-              Unread {unreadCount > 0 ? `(${unreadCount})` : ""}
+              Unread {effectiveUnreadCount > 0 ? `(${effectiveUnreadCount})` : ""}
             </button>
           </div>
 
           {/* Notification List */}
           <div className="max-h-80 overflow-y-auto divide-y divide-gray-100">
-            {isLoading && notifications.length === 0 ? (
+            {isLoading && displayedNotifications.length === 0 ? (
               <div className="p-6 text-center text-xs text-gray-500">
                 Loading notifications...
               </div>
-            ) : notifications.length === 0 ? (
+            ) : displayedNotifications.length === 0 ? (
               <div className="p-8 text-center text-xs text-gray-400">
                 <Icon
                   icon="solar:bell-off-linear"
@@ -589,7 +622,7 @@ export const NotificationBell = ({ isLoggedIn = true }: NotificationBellProps) =
                 No notifications found
               </div>
             ) : (
-              notifications.map((item) => {
+              displayedNotifications.map((item) => {
                 const isUnread = !item.read_at;
                 const config = getNotificationTypeConfig(item.type);
 
@@ -598,9 +631,8 @@ export const NotificationBell = ({ isLoggedIn = true }: NotificationBellProps) =
                     type="button"
                     key={item.id}
                     onClick={() => handleNotificationClick(item)}
-                    className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50 cursor-pointer ${
-                      isUnread ? "bg-amber-50/40" : "bg-white"
-                    }`}
+                    className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50 cursor-pointer ${isUnread ? "bg-amber-50/40" : "bg-white"
+                      }`}
                   >
                     {/* Status Icon */}
                     <div
@@ -616,9 +648,8 @@ export const NotificationBell = ({ isLoggedIn = true }: NotificationBellProps) =
                             <span className="size-1.5 rounded-full bg-rose-500 shrink-0" />
                           )}
                           <span
-                            className={`text-xs font-semibold truncate ${
-                              isUnread ? "text-primary-normal" : "text-gray-900"
-                            }`}
+                            className={`text-xs font-semibold truncate ${isUnread ? "text-primary-normal" : "text-gray-900"
+                              }`}
                           >
                             {item.title}
                           </span>
@@ -647,6 +678,20 @@ export const NotificationBell = ({ isLoggedIn = true }: NotificationBellProps) =
                           </span>
                         )}
 
+                        {isUnread && (
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markAsRead(item.id);
+                            }}
+                            className="text-[10px] font-medium text-primary-normal hover:underline cursor-pointer"
+                          >
+                            Mark as read
+                          </span>
+                        )}
+
                         <span className="ml-auto text-[10px] font-medium text-primary-normal hover:underline">
                           View Order →
                         </span>
@@ -661,7 +706,7 @@ export const NotificationBell = ({ isLoggedIn = true }: NotificationBellProps) =
           {/* Footer (Pagination Info if available) */}
           {pagination && pagination.total_items > 0 && (
             <div className="border-t border-gray-100 px-4 py-2 bg-gray-50/50 text-[11px] text-gray-400 text-center">
-              Showing {notifications.length} of {pagination.total_items} notifications
+              Showing {displayedNotifications.length} of {pagination.total_items} notifications
             </div>
           )}
         </div>

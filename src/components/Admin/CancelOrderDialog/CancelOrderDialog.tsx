@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
 
@@ -59,6 +59,11 @@ export const CANCELLATION_RULES: CancellationRule[] = [
     fulfillment_status: "OUT_FOR_DELIVERY",
     reasons: ["CUSTOMER_CANCELLED", "STORE_CANCELLED"],
   },
+  {
+    status: "CONFIRMED",
+    fulfillment_status: "READY_FOR_PICKUP",
+    reasons: ["CUSTOMER_CANCELLED", "STORE_CANCELLED"],
+  },
 ];
 
 export function getCancelReasons(status?: string, fulfillmentStatus?: string): CancelOrderReason[] {
@@ -96,7 +101,10 @@ interface CancelOrderDialogProps {
 }
 
 export function CancelOrderDialog({ order, open, onOpenChange }: CancelOrderDialogProps) {
-  const availableReasons = getCancelReasons(order.status, order.fulfillment_status);
+  const availableReasons = useMemo(
+    () => getCancelReasons(order.status, order.fulfillment_status),
+    [order.status, order.fulfillment_status]
+  );
 
   const [reason, setReason] = useState<CancelOrderReason | "">("");
   const [note, setNote] = useState("");
@@ -117,7 +125,7 @@ export function CancelOrderDialog({ order, open, onOpenChange }: CancelOrderDial
       setPreviewData(null);
       setErrors({});
     }
-  }, [open, order, availableReasons]);
+  }, [open, availableReasons]);
 
   const handlePreviewStep = async (e: React.FormEvent) => {
     e.preventDefault();

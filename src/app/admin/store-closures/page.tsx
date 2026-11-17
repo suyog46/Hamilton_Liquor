@@ -26,7 +26,7 @@ import {
   useUpdateStoreClosureMutation,
   useDeleteStoreClosureMutation,
 } from "@/redux/features/store/storeApiSlice";
-import { isFetchBaseQueryError } from "@/lib/api/isFetchBaseQueryError";
+import { getErrorMessage } from "@/lib/api/getErrorMessage";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -44,14 +44,6 @@ const formatDate = (value: string) => {
 };
 
 const toDateKey = (value: string) => value.slice(0, 10);
-
-const getErrorMessage = (error: unknown, fallback: string) => {
-  if (isFetchBaseQueryError(error)) {
-    const data = error.data as { message?: string; error?: { message?: string } } | undefined;
-    return data?.message ?? data?.error?.message ?? fallback;
-  }
-  return fallback;
-};
 
 // ─── Calendar Component ───────────────────────────────────────────────────────
 

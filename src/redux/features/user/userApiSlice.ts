@@ -1,8 +1,7 @@
 import { apiSlice } from "@/redux/apiSlice";
 import type { ApiResponse } from "@/redux/types/api";
 
-// Only "ADMIN" is confirmed from a real response; other roles are unknown,
-// so this stays a plain string with "ADMIN" surfaced for autocomplete.
+
 export type UserRole = "ADMIN" | (string & {});
 
 export interface CurrentUser {
@@ -17,11 +16,30 @@ export interface CurrentUser {
 
 export type CurrentUserResponse = ApiResponse<CurrentUser>;
 
+export interface ChangePasswordRequest {
+  current_password: string;
+  new_password: string;
+}
+
+export interface ChangePasswordResponse {
+  success: boolean;
+  data: {
+    message: string;
+  };
+}
+
 export const userApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getMe: builder.query<CurrentUserResponse, void>({
       query: () => "auth/me",
       providesTags: ["User"],
+    }),
+    changePassword: builder.mutation<ChangePasswordResponse, ChangePasswordRequest>({
+      query: (body) => ({
+        url: "auth/change-password",
+        method: "PATCH",
+        body,
+      }),
     }),
     deleteMe: builder.mutation<void, void>({
       query: () => ({
@@ -33,5 +51,9 @@ export const userApiSlice = apiSlice.injectEndpoints({
   }),
 });
 
-export const { useGetMeQuery, useLazyGetMeQuery, useDeleteMeMutation } =
-  userApiSlice;
+export const {
+  useGetMeQuery,
+  useLazyGetMeQuery,
+  useChangePasswordMutation,
+  useDeleteMeMutation,
+} = userApiSlice;

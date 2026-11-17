@@ -23,6 +23,7 @@ export interface CreateBrandRequest {
   name: string;
   description: string;
   media_id?: string;
+  is_active?: boolean;
 }
 
 export interface UpdateBrandRequest {
@@ -30,6 +31,7 @@ export interface UpdateBrandRequest {
   name: string;
   description: string;
   media_id?: string;
+  is_active?: boolean;
 }
 
 export const brandApiSlice = apiSlice.injectEndpoints({
